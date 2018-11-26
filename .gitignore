@@ -1,0 +1,11 @@
+build/
+*.so
+*.a
+*.out
+*.o
+*.lib
+*.swp
+*.swo
+*.pyc
+*.pyo
+.vscode/
