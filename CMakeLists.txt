@@ -41,7 +41,10 @@ add_library( tysocBullet
              ${TYSOCBULLET_SOURCES} )
 target_link_libraries( tysocBullet
                        tysocViz
-                       tysoc )
+                       tysoc
+                       BulletDynamics 
+                       BulletCollision 
+                       LinearMath )
 
 # *******************************************************************************
 
