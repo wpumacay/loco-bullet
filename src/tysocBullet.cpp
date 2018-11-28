@@ -67,6 +67,9 @@ namespace tysocBullet
 
         // Initialize all other functionality ******************************
 
+        m_primitivesSpawnerPtr = new TBulletPrimitivesSpawner( m_btWorldPtr );
+        m_primitivesSpawnerPtr->initialize();
+
         if ( !m_scenarioPtr )
         {
             // create a default scenario if none given

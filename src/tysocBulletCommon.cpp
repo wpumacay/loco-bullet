@@ -18,4 +18,14 @@ namespace tysocBullet
         }
     }
 
+    void getBtMat3( const btMatrix3x3& srcMat, float* outMat )
+    {
+        for ( size_t i = 0; i < 3; i++ )
+        {
+            for ( size_t j = 0; j < 3; j++ )
+            {
+                outMat[i + 3 * j] = srcMat[i][j];
+            }
+        }
+    }
 }

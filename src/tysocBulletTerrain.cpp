@@ -82,7 +82,7 @@ namespace tysocBullet
         btCollisionShape* _rbCollisionShape = NULL;
         if ( bPrimitivePtr->bulletGeomType == "box" )
         {
-            _rbCollisionShape = new btBoxShape( btVector3( 1.0f, 1.0f, 1.0f ) );
+            _rbCollisionShape = new btBoxShape( btVector3( 0.5f, 0.5f, 0.5f ) );
         }
 
         if ( !_rbCollisionShape )

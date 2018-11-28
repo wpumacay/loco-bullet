@@ -21,4 +21,5 @@ namespace tysocBullet
     // @TODO: Here there be dragons
 
     void createBtMat3( float* srcMat, btMatrix3x3& outMat );
+    void getBtMat3( const btMatrix3x3& srcMat, float* outMat );
 }

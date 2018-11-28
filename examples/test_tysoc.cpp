@@ -27,16 +27,16 @@ int main( int argc, const char** argv )
     auto _factory = new tysocBullet::TBulletFactory();
 
     tysocBullet::TGenericParams _terrainParams;
-    // sections - path - perlin profile
-    {
-        _terrainParams.set( "sectionType", "path" );
-        _terrainParams.set( "sectionDepth", SECTION_DEPTH );
-        _terrainParams.set( "pathProfile", "perlin" );
-        _terrainParams.set( "perlinProfileOctaves", 4 );
-        _terrainParams.set( "perlinProfilePersistance", 0.5f );
-        _terrainParams.set( "perlinProfileLacunarity", 2.0f );
-        _terrainParams.set( "perlinProfileNoiseScale", 10.0f );
-    }
+    // // sections - path - perlin profile
+    // {
+    //     _terrainParams.set( "sectionType", "path" );
+    //     _terrainParams.set( "sectionDepth", SECTION_DEPTH );
+    //     _terrainParams.set( "pathProfile", "perlin" );
+    //     _terrainParams.set( "perlinProfileOctaves", 4 );
+    //     _terrainParams.set( "perlinProfilePersistance", 0.5f );
+    //     _terrainParams.set( "perlinProfileLacunarity", 2.0f );
+    //     _terrainParams.set( "perlinProfileNoiseScale", 10.0f );
+    // }
     // // sections - path - sine profile
     // {
     //     _terrainParams.set( "sectionType", "path" );
@@ -48,25 +48,25 @@ int main( int argc, const char** argv )
     // }
     // sections - blocky
     {
-        // _terrainParams.set( "sectionType", "blocky" );
-        // _terrainParams.set( "sectionDepth", SECTION_DEPTH );
-        // _terrainParams.set( "sectionLength", 250.0f );
-        // _terrainParams.set( "sectionUsesBase", 1 );
-        // _terrainParams.set( "sectionUsesSides", 1 );
-        // _terrainParams.set( "sectionBlockyBaseHeight", 0.5f );
-        // _terrainParams.set( "sectionBlockyBaseWidth", 0.25f );
-        // _terrainParams.set( "sectionBlockyBaseSpacingX", 4.0f );
-        // _terrainParams.set( "sectionBlockyBaseOffsetZ", 0.0f );
-        // _terrainParams.set( "sectionBlockyPercentDepthMin", 0.25f );//1.0f
-        // _terrainParams.set( "sectionBlockyPercentDepthMax", 0.75f );//1.0f
-        // _terrainParams.set( "sectionBlockyPercentHeightMin", 0.75f );
-        // _terrainParams.set( "sectionBlockyPercentHeightMax", 1.25f );
-        // _terrainParams.set( "sectionBlockyPercentWidthMin", 0.5f );
-        // _terrainParams.set( "sectionBlockyPercentWidthMax", 2.0f );
-        // _terrainParams.set( "sectionBlockyPercentSpacingXMin", 0.9f );
-        // _terrainParams.set( "sectionBlockyPercentSpacingXMax", 1.1f );
-        // _terrainParams.set( "sectionBlockyPercentOffsetZMin", 1.0f );
-        // _terrainParams.set( "sectionBlockyPercentOffsetZMax", 1.0f );
+        _terrainParams.set( "sectionType", "blocky" );
+        _terrainParams.set( "sectionDepth", SECTION_DEPTH );
+        _terrainParams.set( "sectionLength", 250.0f );
+        _terrainParams.set( "sectionUsesBase", 1 );
+        _terrainParams.set( "sectionUsesSides", 1 );
+        _terrainParams.set( "sectionBlockyBaseHeight", 0.5f );
+        _terrainParams.set( "sectionBlockyBaseWidth", 0.25f );
+        _terrainParams.set( "sectionBlockyBaseSpacingX", 4.0f );
+        _terrainParams.set( "sectionBlockyBaseOffsetZ", 0.0f );
+        _terrainParams.set( "sectionBlockyPercentDepthMin", 0.25f );//1.0f
+        _terrainParams.set( "sectionBlockyPercentDepthMax", 0.75f );//1.0f
+        _terrainParams.set( "sectionBlockyPercentHeightMin", 0.75f );
+        _terrainParams.set( "sectionBlockyPercentHeightMax", 1.25f );
+        _terrainParams.set( "sectionBlockyPercentWidthMin", 0.5f );
+        _terrainParams.set( "sectionBlockyPercentWidthMax", 2.0f );
+        _terrainParams.set( "sectionBlockyPercentSpacingXMin", 0.9f );
+        _terrainParams.set( "sectionBlockyPercentSpacingXMax", 1.1f );
+        _terrainParams.set( "sectionBlockyPercentOffsetZMin", 1.0f );
+        _terrainParams.set( "sectionBlockyPercentOffsetZMax", 1.0f );
 
         // _terrainParams.set( "sectionType", "blocky" );
         // _terrainParams.set( "sectionDepth", SECTION_DEPTH );
@@ -182,6 +182,14 @@ int main( int argc, const char** argv )
         {
             auto _genInfoPtr = _terrainGens[i]->generatorInfo();
             _genInfoPtr->trackingpoint.x = _currentX;
+        }
+
+        if ( engine::InputSystem::isKeyDown( GLFW_KEY_SPACE ) )
+        {
+            std::cout << "Spawned object" << std::endl;
+            _tysocApi->getPrimitivesSpawner()->spawnObject( "box",
+                                                            0.25f, 0.25f, 0.25f,
+                                                            _currentX, 0.0f, 4.0f );
         }
     }
 

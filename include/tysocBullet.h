@@ -4,6 +4,7 @@
 #include <tysocBulletAgent.h>
 #include <tysocBulletTerrain.h>
 #include <tysocBulletFactory.h>
+#include <tysocBulletPrimitivesSpawner.h>
 
 // abstract api to extend from
 #include <api_adapter.h>

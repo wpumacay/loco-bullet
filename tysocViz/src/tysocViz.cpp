@@ -62,6 +62,9 @@ namespace tysocViz
         {
             _collectTerrainGenResources( _terrainGenMaps[i] );
         }
+
+        auto _primitivesSpawner = m_tysocApiPtr->getPrimitivesSpawner();
+        _collectDebugSpawnerResources( _primitivesSpawner );
     }
 
     void TVisualizer::_collectAgentResources( tysocagent::TAgent* agentPtr )
@@ -130,35 +133,38 @@ namespace tysocViz
         }
     }
 
-    void TVisualizer::_resizeMesh( engine::LMesh* meshPtr, 
-                                   tysocterrain::TTerrainPrimitive* terrainGeomPtr )
+    void TVisualizer::_resizeMesh( engine::LMesh* meshPtr,
+                                   const std::string& type,
+                                   float sx, float sy, float sz )
     {
-        if ( terrainGeomPtr->geomType == "plane" )
+        if ( type == "plane" )
         {
-            meshPtr->scale.x = 0.5f * terrainGeomPtr->size.x;
-            meshPtr->scale.y = 0.5f * terrainGeomPtr->size.y;
+            meshPtr->scale.x = 0.5f * sx;
+            meshPtr->scale.y = 0.5f * sy;
         }
-        else if ( terrainGeomPtr->geomType == "sphere" )
+        else if ( type == "sphere" )
         {
-            meshPtr->scale.x = terrainGeomPtr->size.x;
+            meshPtr->scale.x = sx;
+            meshPtr->scale.y = sx;
+            meshPtr->scale.z = sx;
         }
-        else if ( terrainGeomPtr->geomType == "capsule" )
+        else if ( type == "capsule" )
         {
-            meshPtr->scale.x = terrainGeomPtr->size.x;
-            meshPtr->scale.y = terrainGeomPtr->size.x;
-            meshPtr->scale.z = 0.5f * terrainGeomPtr->size.y;
+            meshPtr->scale.x = sx;
+            meshPtr->scale.y = sx;
+            meshPtr->scale.z = 0.5f * sy;
         }
-        else if ( terrainGeomPtr->geomType == "cylinder" )
+        else if ( type == "cylinder" )
         {
-            meshPtr->scale.x = terrainGeomPtr->size.x;
-            meshPtr->scale.y = terrainGeomPtr->size.x;
-            meshPtr->scale.z = 0.5f * terrainGeomPtr->size.y;
+            meshPtr->scale.x = sx;
+            meshPtr->scale.y = sx;
+            meshPtr->scale.z = 0.5f * sy;
         }
-        else if ( terrainGeomPtr->geomType == "box" )
+        else if ( type == "box" )
         {
-            meshPtr->scale.x = 0.5f * terrainGeomPtr->size.x;
-            meshPtr->scale.y = 0.5f * terrainGeomPtr->size.y;
-            meshPtr->scale.z = 0.5f * terrainGeomPtr->size.z;
+            meshPtr->scale.x = 0.5f * sx;
+            meshPtr->scale.y = 0.5f * sy;
+            meshPtr->scale.z = 0.5f * sz;
         }
     }
 
@@ -258,7 +264,6 @@ namespace tysocViz
         if ( terrainGeomPtr->geomType == "plane" )
         {
             _glMesh = engine::LMeshBuilder::createPlane( 2.0f, 2.0f );
-
         }
         else if ( terrainGeomPtr->geomType == "sphere" )
         {
@@ -286,7 +291,11 @@ namespace tysocViz
 
         if ( _glMesh )
         {
-            _resizeMesh( _glMesh, terrainGeomPtr );
+            _resizeMesh( _glMesh, 
+                         terrainGeomPtr->geomType,
+                         terrainGeomPtr->size.x,
+                         terrainGeomPtr->size.y,
+                         terrainGeomPtr->size.z );
             // ok, we can create the wrapper now
             auto _meshWrapper = new TVizTerrainMeshWrapper();
             _meshWrapper->glMesh = _glMesh;
@@ -297,6 +306,70 @@ namespace tysocViz
             m_terrainMeshWrappers.push_back( _meshWrapper );
         }
 
+    }
+
+    void TVisualizer::_collectDebugSpawnerResources( tysocUtils::TPrimitivesSpawner* debugSpawnerPtr )
+    {
+        std::string _shapeOptions[4] = { "box", "sphere", "capsule", "cylinder" };
+
+        for ( size_t o = 0; o < 4; o++ )
+        {
+            auto _geometries = debugSpawnerPtr->getPrimitives( _shapeOptions[o] );
+            for ( size_t i = 0; i < _geometries.size(); i++ )
+            {
+                _cacheDebugSpawnerGeometry( _geometries[i] );
+            }
+        }
+    }
+
+    void TVisualizer::_cacheDebugSpawnerGeometry( tysocUtils::TDebugPrimitive* debugPrimitiveGeomPtr )
+    {
+        engine::LMesh* _glMesh = NULL;
+
+        if ( debugPrimitiveGeomPtr->type == "plane" )
+        {
+            _glMesh = engine::LMeshBuilder::createPlane( 2.0f, 2.0f );
+        }
+        else if ( debugPrimitiveGeomPtr->type == "sphere" )
+        {
+            _glMesh = engine::LMeshBuilder::createSphere( 1.0f );
+        }
+        else if ( debugPrimitiveGeomPtr->type == "capsule" )
+        {
+            _glMesh = engine::LMeshBuilder::createCapsule( 1.0f, 2.0f );
+        }
+        else if ( debugPrimitiveGeomPtr->type == "cylinder" )
+        {
+            _glMesh = engine::LMeshBuilder::createCylinder( 1.0f, 2.0f );
+        }
+        else if ( debugPrimitiveGeomPtr->type == "box" )
+        {
+            _glMesh = engine::LMeshBuilder::createBox( 2.0f,
+                                                       2.0f,
+                                                       2.0f );
+        }
+        else
+        {
+            std::cout << "WARNING> Could not create debug-primitive geometry : " << debugPrimitiveGeomPtr->type << std::endl;
+            _glMesh = NULL;
+        }
+
+        if ( _glMesh )
+        {
+            _resizeMesh( _glMesh, 
+                         debugPrimitiveGeomPtr->type,
+                         debugPrimitiveGeomPtr->size.x,
+                         debugPrimitiveGeomPtr->size.y,
+                         debugPrimitiveGeomPtr->size.z );
+            // ok, we can create the wrapper now
+            auto _meshWrapper = new TVizDebugPrimitiveWrapper();
+            _meshWrapper->glMesh = _glMesh;
+            _meshWrapper->geometry = debugPrimitiveGeomPtr;
+            // add mesh to glengine's scene
+            m_glScenePtr->addRenderable( _meshWrapper->glMesh );
+            // add it to the wrappers list for later usage
+            m_debugPrimitiveMeshWrappers.push_back( _meshWrapper );
+        }
     }
 
     void TVisualizer::update()
@@ -321,6 +394,10 @@ namespace tysocViz
         for ( size_t i = 0; i < m_terrainMeshWrappers.size(); i++ )
         {
             _updateTerrainWrapper( m_terrainMeshWrappers[i] );
+        }
+        for ( size_t i = 0; i < m_debugPrimitiveMeshWrappers.size(); i++ )
+        {
+            _updateDebugPrimitiveWrapper( m_debugPrimitiveMeshWrappers[i] );
         }
 
         // @CHECK: For now I will just create a pool for the terrain objects, and reuse it
@@ -373,7 +450,11 @@ namespace tysocViz
 
     void TVisualizer::_updateTerrainWrapper( TVizTerrainMeshWrapper* terrainWrapperPtr )
     {
-        _resizeMesh( terrainWrapperPtr->glMesh, terrainWrapperPtr->geometry );
+        _resizeMesh( terrainWrapperPtr->glMesh, 
+                     terrainWrapperPtr->geometry->geomType,
+                     terrainWrapperPtr->geometry->size.x,
+                     terrainWrapperPtr->geometry->size.y,
+                     terrainWrapperPtr->geometry->size.z );
 
         float _color[3] = { terrainWrapperPtr->geometry->color.r,
                             terrainWrapperPtr->geometry->color.g,
@@ -397,5 +478,34 @@ namespace tysocViz
         terrainWrapperPtr->glMesh->rotation.set( 2, 2, terrainWrapperPtr->geometry->rotmat[8] );
     }
 
+    void TVisualizer::_updateDebugPrimitiveWrapper( TVizDebugPrimitiveWrapper* debugPrimitiveWrapperPtr )
+    {
+        _resizeMesh( debugPrimitiveWrapperPtr->glMesh, 
+                     debugPrimitiveWrapperPtr->geometry->type,
+                     debugPrimitiveWrapperPtr->geometry->size.x,
+                     debugPrimitiveWrapperPtr->geometry->size.y,
+                     debugPrimitiveWrapperPtr->geometry->size.z );
+
+        float _color[3] = { debugPrimitiveWrapperPtr->geometry->color.r,
+                            debugPrimitiveWrapperPtr->geometry->color.g,
+                            debugPrimitiveWrapperPtr->geometry->color.b };
+        _setColor( debugPrimitiveWrapperPtr->glMesh, _color );
+
+        debugPrimitiveWrapperPtr->glMesh->setVisibility( debugPrimitiveWrapperPtr->geometry->inUse );
+
+        debugPrimitiveWrapperPtr->glMesh->pos.x = debugPrimitiveWrapperPtr->geometry->position.x;
+        debugPrimitiveWrapperPtr->glMesh->pos.y = debugPrimitiveWrapperPtr->geometry->position.y;
+        debugPrimitiveWrapperPtr->glMesh->pos.z = debugPrimitiveWrapperPtr->geometry->position.z;
+        
+        debugPrimitiveWrapperPtr->glMesh->rotation.set( 0, 0, debugPrimitiveWrapperPtr->geometry->rotmat[0] );
+        debugPrimitiveWrapperPtr->glMesh->rotation.set( 0, 1, debugPrimitiveWrapperPtr->geometry->rotmat[3] );
+        debugPrimitiveWrapperPtr->glMesh->rotation.set( 0, 2, debugPrimitiveWrapperPtr->geometry->rotmat[6] );
+        debugPrimitiveWrapperPtr->glMesh->rotation.set( 1, 0, debugPrimitiveWrapperPtr->geometry->rotmat[1] );
+        debugPrimitiveWrapperPtr->glMesh->rotation.set( 1, 1, debugPrimitiveWrapperPtr->geometry->rotmat[4] );
+        debugPrimitiveWrapperPtr->glMesh->rotation.set( 1, 2, debugPrimitiveWrapperPtr->geometry->rotmat[7] );
+        debugPrimitiveWrapperPtr->glMesh->rotation.set( 2, 0, debugPrimitiveWrapperPtr->geometry->rotmat[2] );
+        debugPrimitiveWrapperPtr->glMesh->rotation.set( 2, 1, debugPrimitiveWrapperPtr->geometry->rotmat[5] );
+        debugPrimitiveWrapperPtr->glMesh->rotation.set( 2, 2, debugPrimitiveWrapperPtr->geometry->rotmat[8] );
+    }
 
 }
