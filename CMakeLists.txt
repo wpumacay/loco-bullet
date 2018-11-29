@@ -27,10 +27,14 @@ add_subdirectory( tysocViz )
 # grab all the sources for compilation
 file( GLOB_RECURSE TYSOCBULLET_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp" )
 
+# add external
+
 # add all dependencies to include path
 include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/include/" )
 include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/ext/bullet/src" )
 include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/ext/cat1/include" )
+include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/ext/tinyxml2" )
+include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/ext/json" )
 include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/ext/tysocTerrain/include" )
 include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/tysocViz/include" )
 
@@ -42,6 +46,7 @@ add_library( tysocBullet
 target_link_libraries( tysocBullet
                        tysocViz
                        tysoc
+                       tinyxml2
                        BulletDynamics 
                        BulletCollision 
                        LinearMath )

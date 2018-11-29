@@ -23,3 +23,8 @@ add_executable( test_tysoc
                 test_tysoc.cpp )
 target_link_libraries( test_tysoc
                        tysocBullet  )
+
+add_executable( test_urdf
+                test_urdf.cpp )
+target_link_libraries( test_urdf
+                       tysocBullet  )
