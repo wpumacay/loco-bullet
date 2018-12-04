@@ -1,4 +1,6 @@
 
+/* Adapted from bullet examples. Check various util files in Importers/ImportURDFDemo/ */
+
 #pragma once
 
 #include <cstdlib>

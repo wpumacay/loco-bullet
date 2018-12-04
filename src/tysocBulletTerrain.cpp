@@ -104,9 +104,9 @@ namespace tysocBullet
 
         // @CHECK: for now we are just using static objects. We have to change this
         // with some construction information from the underlying objects, like mass, etc.
-        btScalar _rbMass = 0;// @TODO: For now just 0, will have to change this later
-        btVector3 _rbInertia( 0, 0, 0 );
-        if ( _rbMass != 0 )
+        btScalar _rbMass = 0.0;// @TODO: For now just 0, will have to change this later
+        btVector3 _rbInertia( 0.0, 0.0, 0.0 );
+        if ( _rbMass != 0.0 )
         {
             _rbCollisionShape->calculateLocalInertia( _rbMass, _rbInertia );
         }

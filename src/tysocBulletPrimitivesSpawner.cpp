@@ -138,7 +138,7 @@ namespace tysocBullet
         primitivePtr->position.z = _rbPosition.z();
 
         float _rotmat[9];
-        getBtMat3( _rbOrientation, _rotmat );
+        getMat3Array( _rbOrientation, _rotmat );
 
         primitivePtr->rotmat[0] = _rotmat[0];
         primitivePtr->rotmat[1] = _rotmat[1];

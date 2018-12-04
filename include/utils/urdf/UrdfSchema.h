@@ -1,4 +1,6 @@
 
+/* Adapted from bullet examples. Check type-definitions in files located in Importers/ImportURDFDemo/ */
+
 #pragma once
 
 #include <string>

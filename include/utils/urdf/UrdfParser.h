@@ -1,4 +1,6 @@
 
+/* Adapted from bullet examples. Check UrdfParser.h in Importers/ImportURDFDemo/ */
+
 #pragma once
 
 #include <tinyxml2.h>
@@ -11,51 +13,46 @@ namespace urdf
 
     class UrdfParser
     {
-    protected:
-        UrdfModel m_urdf2Model;
-        btAlignedObjectArray<UrdfModel*> m_sdfModels;
-        btAlignedObjectArray<UrdfModel*> m_tmpModels;
+
+        protected:
+
+        UrdfModel                           m_urdf2Model;
+        btAlignedObjectArray< UrdfModel* >  m_sdfModels;
+        btAlignedObjectArray< UrdfModel* >  m_tmpModels;
 
         bool m_parseSDF;
         int m_activeSdfModel;
+
+        std::string m_resourcesParsingPath;
 
         btScalar m_urdfScaling;
 
         void _logError( const std::string& errorMsg );
         void _logWarning( const std::string& warningMsg );
 
-        bool parseTransform(btTransform& tr, tinyxml2::XMLElement* xml, bool parseSDF = false);
-        bool parseInertia(UrdfInertia& inertia, tinyxml2::XMLElement* config);
-        bool parseGeometry(UrdfGeometry& geom, tinyxml2::XMLElement* g);
-        bool parseVisual(UrdfModel& model, UrdfVisual& visual, tinyxml2::XMLElement* config);
-        bool parseCollision(UrdfCollision& collision, tinyxml2::XMLElement* config);
-        bool initTreeAndRoot(UrdfModel& model);
-        bool parseMaterial(UrdfMaterial& material, tinyxml2::XMLElement* config);
-        bool parseJointLimits(UrdfJoint& joint, tinyxml2::XMLElement* config);
-        bool parseJointDynamics(UrdfJoint& joint, tinyxml2::XMLElement* config);
-        bool parseJoint(UrdfJoint& joint, tinyxml2::XMLElement* config);
-        bool parseLink(UrdfModel& model, UrdfLink& link, tinyxml2::XMLElement* config);
-        bool parseSensor(UrdfModel& model, UrdfLink& link, UrdfJoint& joint, tinyxml2::XMLElement* config);
+        bool parseTransform( btTransform& tr, tinyxml2::XMLElement* xml, bool parseSDF = false );
+        bool parseInertia( UrdfInertia& inertia, tinyxml2::XMLElement* config );
+        bool parseGeometry( UrdfGeometry& geom, tinyxml2::XMLElement* g );
+        bool parseVisual( UrdfModel& model, UrdfVisual& visual, tinyxml2::XMLElement* config );
+        bool parseCollision( UrdfCollision& collision, tinyxml2::XMLElement* config );
+        bool initTreeAndRoot( UrdfModel& model );
+        bool parseMaterial( UrdfMaterial& material, tinyxml2::XMLElement* config );
+        bool parseJointLimits( UrdfJoint& joint, tinyxml2::XMLElement* config );
+        bool parseJointDynamics( UrdfJoint& joint, tinyxml2::XMLElement* config );
+        bool parseJoint( UrdfJoint& joint, tinyxml2::XMLElement* config );
+        bool parseLink( UrdfModel& model, UrdfLink& link, tinyxml2::XMLElement* config );
+        bool parseSensor( UrdfModel& model, UrdfLink& link, UrdfJoint& joint, tinyxml2::XMLElement* config );
 
-    public:
+        public:
+
         UrdfParser();
-        virtual ~UrdfParser();
+        ~UrdfParser();
 
-        void setParseSDF(bool useSDF)
-        {
-            m_parseSDF = useSDF;
-        }
-        bool getParseSDF() const
-        {
-            return m_parseSDF;
-        }
-        void setGlobalScaling(btScalar scaling)
-        {
-            m_urdfScaling = scaling;
-        }
+        void setParseSDF( bool useSDF ) { m_parseSDF = useSDF; }
+        bool getParseSDF() const { return m_parseSDF; }
+        void setGlobalScaling( btScalar scaling ) { m_urdfScaling = scaling; }
 
         bool loadUrdf(const char* filepath, bool forceFixedBase, bool parseSensors);
-
         bool loadUrdf(const char* filepath, bool forceFixedBase)
         {
             return loadUrdf(filepath, forceFixedBase, false);
@@ -112,10 +109,7 @@ namespace urdf
 
         std::string sourceFileLocation(tinyxml2::XMLElement* e);
 
-        void setSourceFile(const std::string& sourceFile)
-        {
-            m_urdf2Model.m_sourceFile = sourceFile;
-        }
+        std::string resourcesParsingPath() { return m_resourcesParsingPath; }
     };
 
 }

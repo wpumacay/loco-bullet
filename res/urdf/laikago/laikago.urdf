@@ -1,9 +1,9 @@
 <?xml version="1.0" ?>
-<robot name="plane">
+<robot name="laikago">
   <link name="chassis">
-  <contact>
-      <lateral_friction value="1"/>
-  </contact>
+    <contact>
+        <lateral_friction value="1"/>
+    </contact>
     <inertial>
       <origin rpy="0 0 0" xyz="0 0.03 0.043794"/>
        <mass value="13.715"/>
@@ -12,7 +12,6 @@
     <visual>
       <origin rpy="0 0 0" xyz="0 0 0.043794"/>
       <geometry>
-      	
 				<mesh filename="chassis.stl" scale="1 1 1"/>
       </geometry>
        <material name="yellow">
@@ -22,7 +21,6 @@
     <collision>
       <origin rpy="-1.57 0 0" xyz="0 0 0.043794"/>
       <geometry>
-      	
 				<mesh filename="chassis_vhacd_mod.obj" scale="1 1 1"/>
       </geometry>
     </collision>
@@ -30,10 +28,10 @@
   
  
 	
-	 <link name="FR_hip_motor">
-  <contact>
-      <lateral_friction value="1"/>
-  </contact>
+	<link name="FR_hip_motor">
+    <contact>
+        <lateral_friction value="1"/>
+    </contact>
     <inertial>
        <origin rpy="0 0 0" xyz="0.02 0 0"/>
        <mass value="0.241"/>
@@ -54,9 +52,9 @@
 				<mesh filename="hip_motor_mirror.stl" scale="1 1 1"/>
       </geometry>
     </collision>
-    </link>
+  </link>
     
-    <joint name="FR_hip_motor_2_chassis_joint" type="continuous">
+  <joint name="FR_hip_motor_2_chassis_joint" type="continuous">
 		<axis xyz="0 0 -1"/>
 		<parent link="chassis"/>
 		<child link="FR_hip_motor"/>
@@ -65,10 +63,10 @@
 		<joint_properties damping=".0" friction=".0"/>
 	</joint>
 	
-     <link name="FR_upper_leg">
-  <contact>
-      <lateral_friction value="1"/>
-  </contact>
+  <link name="FR_upper_leg">
+    <contact>
+        <lateral_friction value="1"/>
+    </contact>
     <inertial>
      <origin rpy="0 0 0" xyz="0 -0.04 -0.04"/>
        <mass value="1.527"/>
@@ -89,9 +87,9 @@
       </geometry>
     </collision>
     
-    </link>
+  </link>
     
-    <joint name="FR_upper_leg_2_hip_motor_joint" type="continuous">
+  <joint name="FR_upper_leg_2_hip_motor_joint" type="continuous">
 		<axis xyz="1 0 0"/>
 		<parent link="FR_hip_motor"/>
 		<child link="FR_upper_leg"/>
@@ -100,10 +98,10 @@
 		<joint_properties damping=".0" friction=".0"/>
 	</joint>
 	
-     <link name="FR_lower_leg">
-  <contact>
-      <lateral_friction value="1"/>
-  </contact>
+  <link name="FR_lower_leg">
+    <contact>
+        <lateral_friction value="1"/>
+    </contact>
     <inertial>
       <origin rpy="0 0 0" xyz="0 -0.16 -0.02"/>
        <mass value="0.241"/>
@@ -124,9 +122,9 @@
       </geometry>
     </collision>
     
-    </link>
+  </link>
     
-    <joint name="FR_lower_leg_2_upper_leg_joint" type="continuous">
+  <joint name="FR_lower_leg_2_upper_leg_joint" type="continuous">
 		<axis xyz="1 0 0"/>
 		<parent link="FR_upper_leg"/>
 		<child link="FR_lower_leg"/>
@@ -137,10 +135,10 @@
 	</joint>
 	
 	
-	 <link name="FL_hip_motor">
-  <contact>
-      <lateral_friction value="1"/>
-  </contact>
+	<link name="FL_hip_motor">
+    <contact>
+        <lateral_friction value="1"/>
+    </contact>
     <inertial>
      <origin rpy="0 0 0" xyz="-.02 0 0"/>
        <mass value="1.095"/>
@@ -163,9 +161,9 @@
       </geometry>
     </collision>
     
-      </link>
+  </link>
   
-   <joint name="FL_hip_motor_2_chassis_joint" type="continuous">
+  <joint name="FL_hip_motor_2_chassis_joint" type="continuous">
 		<axis xyz="0 0 1"/>
 		<parent link="chassis"/>
 		<child link="FL_hip_motor"/>
@@ -175,9 +173,9 @@
 	</joint>
 	
   <link name="FL_upper_leg">
-  <contact>
-      <lateral_friction value="1"/>
-  </contact>
+    <contact>
+        <lateral_friction value="1"/>
+    </contact>
     <inertial>
        <origin rpy="0 0 0" xyz="0 -0.04 -0.04"/>
        <mass value="1.527"/>
@@ -201,7 +199,7 @@
       </geometry>
     </collision>
     
-    </link>
+  </link>
   
   
   <joint name="FL_upper_leg_2_hip_motor_joint" type="continuous">
@@ -215,9 +213,9 @@
 	 
   
   <link name="FL_lower_leg">
-  <contact>
-      <lateral_friction value="1"/>
-  </contact>
+    <contact>
+        <lateral_friction value="1"/>
+    </contact>
     <inertial>
       <origin rpy="0 0 0" xyz="0 -0.16 -0.02"/>
        <mass value="0.241"/>
@@ -240,7 +238,7 @@
       </geometry>
     </collision>
     
-    </link>
+  </link>
     
   <joint name="FL_lower_leg_2_upper_leg_joint" type="continuous">
 		<axis xyz="1 0 0"/>
@@ -256,10 +254,10 @@
 	
 	
 	
-	 <link name="RR_hip_motor">
-  <contact>
-      <lateral_friction value="1"/>
-  </contact>
+	<link name="RR_hip_motor">
+    <contact>
+        <lateral_friction value="1"/>
+    </contact>
     <inertial>
       <origin rpy="0 0 0" xyz="0.02 0 0"/>
        <mass value="0.241"/>
@@ -281,9 +279,9 @@
       </geometry>
     </collision>
     
-    </link>
+  </link>
     
-    <joint name="RR_hip_motor_2_chassis_joint" type="continuous">
+  <joint name="RR_hip_motor_2_chassis_joint" type="continuous">
 		<axis xyz="0 0 -1"/>
 		<parent link="chassis"/>
 		<child link="RR_hip_motor"/>
@@ -292,10 +290,10 @@
 		<joint_properties damping=".0" friction=".0"/>
 	</joint>
 	
-     <link name="RR_upper_leg">
-  <contact>
-      <lateral_friction value="1"/>
-  </contact>
+  <link name="RR_upper_leg">
+    <contact>
+        <lateral_friction value="1"/>
+    </contact>
     <inertial>
      <origin rpy="0 0 0" xyz="0 -0.04 -0.04"/>
        <mass value="1.527"/>
@@ -316,9 +314,9 @@
       </geometry>
     </collision>
     
-    </link>
+  </link>
     
-    <joint name="RR_upper_leg_2_hip_motor_joint" type="continuous">
+  <joint name="RR_upper_leg_2_hip_motor_joint" type="continuous">
 		<axis xyz="1 0 0"/>
 		<parent link="RR_hip_motor"/>
 		<child link="RR_upper_leg"/>
@@ -327,10 +325,10 @@
 		<joint_properties damping=".0" friction=".0"/>
 	</joint>
 	
-     <link name="RR_lower_leg">
-  <contact>
-      <lateral_friction value="1"/>
-  </contact>
+  <link name="RR_lower_leg">
+    <contact>
+        <lateral_friction value="1"/>
+    </contact>
     <inertial>
       <origin rpy="0 0 0" xyz="0 -0.16 -0.02"/>
        <mass value="0.241"/>
@@ -351,9 +349,9 @@
       </geometry>
     </collision>
     
-    </link>
+  </link>
     
-    <joint name="RR_lower_leg_2_upper_leg_joint" type="continuous">
+  <joint name="RR_lower_leg_2_upper_leg_joint" type="continuous">
 		<axis xyz="1 0 0"/>
 		<parent link="RR_upper_leg"/>
 		<child link="RR_lower_leg"/>
@@ -363,10 +361,10 @@
 	</joint>
 	
 	
-	 <link name="RL_hip_motor">
-  <contact>
-      <lateral_friction value="1"/>
-  </contact>
+	<link name="RL_hip_motor">
+    <contact>
+        <lateral_friction value="1"/>
+    </contact>
     <inertial>
       <origin rpy="0 0 0" xyz="-.02 0 0"/>
        <mass value="1.095"/>
@@ -387,9 +385,9 @@
       </geometry>
     </collision>
     
-      </link>
+  </link>
   
-   <joint name="RL_hip_motor_2_chassis_joint" type="continuous">
+  <joint name="RL_hip_motor_2_chassis_joint" type="continuous">
 		<axis xyz="0 0 1"/>
 		<parent link="chassis"/>
 		<child link="RL_hip_motor"/>
@@ -400,9 +398,9 @@
 	</joint>
 	
   <link name="RL_upper_leg">
-  <contact>
-      <lateral_friction value="1"/>
-  </contact>
+    <contact>
+        <lateral_friction value="1"/>
+    </contact>
     <inertial>
       <origin rpy="0 0 0" xyz="0 -0.04 -0.04"/>
        <mass value="1.527"/>
@@ -423,7 +421,7 @@
       </geometry>
     </collision>
     
-    </link>
+  </link>
   
   
   <joint name="RL_upper_leg_2_hip_motor_joint" type="continuous">
@@ -437,9 +435,9 @@
 	 
   
   <link name="RL_lower_leg">
-  <contact>
-      <lateral_friction value="1"/>
-  </contact>
+    <contact>
+        <lateral_friction value="1"/>
+    </contact>
     <inertial>
       <origin rpy="0 0 0" xyz="0 -0.16 -0.02"/>
        <mass value="0.241"/>
@@ -460,7 +458,7 @@
       </geometry>
     </collision>
     
-    </link>
+  </link>
     
   <joint name="RL_lower_leg_2_upper_leg_joint" type="continuous">
 		<axis xyz="1 0 0"/>

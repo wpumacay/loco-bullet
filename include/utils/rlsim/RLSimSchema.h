@@ -9,7 +9,10 @@ namespace rlsim
 
 
 
-
+    struct RLSimModel
+    {
+        
+    };
 
     
 }

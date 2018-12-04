@@ -2,10 +2,12 @@
 #pragma once
 
 #include <tysocBulletCommon.h>
+#include <tysocBulletKinTree.h>
 #include <agent/agent.h>
 
 namespace tysocBullet
 {
+
 
     class TBulletAgentWrapper
     {
