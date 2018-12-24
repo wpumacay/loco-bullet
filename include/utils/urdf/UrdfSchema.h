@@ -77,7 +77,7 @@ namespace urdf
 
         double m_sphereRadius;
 
-        btVector3 m_boxSize;
+        TVec3 m_boxSize;
 
         double m_capsuleRadius;
         double m_capsuleHeight;
@@ -282,10 +282,8 @@ namespace urdf
         btHashMap<btHashString, UrdfLink*>      m_links;
         btHashMap<btHashString, UrdfJoint*>     m_joints;
         btAlignedObjectArray<UrdfLink*>         m_rootLinks;
-        bool                                    m_overrideFixedBase;
 
         UrdfModel()
-            : m_overrideFixedBase(false)
         {
             m_rootTransformInWorld.setIdentity();
         }

@@ -19,8 +19,8 @@ set( BUILD_UNIT_TESTS OFF CACHE BOOL "Do not build bullet-unittests" )
 # Configure external dependencies
 add_subdirectory( ext )
 
-# Configure visualizer // @TODO: Should move this out from src to the ext directory
-add_subdirectory( tysocViz )
+# Configure custom visualizer
+add_subdirectory( tysocCustomViz )
 
 # Configure tysocBullet project *************************************************
 
@@ -35,7 +35,7 @@ include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/ext/bullet/src" )
 include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/ext/cat1/include" )
 include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/ext/tinyxml2" )
 include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/ext/json" )
-include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/ext/tysocTerrain/include" )
+include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/ext/tysocCore/include" )
 include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/tysocViz/include" )
 
 message( "TYSOCBULLET_SOURCES: ${TYSOCBULLET_SOURCES}" )
@@ -44,7 +44,7 @@ message( "TYSOCBULLET_SOURCES: ${TYSOCBULLET_SOURCES}" )
 add_library( tysocBullet
              ${TYSOCBULLET_SOURCES} )
 target_link_libraries( tysocBullet
-                       tysocViz
+                       tysocCustomViz
                        tysoc
                        tinyxml2
                        BulletDynamics 
