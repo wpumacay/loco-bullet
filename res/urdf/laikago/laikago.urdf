@@ -60,7 +60,7 @@
 		<child link="FR_hip_motor"/>
 		<origin rpy="0 0 0" xyz="-0.0817145 0 0.242889"/>
 		<limit effort="100" velocity="100"/>
-		<joint_properties damping=".0" friction=".0"/>
+		<dynamics damping=".0" friction=".0"/>
 	</joint>
 	
   <link name="FR_upper_leg">
@@ -95,7 +95,7 @@
 		<child link="FR_upper_leg"/>
 		<origin rpy="0 0 0" xyz="-0.053565 0 0"/>
 		<limit effort="100" velocity="100"/>
-		<joint_properties damping=".0" friction=".0"/>
+		<dynamics damping=".0" friction=".0"/>
 	</joint>
 	
   <link name="FR_lower_leg">
@@ -131,7 +131,7 @@
 														
 		<origin rpy="0 0 0" xyz="0.02069  -0.20833  -0.1422"/>
 		<limit effort="100" velocity="100"/>
-		<joint_properties damping=".0" friction=".0"/>
+		<dynamics damping=".0" friction=".0"/>
 	</joint>
 	
 	
@@ -169,7 +169,7 @@
 		<child link="FL_hip_motor"/>
 		<origin rpy="0 0 0" xyz="0.0817145 0 0.242889"/>
 		<limit effort="100" velocity="100"/>
-		<joint_properties damping=".0" friction=".0"/>
+		<dynamics damping=".0" friction=".0"/>
 	</joint>
 	
   <link name="FL_upper_leg">
@@ -208,7 +208,7 @@
 		<child link="FL_upper_leg"/>
 		<origin rpy="0 0 0" xyz="0.055855  0 0"/>
 		<limit effort="100" velocity="100"/>
-		<joint_properties damping=".0" friction=".0"/>
+		<dynamics damping=".0" friction=".0"/>
 	</joint>
 	 
   
@@ -246,7 +246,7 @@
 		<child link="FL_lower_leg"/>
 		<origin rpy="0 0 0" xyz="-0.02069  -0.20833  -0.1422"/>
 		<limit effort="100" velocity="100"/>
-		<joint_properties damping=".0" friction=".0"/>
+		<dynamics damping=".0" friction=".0"/>
 	</joint>
 	
 	
@@ -287,7 +287,7 @@
 		<child link="RR_hip_motor"/>
 		<origin rpy="0 0 0" xyz="-0.0817145 0 -0.194401"/>
 		<limit effort="100" velocity="100"/>
-		<joint_properties damping=".0" friction=".0"/>
+		<dynamics damping=".0" friction=".0"/>
 	</joint>
 	
   <link name="RR_upper_leg">
@@ -322,7 +322,7 @@
 		<child link="RR_upper_leg"/>
 		<origin rpy="0 0 0" xyz="-0.053565 0 0"/>
 		<limit effort="100" velocity="100"/>
-		<joint_properties damping=".0" friction=".0"/>
+		<dynamics damping=".0" friction=".0"/>
 	</joint>
 	
   <link name="RR_lower_leg">
@@ -357,7 +357,7 @@
 		<child link="RR_lower_leg"/>
 		<origin rpy="0 0 0" xyz="0.02069  -0.20833  -0.1422"/>
 		<limit effort="100" velocity="100"/>
-		<joint_properties damping=".0" friction=".0"/>
+		<dynamics damping=".0" friction=".0"/>
 	</joint>
 	
 	
@@ -394,7 +394,7 @@
 												
 		<origin rpy="0 0 0" xyz="0.0817145 0 -0.194401"/>
 		<limit effort="100" velocity="100"/>
-		<joint_properties damping=".0" friction=".0"/>
+		<dynamics damping=".0" friction=".0"/>
 	</joint>
 	
   <link name="RL_upper_leg">
@@ -430,7 +430,7 @@
 		<child link="RL_upper_leg"/>
 		<origin rpy="0 0 0" xyz="0.055855  0 0"/>
 		<limit effort="100" velocity="100"/>
-		<joint_properties damping=".0" friction=".0"/>
+		<dynamics damping=".0" friction=".0"/>
 	</joint>
 	 
   
@@ -466,7 +466,7 @@
 		<child link="RL_lower_leg"/>
 		<origin rpy="0 0 0" xyz="-0.02069  -0.20833  -0.1422"/>
 		<limit effort="100" velocity="100"/>
-		<joint_properties damping=".0" friction=".0"/>
+		<dynamics damping=".0" friction=".0"/>
 	</joint>
 	
 	
