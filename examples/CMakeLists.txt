@@ -1,30 +1,28 @@
 
-message( "Configuring examples" )
+message( "Configuring tysocBullet::examples" )
 
+include_directories( "../include" )
 
-add_executable( test_helloworld
-                test_helloworld.cpp )
-target_link_libraries( test_helloworld
-                       BulletDynamics 
-                       BulletCollision 
-                       LinearMath  )
+# single builder function
 
+function( FcnBuildTest pSourcesList pExecutableName )
 
-add_executable( test_integration_renderer
-                test_integration_renderer.cpp )
-target_link_libraries( test_integration_renderer
-                       cat1
-                       BulletDynamics 
-                       BulletCollision 
-                       LinearMath  )
+    add_executable( ${pExecutableName}
+                    ${pSourcesList} )
 
+    # Link only against tysocCore, as the specific backend is linked dynamically
+    target_link_libraries( ${pExecutableName}
+                           tysocCore )
 
-add_executable( test_tysoc
-                test_tysoc.cpp )
-target_link_libraries( test_tysoc
-                       tysocBullet  )
+endfunction()
 
-add_executable( test_urdf
-                test_urdf.cpp )
-target_link_libraries( test_urdf
-                       tysocBullet  )
+FILE( GLOB ExampleSources *.cpp )
+
+foreach( exampleFile ${ExampleSources} )
+    
+    string( REPLACE ".cpp" "" executableLongName ${exampleFile} )
+    get_filename_component( execName ${executableLongName} NAME )
+
+    FcnBuildTest( ${exampleFile} ${execName} )
+
+endforeach( exampleFile )

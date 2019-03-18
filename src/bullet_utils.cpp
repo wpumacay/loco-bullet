@@ -49,14 +49,14 @@ namespace utils {
         }
 
         // recursively copy the data from assimp to our data structure
-        _processAssimpNode( _assimpScenePtr->mRootNode, _assimpScenePtr, mesh );
+        _processAssimpNode( _assimpScenePtr, _assimpScenePtr->mRootNode, mesh );
 
         // make sure we release the assimp resources
         aiReleaseImport( _assimpScenePtr );
     }
 
-    void _processAssimpNode( aiNode* assimpNodePtr, 
-                             const aiScene* assimpScenePtr,
+    void _processAssimpNode( const aiScene* assimpScenePtr,
+                             aiNode* assimpNodePtr,
                              TMeshObject& mesh )
     {
         for ( size_t i = 0; i < assimpNodePtr->mNumMeshes; i++ )
@@ -67,8 +67,9 @@ namespace utils {
 
         for ( size_t i = 0; i < assimpNodePtr->mNumChildren; i++ )
         {
-            _processAssimpNode( assimpNodePtr->mChildren[i],
-                                assimpScenePtr, mesh );
+            _processAssimpNode( assimpScenePtr,
+                                assimpNodePtr->mChildren[i], 
+                                mesh );
         }
     }
 

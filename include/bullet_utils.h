@@ -62,4 +62,31 @@ namespace utils {
     */
     btTransform toBtTransform( const TMat4& mat );
 
+    /**
+    *   Loads a mesh from a given file
+    *
+    *   @param filePath     Full path to the file to be loaded
+    *   @param mesh         A reference to the mesh to be populated in-place
+    */
+    void loadMesh( const std::string& filePath, TMeshObject& mesh );
+
+    /**
+    *   Internal helper function to process a node of the tree from an assimp scene
+    *
+    *   @param assimpScenePtr   Scene currently being processed
+    *   @param assimpNodePtr    Node from the assimp-scene to be processed
+    *   @param mesh             A reference to the mesh to be populated in-place
+    */
+    void _processAssimpNode( const aiScene* assimpScenePtr,
+                             aiNode* assimpNodePtr, 
+                             TMeshObject& mesh );
+
+    /**
+    *   Internal helper function to process a mesh from an assimp-node
+    *
+    *   @param assimpMeshPtr    Mesh from the assimp-node to be processed
+    *   @param mesh             A reference to the mesh to be populated in-place
+    */
+    void _processAssimpMesh( aiMesh* assimpMeshPtr, TMeshObject& mesh );
+
 }}}

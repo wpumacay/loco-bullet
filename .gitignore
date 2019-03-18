@@ -9,3 +9,4 @@ build/
 *.pyc
 *.pyo
 .vscode/
+_legacy/

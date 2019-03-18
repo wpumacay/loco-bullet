@@ -18,10 +18,6 @@
 #include <random>
 #include <iostream>
 
-#ifndef TYSOCBULLET_RESOURCES_PATH
-    #define TYSOCBULLET_RESOURCES_PATH "../res"
-#endif
-
 namespace tysoc {
 namespace bullet {
 

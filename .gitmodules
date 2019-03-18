@@ -1,12 +1,6 @@
-[submodule "ext/cat1"]
-	path = ext/cat1
-	url = git@github.com:wpumacay/cat1.git
 [submodule "ext/bullet"]
 	path = ext/bullet
 	url = https://github.com/bulletphysics/bullet3.git
-[submodule "ext/tysocCore"]
-	path = ext/tysocCore
-	url = git@github.com:wpumacay/tysocCore.git
-[submodule "ext/imgui"]
-	path = ext/imgui
-	url = git@github.com:wpumacay/imgui.git
+[submodule "tysoc"]
+	path = tysoc
+	url = https://github.com/wpumacay/tysoc.git
