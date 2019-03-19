@@ -1,15 +1,19 @@
 
-#pragma once
-
 #include <bullet_agent_wrapper.h>
 
 namespace tysoc {
 namespace bullet {
 
-    TBtKinTreeAgentWrapper::TBtKinTreeAgentWrapper( agent::TAgentKinTree* kinTreeAgentPtr )
-        : TKinTreeAgentWrapper( kinTreeAgentPtr )
+    TBtKinTreeAgentWrapper::TBtKinTreeAgentWrapper( agent::TAgentKinTree* kinTreeAgentPtr,
+                                                    const std::string& workingDir )
+        : TKinTreeAgentWrapper( kinTreeAgentPtr, workingDir )
     {
         _createBtResourcesFromKinTree();
+    }
+
+    TBtKinTreeAgentWrapper::~TBtKinTreeAgentWrapper()
+    {
+        // @WIP
     }
 
     void TBtKinTreeAgentWrapper::_createBtResourcesFromKinTree()
@@ -28,7 +32,7 @@ namespace bullet {
         btTransform _tfInertialLocalFrame;
         btVector3 _inertiaDiag;
         btScalar _inertiaMass;
-        _processInertial( kinTreeBodyPtr, _tfInertialLocalFrame, _inertiaDiag, _inertiaMass );
+        // _processInertial( kinTreeBodyPtr, _tfInertialLocalFrame, _inertiaDiag, _inertiaMass );
 
         /* @DOC|@JUPYTER: */
         // process collisions
@@ -74,8 +78,51 @@ namespace bullet {
     }
 
 
+    void TBtKinTreeAgentWrapper::_processInertial( agent::TKinTreeInertia* kinTreeInertiaPtr,
+                                                   btTransform& inertialFrame,
+                                                   btVector3& inertiaDiag,
+                                                   btScalar& inertiaMass )
+    {
+        // @WIP
+    }
 
+    btCollisionShape* TBtKinTreeAgentWrapper::_processCollision( agent::TKinTreeCollision* kinTreeCollisionPtr )
+    {
+        // @WIP
+        return NULL;
+    }
 
+    btTypedConstraint* TBtKinTreeAgentWrapper::_processJoint( agent::TKinTreeJoint* kinTreeJointPtr,
+                                                              agent::TKinTreeBody* kinTreeBodyPtr,
+                                                              agent::TKinTreeBody* parentBodyPtr )
+    {
+        // @WIP
+        return NULL;
+    }
+
+    extern "C" TKinTreeAgentWrapper* agent_createFromAbstract( agent::TAgentKinTree* kinTreeAgentPtr,
+                                                               const std::string& workingDir )
+    {
+        // @WIP
+        return NULL;
+    }
+
+    extern "C" TKinTreeAgentWrapper* agent_createFromFile( const std::string& name,
+                                                           const std::string& filename,
+                                                           const std::string& workingDir )
+    {
+        // @WIP
+        return NULL;
+    }
+
+    extern "C" TKinTreeAgentWrapper* agent_createFromId( const std::string& name,
+                                                         const std::string& format,
+                                                         const std::string& id,
+                                                         const std::string& workingDir )
+    {
+        // @WIP
+        return NULL;
+    }
 
 
 }}

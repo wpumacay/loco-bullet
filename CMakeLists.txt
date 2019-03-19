@@ -60,11 +60,11 @@ message( "PROP_TYSOC_BACKEND_GRAPHICS_GLVIZ:    ${VAR_TYSOC_BACKEND_GRAPHICS_GLV
 message( "PROP_TYSOC_BACKEND_PHYSICS_BULLET:    ${VAR_TYSOC_BACKEND_PHYSICS_BULLET}" )
 
 # grab all the sources for compilation
-#file( GLOB_RECURSE TYSOCBULLET_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp" )
-set( TYSOCBULLET_SOURCES src/bullet_common.cpp
-                         src/bullet_utils.cpp
-                         src/bullet_simulation.cpp
-                         src/bullet_sandbox_body_wrapper.cpp )
+file( GLOB_RECURSE TYSOCBULLET_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp" )
+#set( TYSOCBULLET_SOURCES src/bullet_common.cpp
+#                         src/bullet_utils.cpp
+#                         src/bullet_simulation.cpp
+#                         src/bullet_sandbox_body_wrapper.cpp )
 message( "TYSOCBULLET_SOURCES: ${TYSOCBULLET_SOURCES}" )
 
 # add this project headers to includepath
@@ -87,6 +87,7 @@ endif()
 set( BUILD_BULLET2_DEMOS OFF CACHE BOOL "Do not build bullet-2 demos" )
 set( BUILD_CPU_DEMOS OFF CACHE BOOL "Do not build bullet cpu demos" )
 set( BUILD_EGL OFF CACHE BOOL "Do not build bullet-EGL" )
+set( USE_DOUBLE_PRECISION OFF CACHE BOOL "Do not build with double precision support (@TODO: fixing TScalar->double)" )
 set( BUILD_EXTRAS OFF CACHE BOOL "Do not build bullet-extras" )
 set( BUILD_CLSOCKET OFF CACHE BOOL "Do not build bullet-clsocket" )
 set( BUILD_OPENGL3_DEMOS OFF CACHE BOOL "Do not build bullet-opengl3-demos" )
@@ -97,11 +98,14 @@ set( BUILD_SHARED_LIBS ON CACHE BOOL "Force shared libs" )
 add_subdirectory( ext/bullet )
 include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/ext/bullet/src" )
 
+find_package( assimp REQUIRED )
+
 # Configure the resulting library
 add_library( tysocPhysicsBullet SHARED
              ${TYSOCBULLET_SOURCES} )
 target_link_libraries( tysocPhysicsBullet
                        tysocCore
+                       assimp
                        BulletDynamics 
                        BulletCollision 
                        LinearMath )

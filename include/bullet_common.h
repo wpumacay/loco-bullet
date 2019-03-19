@@ -18,6 +18,9 @@
 #include <random>
 #include <iostream>
 
+// and some configurations
+#include <bullet_config.h>
+
 namespace tysoc {
 namespace bullet {
 

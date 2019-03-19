@@ -69,19 +69,23 @@ namespace bullet {
 
         public :
 
-        TBtKinTreeAgentWrapper( agent::TAgentKinTree* kinTreeAgentPtr );
+        TBtKinTreeAgentWrapper( agent::TAgentKinTree* kinTreeAgentPtr,
+                                const std::string& workingDir );
         ~TBtKinTreeAgentWrapper();
 
 
     };
 
-    extern "C" TBtKinTreeAgentWrapper* agent_createFromAbstract( agent::TAgentKinTree* kinTreeAgentPtr );
+    extern "C" TKinTreeAgentWrapper* agent_createFromAbstract( agent::TAgentKinTree* kinTreeAgentPtr,
+                                                               const std::string& workingDir );
 
-    extern "C" TBtKinTreeAgentWrapper* agent_createFromFile( const std::string& name,
-                                                             const std::string& filename );
+    extern "C" TKinTreeAgentWrapper* agent_createFromFile( const std::string& name,
+                                                           const std::string& filename,
+                                                           const std::string& workingDir );
 
-    extern "C" TBtKinTreeAgentWrapper* agent_createFromId( const std::string& name,
-                                                           const std::string& format,
-                                                           const std::string& id );
+    extern "C" TKinTreeAgentWrapper* agent_createFromId( const std::string& name,
+                                                         const std::string& format,
+                                                         const std::string& id,
+                                                         const std::string& workingDir );
 
 }}

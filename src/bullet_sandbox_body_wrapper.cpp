@@ -132,16 +132,27 @@ namespace bullet {
         auto _size = m_bodyPtr->size;
 
         if ( _type == "box" )
+        {
             m_btCollisionShapePtr = new btBoxShape( btVector3( 0.5, 0.5, 0.5 ) );
-
+        }
         else if ( _type == "sphere" )
+        {
             m_btCollisionShapePtr = new btSphereShape( 1.0 );
-
+        }
         else if ( _type == "capsule" )
-            m_btCollisionShapePtr = new btCapsuleShapeZ( 1.0, 0.5 );
-
+        {
+            _size = { _size.z, _size.x, _size.y };
+            m_btCollisionShapePtr = new btCapsuleShapeZ( 1.0, 1.0 );
+        }
         else if ( _type == "cylinder" )
+        {
+            _size = { _size.x, _size.x, _size.y };
             m_btCollisionShapePtr = new btCylinderShapeZ( btVector3( 1.0, 1.0, 1.0 ) );
+        }
+        else if ( _type == "plane" )
+        {
+            m_btCollisionShapePtr = new btStaticPlaneShape( btVector3( 0, 0, 1 ), 0 );
+        }
 
         if ( !m_btCollisionShapePtr )
             std::cout << "WARNING> could not create shape of type: " << _type << std::endl;

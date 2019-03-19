@@ -80,27 +80,63 @@ namespace bullet {
 
     bool TBtSimulation::_initializeInternal()
     {
+        /* Initialize wrappers (to create their internal resources) ***********/
 
+        for ( size_t q = 0; q < m_bodyWrappers.size(); q++ )
+        {
+            auto _btBodyWrapper = reinterpret_cast< TBtBodyWrapper* >( m_bodyWrappers[q] );
+
+            _btBodyWrapper->setBtWorld( m_btWorldPtr );
+            _btBodyWrapper->initialize();
+        }
+
+        /**********************************************************************/
+
+        return true;
     }
 
     void TBtSimulation::_preStepInternal()
     {
+        for ( size_t q = 0; q < m_terrainGenWrappers.size(); q++ )
+            m_terrainGenWrappers[q]->preStep();
 
+        for ( size_t q = 0; q < m_agentWrappers.size(); q++ )
+            m_agentWrappers[q]->preStep();
+
+        for ( size_t q = 0; q < m_bodyWrappers.size(); q++ )
+            m_bodyWrappers[q]->preStep();
     }
 
     void TBtSimulation::_simStepInternal()
     {
+        if ( !m_btWorldPtr )
+            return;
 
+        m_btWorldPtr->stepSimulation( 1.0f / 60.0f );
     }
 
     void TBtSimulation::_postStepInternal()
     {
+        for ( size_t q = 0; q < m_terrainGenWrappers.size(); q++ )
+            m_terrainGenWrappers[q]->postStep();
 
+        for ( size_t q = 0; q < m_agentWrappers.size(); q++ )
+            m_agentWrappers[q]->postStep();
+
+        for ( size_t q = 0; q < m_bodyWrappers.size(); q++ )
+            m_bodyWrappers[q]->postStep();
     }
 
     void TBtSimulation::_resetInternal()
     {
+        for ( size_t q = 0; q < m_terrainGenWrappers.size(); q++ )
+            m_terrainGenWrappers[q]->reset();
 
+        for ( size_t q = 0; q < m_agentWrappers.size(); q++ )
+            m_agentWrappers[q]->reset();
+
+        for ( size_t q = 0; q < m_bodyWrappers.size(); q++ )
+            m_bodyWrappers[q]->reset();
     }
 
     std::map< std::string, std::vector<TScalar> > TBtSimulation::_getVectorizedInfoInternal()
