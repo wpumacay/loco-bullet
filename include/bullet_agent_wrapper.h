@@ -10,10 +10,6 @@ namespace tysoc {
 namespace bullet {
 
 
-
-
-
-
     class TBtKinTreeAgentWrapper : public TKinTreeAgentWrapper
     {
 
