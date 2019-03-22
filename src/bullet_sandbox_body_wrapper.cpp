@@ -180,7 +180,7 @@ namespace bullet {
         auto _rigidBodyPtr = new btRigidBody( _rbConstructionInfo );
 
         // grab some extra info from the wrapped body
-        _rigidBodyPtr->setRestitution( 0.5f );
+        _rigidBodyPtr->setRestitution( 0.1 );
         _rigidBodyPtr->setFriction( bodyPtr->friction.x );
 
         // make sure the object is going to be simulated by forcing activation
@@ -301,9 +301,29 @@ namespace bullet {
         }
         else
         {
-            // Use '''parentBtBodyPtr=bodyA''' and '''currentBtBodyPtr=bodyB''' ...
+            // Use '''parentBtBodyPtr=bodyB''' and '''currentBtBodyPtr=bodyA''' ...
             // for hinge-constraint creation
 
+            auto _bodyPtr = jointPtr->parentBodyPtr;
+            if ( !_bodyPtr )
+            {
+                std::cout << "WARNING> It seems you left a joint: " 
+                          << jointPtr->name << " without its parent" << std::endl;
+                return NULL;
+            }
+
+            auto _axisInA = jointPtr->axis;
+            auto _pivotInA = jointPtr->relTransform.getPosition();
+
+            auto _axisInB = _bodyPtr->relTransform.getRotation() * _axisInA;
+            auto _pivotInB = _bodyPtr->relTransform.getRotation() * _pivotInA +
+                             _bodyPtr->relTransform.getPosition();
+
+            _btConstraint = new btHingeConstraint( *currentBtBodyPtr, *parentBtBodyPtr,
+                                                   utils::toBtVec3( _pivotInA ), 
+                                                   utils::toBtVec3( _pivotInB ),
+                                                   utils::toBtVec3( _axisInA ), 
+                                                   utils::toBtVec3( _axisInB ) );
         }
 
         return _btConstraint;
