@@ -35,6 +35,14 @@ namespace bullet {
             std::cout << "WARNING> did not set root body properly" << std::endl;
     }
 
+    void TBtBodyWrapper::_initializeWorldTransformsInternal()
+    {
+        if ( !m_bodyPtr )
+            return;
+
+        _initBodyRecursively( m_bodyPtr );
+    }
+
     void TBtBodyWrapper::_resetInternal()
     {
         if ( !m_bodyPtr )
@@ -121,7 +129,7 @@ namespace bullet {
             return;
 
         auto _btBodyPtr = _createBtRigidBody( bodyPtr );
-        auto _btConstraint = _createBtConstraint( bodyPtr->joints, 
+        auto _btConstraint = _createBtConstraint( bodyPtr, 
                                                   _btBodyPtr,
                                                   parentBtBodyPtr );
 
@@ -224,27 +232,27 @@ namespace bullet {
 
         if ( !_collisionShapePtr )
             std::cout << "ERROR> could not create shape of type: " << _type << std::endl;
-        else
+        else if ( _type != "plane" )
             _collisionShapePtr->setLocalScaling( utils::toBtVec3( _size ) );
 
         return _collisionShapePtr;
     }
 
-    btTypedConstraint* TBtBodyWrapper::_createBtConstraint( const std::vector< sandbox::TJoint* >& joints,
+    btTypedConstraint* TBtBodyWrapper::_createBtConstraint( sandbox::TBody* bodyPtr,
                                                             btRigidBody* currentBtBodyPtr,
                                                             btRigidBody* parentBtBodyPtr )
     {
         btTypedConstraint* _btConstraint = NULL;
 
-        if ( joints.size() == 0 )
+        if ( bodyPtr->joints.size() == 0 )
         {
             // create a fixed joint, as the related body has no dofs
-            _btConstraint = _createFixedConstraint( currentBtBodyPtr, parentBtBodyPtr );
+            _btConstraint = _createFixedConstraint( bodyPtr, currentBtBodyPtr, parentBtBodyPtr );
         }
-        else if ( joints.size() == 1 )
+        else if ( bodyPtr->joints.size() == 1 )
         {
             // check the type, and create one constraint according to the type
-            auto _joint = joints[0];
+            auto _joint = bodyPtr->joints[0];
             auto _type = _joint->type;
 
             if ( _type == "free" )
@@ -272,16 +280,59 @@ namespace bullet {
         else
         {
             // create a single generic constraint with limits|dofs configured appropriately
-            _btConstraint = _createGenericConstraintFromJoints( joints, currentBtBodyPtr, parentBtBodyPtr );
+            _btConstraint = _createGenericConstraintFromJoints( bodyPtr->joints, currentBtBodyPtr, parentBtBodyPtr );
         }
 
         return _btConstraint;
     }
 
-    btFixedConstraint* TBtBodyWrapper::_createFixedConstraint( btRigidBody* currentBtBodyPtr,
-                                                               btRigidBody* parentBtBodyPtr )
+    btGeneric6DofConstraint* TBtBodyWrapper::_createFixedConstraint( sandbox::TBody* bodyPtr,
+                                                                            btRigidBody* currentBtBodyPtr,
+                                                                            btRigidBody* parentBtBodyPtr )
     {
-        return NULL;
+        btGeneric6DofConstraint* _btConstraint = NULL;
+
+        if ( !parentBtBodyPtr )
+        {
+            // Just use '''currentBtBodyPtr=bodyB''' for fixed-constraint creation
+            _btConstraint = new btGeneric6DofConstraint( *currentBtBodyPtr,
+                                                         utils::toBtTransform( tysoc::TMat4() ),
+                                                         true );
+
+            // Lock all 6 axes
+            _btConstraint->setLimit( 0, 0, 0 );
+            _btConstraint->setLimit( 1, 0, 0 );
+            _btConstraint->setLimit( 2, 0, 0 );
+            _btConstraint->setLimit( 3, 0, 0 );
+            _btConstraint->setLimit( 4, 0, 0 );
+            _btConstraint->setLimit( 5, 0, 0 );
+        }
+        else
+        {
+            // Use '''parentBtBodyPtr=bodyB''' and '''currentBtBodyPtr=bodyA''' ...
+            // for fixed-constraint creation
+
+            auto _frameInA = utils::toBtTransform( tysoc::TMat4() ); // Identity, fixed in own body frame
+            auto _frameInB = utils::toBtTransform( bodyPtr->relTransform );// Relative transform of body to parent
+
+            _btConstraint = new btGeneric6DofConstraint( *currentBtBodyPtr,
+                                                         *parentBtBodyPtr,
+                                                         _frameInA,
+                                                         _frameInB,
+                                                         true );
+
+            // Lock all 6 axes
+            _btConstraint->setLimit( 0, 0, 0 );
+            _btConstraint->setLimit( 1, 0, 0 );
+            _btConstraint->setLimit( 2, 0, 0 );
+            _btConstraint->setLimit( 3, 0, 0 );
+            _btConstraint->setLimit( 4, 0, 0 );
+            _btConstraint->setLimit( 5, 0, 0 );
+        }
+
+        std::cout << "LOG> created fixed constraint" << std::endl;
+
+        return _btConstraint;
     }
 
     btHingeConstraint* TBtBodyWrapper::_createHingeConstraint( sandbox::TJoint* jointPtr,
@@ -296,8 +347,6 @@ namespace bullet {
             _btConstraint = new btHingeConstraint( *currentBtBodyPtr, 
                                                    utils::toBtVec3( jointPtr->relTransform.getPosition() ),
                                                    utils::toBtVec3( jointPtr->axis ) );
-
-            _btConstraint->setLimit( 1.f, -1.f );
         }
         else
         {
@@ -326,6 +375,8 @@ namespace bullet {
                                                    utils::toBtVec3( _axisInB ) );
         }
 
+        _btConstraint->setLimit( jointPtr->limits.x, jointPtr->limits.y );
+
         return _btConstraint;
     }
 
@@ -333,7 +384,59 @@ namespace bullet {
                                                                  btRigidBody* currentBtBodyPtr,
                                                                  btRigidBody* parentBtBodyPtr )
     {
-        return NULL;
+        btSliderConstraint* _btConstraint = NULL;
+
+        if ( !parentBtBodyPtr )
+        {
+            // Just use '''currentBtBodyPtr=bodyB''' for slider constraint creation
+            // By looking at btSliderConstraint::calculateTransforms (line 153) ...
+            // it seems that the transform implicitly defines the sliding axis
+
+            auto _transform = tysoc::TMat4();
+            _transform.setPosition( jointPtr->relTransform.getPosition() );
+            _transform.setRotation( tysoc::shortestArcQuat( { 1, 0, 0 }, jointPtr->axis ) );
+
+            _btConstraint = new btSliderConstraint( *currentBtBodyPtr,
+                                                    utils::toBtTransform( _transform ),
+                                                    true );
+        }
+        else
+        {
+            // Use '''parentBtBodyPtr=bodyB''' and '''currentBtBodyPtr=bodyA''' ...
+            // for slider-constraint creation
+
+            auto _bodyPtr = jointPtr->parentBodyPtr;
+            if ( !_bodyPtr )
+            {
+                std::cout << "WARNING> It seems you left a joint: " 
+                          << jointPtr->name << " without its parent" << std::endl;
+                return NULL;
+            }
+
+            auto _axisInA = jointPtr->axis;
+            auto _pivotInA = jointPtr->relTransform.getPosition();
+            auto _frameInA = tysoc::TMat4();
+            _frameInA.setPosition( _pivotInA );
+            _frameInA.setRotation( tysoc::shortestArcQuat( { 1, 0, 0 }, _axisInA ) );
+
+            auto _axisInB = _bodyPtr->relTransform.getRotation() * _axisInA;
+            auto _pivotInB = _bodyPtr->relTransform.getRotation() * _pivotInA +
+                             _bodyPtr->relTransform.getPosition();
+            auto _frameInB = tysoc::TMat4();
+            _frameInB.setPosition( _pivotInB );
+            _frameInB.setRotation( tysoc::shortestArcQuat( { 1, 0, 0 }, _axisInB ) );
+
+            _btConstraint = new btSliderConstraint( *currentBtBodyPtr,
+                                                    *parentBtBodyPtr,
+                                                    utils::toBtTransform( _frameInA ),
+                                                    utils::toBtTransform( _frameInB ), 
+                                                    true );
+        }
+
+        _btConstraint->setLowerLinLimit( jointPtr->limits.x );
+        _btConstraint->setUpperLinLimit( jointPtr->limits.y );
+
+        return _btConstraint;
     }
 
     btPoint2PointConstraint* TBtBodyWrapper::_createPoint2PointConstraint( sandbox::TJoint* jointPtr,
@@ -378,6 +481,21 @@ namespace bullet {
         else
         {
             std::cout << "WARNING> body with name: " << bodyPtr->name << " not initialized" << std::endl;
+        }
+    }
+
+    void TBtBodyWrapper::_initBodyRecursively( sandbox::TBody* bodyPtr )
+    {
+        if ( m_btBodies.find( bodyPtr->name ) != m_btBodies.end() )
+        {
+            auto _btRigidBodyPtr = m_btBodies[ bodyPtr->name ];
+            auto _rbTransform = utils::toBtTransform( bodyPtr->worldTransform );
+            
+            _btRigidBodyPtr->setWorldTransform( _rbTransform );
+
+            // and the child bodies as well
+            for ( size_t q = 0; q < bodyPtr->bodies.size(); q++ )
+                _initBodyRecursively( bodyPtr->bodies[q] );
         }
     }
 

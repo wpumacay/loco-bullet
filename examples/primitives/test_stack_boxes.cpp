@@ -12,8 +12,8 @@ tysoc::sandbox::TBody* createBody( const std::string& name,
 {
     auto _bbox = new tysoc::sandbox::TFreeBody();
     _bbox->name = name;
-    _bbox->type = "capsule";
-    _bbox->mass = 1.0;
+    _bbox->type = "box";
+    _bbox->mass = 0.1;
     _bbox->size = size;
     _bbox->color = color;
     _bbox->friction = { 1.0, 1.0, 1.0 };
@@ -44,7 +44,7 @@ int main()
                 auto _name = std::string( "bbox" ) + "_" + std::to_string( i ) + "_" + std::to_string( j ) + "_" + std::to_string( k );
                 auto _body = createBody( _name,
                                          { 0.2f * i, 0.2f * j, 2 + 0.2f * k },
-                                         { 0.1, 0.2, 0.2 },
+                                         { 0.15, 0.15, 0.15 },
                                          { 0.25f + 0.75f * ( i / 4.0f ),
                                            0.25f + 0.75f * ( j / 4.0f ),
                                            0.25f + 0.75f * ( k / 4.0f ) } );
@@ -63,9 +63,15 @@ int main()
     auto _visualizer = _runtime->createVisualizer( _scenario );
     _visualizer->initialize();
 
+    bool _running = false;
+
     while ( _visualizer->isActive() )
     {
-        _simulation->step();
+        if ( _visualizer->checkSingleKeyPress( 15 ) )
+            _running = ( _running ) ? false : true;
+
+        if ( _running )
+            _simulation->step();
 
         _visualizer->update();
     }

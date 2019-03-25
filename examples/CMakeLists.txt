@@ -16,13 +16,5 @@ function( FcnBuildTest pSourcesList pExecutableName )
 
 endfunction()
 
-FILE( GLOB ExampleSources *.cpp )
-
-foreach( exampleFile ${ExampleSources} )
-    
-    string( REPLACE ".cpp" "" executableLongName ${exampleFile} )
-    get_filename_component( execName ${executableLongName} NAME )
-
-    FcnBuildTest( ${exampleFile} ${execName} )
-
-endforeach( exampleFile )
+add_subdirectory( primitives )
+add_subdirectory( constraints )

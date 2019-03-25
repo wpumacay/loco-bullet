@@ -13,15 +13,15 @@ int main()
     _bbox1->mass = 1.0;
     _bbox1->size = { 0.2, 0.2, 1.0 };
     _bbox1->worldTransform.setPosition( { 1.0, 1.0, 3.0 } );
-    _bbox1->worldTransform.setRotation( tysoc::TMat3::fromEuler( { 0.4, 0.6, 0.8 } ) );
+    _bbox1->worldTransform.setRotation( tysoc::TMat3::fromEuler( { 1.57, 0.0, 0.0 } ) );
 
     auto _jhinge1 = new tysoc::sandbox::TJoint();
     _jhinge1->name = "jhinge1";
     _jhinge1->type = "hinge";
     _jhinge1->axis = { 1, 0, 0 };
-    _jhinge1->limits = { -180, 180 };
+    _jhinge1->limits = { -0.5 * TYSOC_PI, 0.5 * TYSOC_PI };
     _jhinge1->parentBodyPtr = _bbox1;
-    _bbox1->joints.push_back( _jhinge1 );
+     _bbox1->joints.push_back( _jhinge1 );
     _jhinge1->relTransform.setPosition( { 0.0, 0.0, 0.5 } );
 
     auto _bbox2 = new tysoc::sandbox::TBody();
@@ -32,13 +32,13 @@ int main()
     _bbox2->color = { 0.75, 0.5, 0.25 };
     _bbox2->parentBodyPtr = _bbox1;
     _bbox1->bodies.push_back( _bbox2 );
-    _bbox2->relTransform.setPosition( { 0.0, 0.0, -0.75 } );
+    _bbox2->relTransform.setPosition( { 0.0, 0.0, -1.0 } );
 
     auto _jhinge2 = new tysoc::sandbox::TJoint();
     _jhinge2->name = "jhinge2";
     _jhinge2->type = "hinge";
     _jhinge2->axis = { 1, 0, 0 };
-    _jhinge2->limits = { -180, 180 };
+    _jhinge2->limits = { -0.25 * TYSOC_PI, 0.25 * TYSOC_PI };
     _jhinge2->parentBodyPtr = _bbox2;
     _bbox2->joints.push_back( _jhinge2 );
     _jhinge2->relTransform.setPosition( { 0.0, 0.0, 0.5 } );
@@ -63,9 +63,15 @@ int main()
     auto _visualizer = _runtime->createVisualizer( _scenario );
     _visualizer->initialize();
 
+    bool _running = false;
+
     while ( _visualizer->isActive() )
     {
-        _simulation->step();
+        if ( _visualizer->checkSingleKeyPress( 15 ) )
+            _running = ( _running ) ? false : true;
+
+        if ( _running )
+            _simulation->step();
 
         _visualizer->update();
     }

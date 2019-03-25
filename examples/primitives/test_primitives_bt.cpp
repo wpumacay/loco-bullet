@@ -62,9 +62,15 @@ int main()
     auto _visualizer = _runtime->createVisualizer( _scenario );
     _visualizer->initialize();
 
+    bool _running = false;
+
     while ( _visualizer->isActive() )
     {
-        _simulation->step();
+        if ( _visualizer->checkSingleKeyPress( 15 ) )
+            _running = ( _running ) ? false : true;
+
+        if ( _running )
+            _simulation->step();
 
         _visualizer->update();
     }

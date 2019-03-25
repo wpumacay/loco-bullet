@@ -60,14 +60,15 @@ namespace bullet {
         *   |         |                                |                        
         *   @param joints   TJoint object that contains the data to be used
         */
-        btTypedConstraint* _createBtConstraint( const std::vector< sandbox::TJoint* >& joints,
+        btTypedConstraint* _createBtConstraint( sandbox::TBody* bodyPtr,
                                                 btRigidBody* currentBtBodyPtr,
                                                 btRigidBody* parentBtBodyPtr );
 
         // Helper constraint-creation methods
 
-        btFixedConstraint* _createFixedConstraint( btRigidBody* currentBtBodyPtr,
-                                                   btRigidBody* parentBtBodyPtr );
+        btGeneric6DofConstraint* _createFixedConstraint( sandbox::TBody* bodyPtr,
+                                                         btRigidBody* currentBtBodyPtr,
+                                                         btRigidBody* parentBtBodyPtr );
 
         btHingeConstraint* _createHingeConstraint( sandbox::TJoint* jointPtr,
                                                    btRigidBody* currentBtBodyPtr,
@@ -92,9 +93,17 @@ namespace bullet {
         */
         void _updateBodyRecursively( sandbox::TBody* bodyPtr );
 
+        /**
+        *   Initialize the body information recursively from user data back into simulation
+        *
+        *   @param bodyPtr  The body we want to initialize its data
+        */
+        void _initBodyRecursively( sandbox::TBody* bodyPtr );
+
         protected :
 
         void _initializeInternal() override;
+        void _initializeWorldTransformsInternal() override;
         void _resetInternal() override;
         void _preStepInternal() override;
         void _postStepInternal() override;
