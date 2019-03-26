@@ -82,9 +82,9 @@ namespace bullet {
                                                                btRigidBody* currentBtBodyPtr,
                                                                btRigidBody* parentBtBodyPtr );
 
-        btGeneric6DofSpring2Constraint* _createGenericConstraintFromJoints( const std::vector< sandbox::TJoint* >& joints,
-                                                                            btRigidBody* currentBtBodyPtr,
-                                                                            btRigidBody* parentBtBodyPtr );
+        btGeneric6DofConstraint* _createGenericConstraintFromJoints( sandbox::TBody* bodyPtr,
+                                                                     btRigidBody* currentBtBodyPtr,
+                                                                     btRigidBody* parentBtBodyPtr );
 
         /**
         *   Updates the body information recursively from the simulation

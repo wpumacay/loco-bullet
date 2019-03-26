@@ -145,7 +145,6 @@ namespace bullet {
 
         if ( _btConstraint )
         {
-            std::cout << "LOG> added constraint" << std::endl;
             m_btConstraints[ bodyPtr->name ] = _btConstraint;
             m_btWorldPtr->addConstraint( _btConstraint, CONSTRAINT_DISABLE_COLLISION_CONNECTED_BODIES );
         }
@@ -193,6 +192,9 @@ namespace bullet {
 
         // make sure the object is going to be simulated by forcing activation
         _rigidBodyPtr->forceActivationState( DISABLE_DEACTIVATION );
+
+        // and set the initial velocity
+        _rigidBodyPtr->setLinearVelocity( utils::toBtVec3( bodyPtr->vel ) );
 
         return _rigidBodyPtr;
     }
@@ -280,7 +282,7 @@ namespace bullet {
         else
         {
             // create a single generic constraint with limits|dofs configured appropriately
-            _btConstraint = _createGenericConstraintFromJoints( bodyPtr->joints, currentBtBodyPtr, parentBtBodyPtr );
+            _btConstraint = _createGenericConstraintFromJoints( bodyPtr, currentBtBodyPtr, parentBtBodyPtr );
         }
 
         return _btConstraint;
@@ -330,8 +332,6 @@ namespace bullet {
             _btConstraint->setLimit( 5, 0, 0 );
         }
 
-        std::cout << "LOG> created fixed constraint" << std::endl;
-
         return _btConstraint;
     }
 
@@ -368,7 +368,8 @@ namespace bullet {
             auto _pivotInB = _bodyPtr->relTransform.getRotation() * _pivotInA +
                              _bodyPtr->relTransform.getPosition();
 
-            _btConstraint = new btHingeConstraint( *currentBtBodyPtr, *parentBtBodyPtr,
+            _btConstraint = new btHingeConstraint( *currentBtBodyPtr, 
+                                                   *parentBtBodyPtr,
                                                    utils::toBtVec3( _pivotInA ), 
                                                    utils::toBtVec3( _pivotInB ),
                                                    utils::toBtVec3( _axisInA ), 
@@ -435,6 +436,8 @@ namespace bullet {
 
         _btConstraint->setLowerLinLimit( jointPtr->limits.x );
         _btConstraint->setUpperLinLimit( jointPtr->limits.y );
+        _btConstraint->setLowerAngLimit( 0 );
+        _btConstraint->setUpperAngLimit( 0 );
 
         return _btConstraint;
     }
@@ -443,14 +446,168 @@ namespace bullet {
                                                                            btRigidBody* currentBtBodyPtr,
                                                                            btRigidBody* parentBtBodyPtr )
     {
-        return NULL;
+        // @TODO: Replace with btGeneric6DofSpring2Constraint, as in :
+        // https://github.com/xbpeng/DeepLoco/blob/c4e2db93fefcd49ee7a2481918e2f7db1c1da733/sim/World.cpp#L755
+
+        btPoint2PointConstraint* _btConstraint = NULL;
+
+        if ( !parentBtBodyPtr )
+        {
+            // Just use '''currentBtBodyPtr=bodyA''' for hinge-constraint creation
+            _btConstraint = new btPoint2PointConstraint( *currentBtBodyPtr, 
+                                                         utils::toBtVec3( jointPtr->relTransform.getPosition() ) );
+        }
+        else
+        {
+            // Use '''parentBtBodyPtr=bodyB''' and '''currentBtBodyPtr=bodyA''' ...
+            // for hinge-constraint creation
+
+            auto _bodyPtr = jointPtr->parentBodyPtr;
+            if ( !_bodyPtr )
+            {
+                std::cout << "WARNING> It seems you left a joint: " 
+                          << jointPtr->name << " without its parent" << std::endl;
+                return NULL;
+            }
+
+            auto _pivotInA = jointPtr->relTransform.getPosition();
+            auto _pivotInB = _bodyPtr->relTransform.getRotation() * _pivotInA +
+                             _bodyPtr->relTransform.getPosition();
+
+            _btConstraint = new btPoint2PointConstraint( *currentBtBodyPtr, 
+                                                         *parentBtBodyPtr,
+                                                         utils::toBtVec3( _pivotInA ), 
+                                                         utils::toBtVec3( _pivotInB ) );
+        }
+
+        return _btConstraint;
     }
 
-    btGeneric6DofSpring2Constraint* TBtBodyWrapper::_createGenericConstraintFromJoints( const std::vector< sandbox::TJoint* >& joints,
-                                                                                        btRigidBody* currentBtBodyPtr,
-                                                                                        btRigidBody* parentBtBodyPtr )
+    btGeneric6DofConstraint* TBtBodyWrapper::_createGenericConstraintFromJoints( sandbox::TBody* bodyPtr,
+                                                                                 btRigidBody* currentBtBodyPtr,
+                                                                                 btRigidBody* parentBtBodyPtr )
     {
-        return NULL;
+        btGeneric6DofConstraint* _btConstraint = NULL;
+
+        // Grab only the DOFs whose axes map to basis vectors, only ...
+        // those that consist of 'slide' or 'hinge' joints, and max 6 joints
+        auto _joints = bodyPtr->joints;
+        std::vector< int > _dofIndices;
+        std::vector< tysoc::TVec2 > _dofLimits;
+        for ( size_t q = 0; q < _joints.size(); q++ )
+        {
+            if ( q > 5 )
+            {
+                std::cout << "WARNING> trying to configure more than 6 joints " 
+                          << "for generic constraint" << std::endl;
+                break;
+            }
+
+            if ( _joints[q]->type != "hinge" && _joints[q]->type != "slide" )
+            {
+                std::cout << "WARNING> tried to configure " << _joints[q]->type
+                          << " for generic joint, which is not supported (only slide and hinge)" << std::endl;
+                continue;
+            }
+
+            // map joint AXIS to DOF index
+            if ( _joints[q]->type == "slide" )
+            {
+                if ( std::fabs( _joints[q]->axis.x ) > 0 )
+                {
+                    std::cout << "LOG> Setting dof: " << "lin-x" << std::endl;
+                    _dofIndices.push_back( 0 );
+                    _dofLimits.push_back( _joints[q]->limits );
+                }
+                else if ( std::fabs( _joints[q]->axis.y ) > 0 )
+                {
+                    std::cout << "LOG> Setting dof: " << "lin-y" << std::endl;
+                    _dofIndices.push_back( 1 );
+                    _dofLimits.push_back( _joints[q]->limits );
+                }
+                else if ( std::fabs( _joints[q]->axis.z ) > 0 )
+                {
+                    std::cout << "LOG> Setting dof: " << "lin-z" << std::endl;
+                    _dofIndices.push_back( 2 );
+                    _dofLimits.push_back( _joints[q]->limits );
+                }
+            }
+            else
+            {
+                if ( std::fabs( _joints[q]->axis.x ) > 0 )
+                {
+                    std::cout << "LOG> Setting dof: " << "ang-x" << std::endl;
+                    _dofIndices.push_back( 3 );
+                    _dofLimits.push_back( _joints[q]->limits );
+                }
+                else if ( std::fabs( _joints[q]->axis.y ) > 0 )
+                {
+                    std::cout << "LOG> Setting dof: " << "ang-y" << std::endl;
+                    _dofIndices.push_back( 4 );
+                    _dofLimits.push_back( _joints[q]->limits );
+                }
+                else if ( std::fabs( _joints[q]->axis.z ) > 0 )
+                {
+                    std::cout << "LOG> Setting dof: " << "ang-z" << std::endl;
+                    _dofIndices.push_back( 5 );
+                    _dofLimits.push_back( _joints[q]->limits );
+                }
+            }
+        }
+
+        if ( !parentBtBodyPtr )
+        {
+            // Just use '''currentBtBodyPtr=bodyB''' for fixed-constraint creation
+            _btConstraint = new btGeneric6DofConstraint( *currentBtBodyPtr,
+                                                         utils::toBtTransform( tysoc::TMat4() ),
+                                                         true );
+
+            // Lock all 6 axes
+            _btConstraint->setLimit( 0, 0, 0 );
+            _btConstraint->setLimit( 1, 0, 0 );
+            _btConstraint->setLimit( 2, 0, 0 );
+            _btConstraint->setLimit( 3, 0, 0 );
+            _btConstraint->setLimit( 4, 0, 0 );
+            _btConstraint->setLimit( 5, 0, 0 );
+
+            // Free only the axes that have DOFs
+            for ( size_t q = 0; q < _dofIndices.size(); q++ )
+            {
+                std::cout << "LOG> Setting dof: " << _dofIndices[q] << std::endl;
+                _btConstraint->setLimit( _dofIndices[q], _dofLimits[q].x, _dofLimits[q].y );
+            }
+        }
+        else
+        {
+            // Use '''parentBtBodyPtr=bodyB''' and '''currentBtBodyPtr=bodyA''' ...
+            // for fixed-constraint creation
+
+            auto _frameInA = utils::toBtTransform( tysoc::TMat4() ); // Identity, fixed in own body frame
+            auto _frameInB = utils::toBtTransform( bodyPtr->relTransform );// Relative transform of body to parent
+
+            _btConstraint = new btGeneric6DofConstraint( *currentBtBodyPtr,
+                                                         *parentBtBodyPtr,
+                                                         _frameInA,
+                                                         _frameInB,
+                                                         true );
+
+            // Lock all 6 axes
+            _btConstraint->setLimit( 0, 0, 0 );
+            _btConstraint->setLimit( 1, 0, 0 );
+            _btConstraint->setLimit( 2, 0, 0 );
+            _btConstraint->setLimit( 3, 0, 0 );
+            _btConstraint->setLimit( 4, 0, 0 );
+            _btConstraint->setLimit( 5, 0, 0 );
+
+            // Free only the axes that have DOFs
+            for ( size_t q = 0; q < _dofIndices.size(); q++ )
+            {
+                std::cout << "LOG> Setting dof: " << _dofIndices[q] << std::endl;
+                _btConstraint->setLimit( _dofIndices[q], _dofLimits[q].x, _dofLimits[q].y );
+            }
+        }
+
+        return _btConstraint;
     }
 
     void TBtBodyWrapper::_updateBodyRecursively( sandbox::TBody* bodyPtr )
