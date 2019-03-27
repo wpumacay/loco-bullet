@@ -34,18 +34,19 @@ namespace bullet {
             m_bodyWrappers.push_back( _bodyWrapper );
         }
 
+        auto _agents = m_scenarioPtr->getAgentsByType( agent::AGENT_TYPE_KINTREE );
+        for ( size_t q = 0; q < _agents.size(); q++ )
+        {
+            auto _agentWrapper = new TBtKinTreeAgentWrapper( (agent::TAgentKinTree*) _agents[q],
+                                                              m_workingDir );
+
+            m_agentWrappers.push_back( _agentWrapper );
+        }
     }
 
     TBtSimulation::~TBtSimulation()
     {
         // @WIP: see method "exitPhysics" in bullet example "CommonRigidBodyBase.h"
-
-        for ( size_t q = 0; q < m_bodyWrappers.size(); q++ )
-        {
-            delete m_bodyWrappers[q];
-            m_bodyWrappers[q] = NULL;
-        }
-        m_bodyWrappers.clear();
 
         if ( m_btWorldPtr )
         {
@@ -88,6 +89,14 @@ namespace bullet {
 
             _btBodyWrapper->setBtWorld( m_btWorldPtr );
             _btBodyWrapper->initialize();
+        }
+
+        for ( size_t q = 0; q < m_agentWrappers.size(); q++ )
+        {
+            auto _btAgentWrapper = reinterpret_cast< TBtKinTreeAgentWrapper* >( m_agentWrappers[q] );
+
+            _btAgentWrapper->setBtWorld( m_btWorldPtr );
+            _btAgentWrapper->initialize();
         }
 
         /**********************************************************************/

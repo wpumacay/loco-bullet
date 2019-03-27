@@ -18,3 +18,4 @@ endfunction()
 
 add_subdirectory( primitives )
 add_subdirectory( constraints )
+add_subdirectory( agents )

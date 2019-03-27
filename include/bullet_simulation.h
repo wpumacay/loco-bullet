@@ -4,6 +4,7 @@
 #include <simulation_base.h>
 
 #include <bullet_sandbox_body_wrapper.h>
+#include <bullet_agent_wrapper.h>
 
 namespace tysoc {
 namespace bullet {
