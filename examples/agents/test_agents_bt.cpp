@@ -60,7 +60,7 @@ int main( int argc, const char** argv )
 
     /* ***************************************************************************/
 
-    auto _agent = createAgent( MODEL_FORMAT, MODEL_NAME, "agent0", { 0.0f, 0.0f, 2.5f }, { 0.5, 0.5, 0.5 } );
+    auto _agent = createAgent( MODEL_FORMAT, MODEL_NAME, "agent0", { 0.0f, 0.0f, 2.5f }, { 1.0, 0.0, 0.0 } );
 
     if ( !_agent )
     {

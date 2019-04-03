@@ -84,13 +84,69 @@ namespace bullet {
                 btVector3 _aabbMin, _aabbMax;
 
                 _btBodyInChain->getAabb( _aabbMin, _aabbMax );
-                _aabbWorldTransform = _btBodyInChain->getWorldTransform();
+
+                // auto _diff = _aabbMax - _aabbMin;
+                // auto _norm = _diff.length();
+
+                // std::cout << "diag: " << _norm << std::endl;
+
+                // _aabbWorldTransform = _btBodyInChain->getWorldTransform();
 
                 // request the visualizer to draw the aabb
-                _visualizerPtr->drawAABB( utils::fromBtVec3( _aabbMin ),
-                                          utils::fromBtVec3( _aabbMax ),
-                                          utils::fromBtTransform( _aabbWorldTransform ),
-                                          { 0.8, 0.1, 0.1 } );
+                // _visualizerPtr->drawAABB( utils::fromBtVec3( _aabbMin ),
+                //                           utils::fromBtVec3( _aabbMax ),
+                //                           utils::fromBtTransform( _aabbWorldTransform ),
+                //                           { 0.8, 0.1, 0.1 } );
+
+                // Taken from getAABB.py example from pybullet. It seems that ...
+                // the AABB info should be used in a different way to what I thought :(.
+                _visualizerPtr->drawLine( { _aabbMin.x(), _aabbMin.y(), _aabbMin.z() },
+                                          { _aabbMax.x(), _aabbMin.y(), _aabbMin.z() },
+                                          { 0.1, 0.1, 0.8 } );
+
+                _visualizerPtr->drawLine( { _aabbMin.x(), _aabbMin.y(), _aabbMin.z() },
+                                          { _aabbMin.x(), _aabbMax.y(), _aabbMin.z() },
+                                          { 0.1, 0.1, 0.8 } );
+
+                _visualizerPtr->drawLine( { _aabbMin.x(), _aabbMin.y(), _aabbMin.z() },
+                                          { _aabbMin.x(), _aabbMin.y(), _aabbMax.z() },
+                                          { 0.1, 0.1, 0.8 } );
+
+                _visualizerPtr->drawLine( { _aabbMin.x(), _aabbMin.y(), _aabbMax.z() },
+                                          { _aabbMin.x(), _aabbMax.y(), _aabbMax.z() },
+                                          { 0.1, 0.1, 0.8 } );
+
+                _visualizerPtr->drawLine( { _aabbMin.x(), _aabbMin.y(), _aabbMax.z() },
+                                          { _aabbMax.x(), _aabbMin.y(), _aabbMax.z() },
+                                          { 0.1, 0.1, 0.8 } );
+
+                _visualizerPtr->drawLine( { _aabbMax.x(), _aabbMin.y(), _aabbMin.z() },
+                                          { _aabbMax.x(), _aabbMin.y(), _aabbMax.z() },
+                                          { 0.1, 0.1, 0.8 } );
+
+                _visualizerPtr->drawLine( { _aabbMax.x(), _aabbMin.y(), _aabbMin.z() },
+                                          { _aabbMax.x(), _aabbMax.y(), _aabbMin.z() },
+                                          { 0.1, 0.1, 0.8 } );
+
+                _visualizerPtr->drawLine( { _aabbMax.x(), _aabbMax.y(), _aabbMin.z() },
+                                          { _aabbMin.x(), _aabbMax.y(), _aabbMin.z() },
+                                          { 0.1, 0.1, 0.8 } );
+
+                _visualizerPtr->drawLine( { _aabbMin.x(), _aabbMax.y(), _aabbMin.z() },
+                                          { _aabbMin.x(), _aabbMax.y(), _aabbMax.z() },
+                                          { 0.1, 0.1, 0.8 } );
+
+                _visualizerPtr->drawLine( { _aabbMax.x(), _aabbMax.y(), _aabbMax.z() },
+                                          { _aabbMin.x(), _aabbMax.y(), _aabbMax.z() },
+                                          { 0.1, 0.1, 0.8 } );
+
+                _visualizerPtr->drawLine( { _aabbMax.x(), _aabbMax.y(), _aabbMax.z() },
+                                          { _aabbMax.x(), _aabbMin.y(), _aabbMax.z() },
+                                          { 0.1, 0.1, 0.8 } );
+
+                _visualizerPtr->drawLine( { _aabbMax.x(), _aabbMax.y(), _aabbMax.z() },
+                                          { _aabbMax.x(), _aabbMax.y(), _aabbMin.z() },
+                                          { 0.1, 0.1, 0.8 } );
             }
         }
     }
