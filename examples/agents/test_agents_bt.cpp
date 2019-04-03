@@ -60,7 +60,7 @@ int main( int argc, const char** argv )
 
     /* ***************************************************************************/
 
-    auto _agent = createAgent( MODEL_FORMAT, MODEL_NAME, "agent0", { 0.0f, 0.0f, 2.5f }, { 0.0, 0.0, 0.0 } );
+    auto _agent = createAgent( MODEL_FORMAT, MODEL_NAME, "agent0", { 0.0f, 0.0f, 2.5f }, { 0.5, 0.5, 0.5 } );
 
     if ( !_agent )
     {
@@ -91,15 +91,20 @@ int main( int argc, const char** argv )
     auto _visualizer = _runtime->createVisualizer( _scenario );
     _visualizer->initialize();
 
-    bool _running = false;
+    _simulation->togglePause();
 
     while ( _visualizer->isActive() )
     {
         if ( _visualizer->checkSingleKeyPress( 15 ) )
-            _running = ( _running ) ? false : true;
+            _simulation->togglePause();
 
-        if ( _running )
-            _simulation->step();
+        _simulation->step();
+
+        // _visualizer->drawLine( { 0.0f, 0.0f, 0.0f }, { 5.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } );
+        // _visualizer->drawLine( { 0.0f, 0.0f, 0.0f }, { 0.0f, 5.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } );
+        // _visualizer->drawLine( { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 5.0f }, { 0.0f, 0.0f, 1.0f } );
+
+        // _visualizer->drawAABB( { -5, -2, -2 }, { 5, 2, 2 }, tysoc::TMat4(), { 0.8f, 0.1f, 0.1f } );
 
         _visualizer->update();
     }

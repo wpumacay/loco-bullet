@@ -59,6 +59,40 @@ namespace bullet {
             // set this transform as the worldTransform of the wrapped body
             _kinBodies[i]->worldTransform = _baseWorldTransform;
         }
+
+        // @DEBUG: draw AABB for all bodies
+        if ( !m_simulationPtr )
+            return;
+
+        auto _visualizerPtr = m_simulationPtr->getVisualizer();
+
+        if ( !_visualizerPtr )
+            return;
+
+        for ( auto it = m_bodyCompounds.begin();
+                   it != m_bodyCompounds.end();
+                   it++ )
+        {
+            auto _compound = it->second;
+
+            for ( size_t i = 0; i < _compound->btBodiesInChain.size(); i++ )
+            {
+                auto _btBodyInChain = _compound->btBodiesInChain[i];
+
+                // Extract the aabb from the bullet body
+                btTransform _aabbWorldTransform;
+                btVector3 _aabbMin, _aabbMax;
+
+                _btBodyInChain->getAabb( _aabbMin, _aabbMax );
+                _aabbWorldTransform = _btBodyInChain->getWorldTransform();
+
+                // request the visualizer to draw the aabb
+                _visualizerPtr->drawAABB( utils::fromBtVec3( _aabbMin ),
+                                          utils::fromBtVec3( _aabbMax ),
+                                          utils::fromBtTransform( _aabbWorldTransform ),
+                                          { 0.8, 0.1, 0.1 } );
+            }
+        }
     }
 
     void TBtKinTreeAgentWrapper::_createBtResourcesFromKinTree()
@@ -177,8 +211,8 @@ namespace bullet {
                                                                     _bodyCompound,
                                                                     parentBodyCompound );
 
-        if ( _nodeConstraint )
-            m_btWorldPtr->addConstraint( _nodeConstraint, true );
+        // if ( _nodeConstraint )
+        //     m_btWorldPtr->addConstraint( _nodeConstraint, true );
 
         /***********************************************************************/
 

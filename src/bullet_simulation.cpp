@@ -96,6 +96,7 @@ namespace bullet {
             auto _btAgentWrapper = reinterpret_cast< TBtKinTreeAgentWrapper* >( m_agentWrappers[q] );
 
             _btAgentWrapper->setBtWorld( m_btWorldPtr );
+            _btAgentWrapper->setParentSimulation( this );
             _btAgentWrapper->initialize();
         }
 
