@@ -8,12 +8,16 @@ namespace bullet {
                                                     const std::string& workingDir )
         : TKinTreeAgentWrapper( kinTreeAgentPtr, workingDir )
     {
-
+        m_rootCompound = NULL;
+        m_btWorldPtr = NULL;
     }
 
     TBtKinTreeAgentWrapper::~TBtKinTreeAgentWrapper()
     {
         m_btWorldPtr = NULL;
+        m_rootCompound = NULL;
+
+        // @TODO|@CHECK: Define the proper functionality for the destructor
     }
 
     void TBtKinTreeAgentWrapper::setBtWorld( btDiscreteDynamicsWorld* btWorldPtr )
@@ -42,15 +46,18 @@ namespace bullet {
         auto _kinBodies = m_kinTreeAgentPtr->getKinTreeBodies();
         for ( size_t i = 0; i < _kinBodies.size(); i++ )
         {
-            if ( m_btBodies.find( _kinBodies[i]->name ) == m_btBodies.end() )
+            if ( m_bodyCompounds.find( _kinBodies[i]->name ) == m_bodyCompounds.end() )
                 continue;
 
             // extract the world transform from the simulated body
-            auto _btRigidBodyPtr = m_btBodies[ _kinBodies[i]->name ];
-            auto _rbTransform = _btRigidBodyPtr->getWorldTransform();
+            auto _compound = m_bodyCompounds[ _kinBodies[i]->name ];
+            auto _btStartBody = _compound->btStartBody;
+            auto _baseToStartBodyTransform = _compound->baseToStartBodyTransform;
+            auto _startBodyWorldTransform = utils::fromBtTransform( _btStartBody->getWorldTransform() );
+            auto _baseWorldTransform = _startBodyWorldTransform * _baseToStartBodyTransform;
 
-            // set this transform as the worldtransform of the wrapped body
-            _kinBodies[i]->worldTransform = utils::fromBtTransform( _rbTransform );
+            // set this transform as the worldTransform of the wrapped body
+            _kinBodies[i]->worldTransform = _baseWorldTransform;
         }
     }
 
@@ -59,98 +66,161 @@ namespace bullet {
         if ( !m_kinTreeAgentPtr )
             return;
 
-        auto _rootBodyPtr = m_kinTreeAgentPtr->getRootBody();
-        _createBtResourcesFromBodyNode( _rootBodyPtr, NULL );
+        if ( TYSOC_BULLET_USE_MULTIBODY )
+            std::cout << "ERROR> can't use bullet's multibody feature yet" << std::endl;
+        else
+            m_rootCompound = _createBtCompoundFromBodyNode( m_kinTreeAgentPtr->getRootBody(), NULL );
     }
 
-    void TBtKinTreeAgentWrapper::_createBtResourcesFromBodyNode( agent::TKinTreeBody* kinTreeBodyPtr,
-                                                                 btRigidBody* parentBtBodyPtr )
+    TBtBodyCompound* TBtKinTreeAgentWrapper::_createBtCompoundFromBodyNode( agent::TKinTreeBody* kinTreeBodyPtr,
+                                                                            TBtBodyCompound* parentBodyCompound )
     {
-        // construct a Bullet body out of the kintree body data
-        auto _btBodyPtr = _createBtRigidBody( kinTreeBodyPtr );
-        // construct a Bullet constraint out of the kintree body data (dofs inside)
-        auto _btConstraint = _createBtConstraint( kinTreeBodyPtr, 
-                                                  _btBodyPtr, 
-                                                  parentBtBodyPtr );
-
-        if ( _btBodyPtr )
+        if ( kinTreeBodyPtr->childCollisions.size() < 1 )
         {
-            m_btBodies[ kinTreeBodyPtr->name ] = _btBodyPtr;
-            m_btWorldPtr->addRigidBody( _btBodyPtr );
-        }
-
-        if ( _btConstraint )
-        {
-            m_btConstraints[ kinTreeBodyPtr->name ] = _btConstraint;
-            m_btWorldPtr->addConstraint( _btConstraint, 
-                                         true ); // disable collision between linked bodies
-        }
-
-        if ( _btBodyPtr )
-        {
-            for ( size_t i = 0; i < kinTreeBodyPtr->childBodies.size(); i++ )
-                _createBtResourcesFromBodyNode( kinTreeBodyPtr->childBodies[i], _btBodyPtr );
-        }
-    }
-
-    btRigidBody* TBtKinTreeAgentWrapper::_createBtRigidBody( agent::TKinTreeBody* kinTreeBodyPtr )
-    {
-        // Variables to store inertial props calculations
-        btTransform _tfInertialLocalFrame;
-        btVector3 _inertiaDiag;
-        btScalar _inertiaMass;
-
-        // compute the inertial properties from the data given by the user.
-        bool _hasInertialProps = _computeInertialProperties( kinTreeBodyPtr, 
-                                                             _tfInertialLocalFrame, 
-                                                             _inertiaDiag, 
-                                                             _inertiaMass );
-
-        // create a collision shape out of all collision in the body
-        auto _collisionShapePtr = _createBtCollisionShape( kinTreeBodyPtr,
-                                                           _hasInertialProps,
-                                                           _tfInertialLocalFrame );
-
-        if ( !_collisionShapePtr )
+            std::cout << "ERROR> tried to create a compound with no collisions "
+                      << "for body node: " << kinTreeBodyPtr->name << std::endl;
             return NULL;
+        }
 
-        // create initial pos/rot from kintree body
-        auto _rbTransform = utils::toBtTransform( kinTreeBodyPtr->worldTransform );
+        auto _bodyCompound = new TBtBodyCompound();
+        _bodyCompound->kinTreeBodyPtr = kinTreeBodyPtr;
+        m_bodyCompounds[ kinTreeBodyPtr->name ] = _bodyCompound;
+
+        /* Create the resources for this compound ******************************/
+        auto _kinCollisions = kinTreeBodyPtr->childCollisions;
+        auto _firstCollision = _kinCollisions.front();
+
+        // build the data for the first collision (wrt to core kintree body)
+        _bodyCompound->startBodyToBaseTransform = _firstCollision->relTransform;
+        _bodyCompound->baseToStartBodyTransform = _bodyCompound->startBodyToBaseTransform.inverse();
+        _bodyCompound->btStartBody = _createBtRigidBodyForChain( _firstCollision );
+        _bodyCompound->btBodiesInChain.push_back( _bodyCompound->btStartBody );
+        _bodyCompound->btConstraintsInChain.push_back( NULL );// save a place for the constraint defined by the joints
+        _bodyCompound->relTransformsInChain.push_back( _bodyCompound->startBodyToBaseTransform );
+
+        if ( !_bodyCompound->btStartBody )
+        {
+            std::cout << "ERROR> could not create compound for body: "
+                      << kinTreeBodyPtr->name << ". First body for collision: "
+                      << _firstCollision->name << " returned NULL" << std::endl;
+
+            return NULL;
+        }
+
+        // add front of the chain to the world
+        m_btWorldPtr->addRigidBody( _bodyCompound->btStartBody );
+
+        // create all other rigid bodies in the chain
+        auto _previousBtBody = _bodyCompound->btStartBody;
+        auto _previousToBaseTransform = _bodyCompound->startBodyToBaseTransform;
+        for ( size_t i = 1; i < _kinCollisions.size(); i++ )
+        {
+            // create the current body in the chain
+            auto _currentBtBody = _createBtRigidBodyForChain( _kinCollisions[i] );
+            // and the relative transform to the base (kintree body node)
+            auto _currentToBaseTransform = _kinCollisions[i]->relTransform;
+
+            /*
+            *  Compute the transform of this current body in the chain, wrt the ...
+            *  previous body in the chain, by using the following computations:
+            *
+            *   ___       base
+            *  |   |          T
+            *  |___|---------  i-1
+            *               |
+            *   |           |
+            *   |i-1        _
+            *   |   T      |_| -> base frame (of kintree body node)
+            *   |    i
+            *   |           |
+            *   ___         |
+            *  |   |        | base
+            *  |___|---------     T
+            *                      i
+            *
+            *
+            * base     i        base          i-1      base  -1    base     
+            *     T  x  T      =    T    ->       T  =     T     x     T    
+            *      i      i-1        i-1           i        i-1         i
+            */
+            auto _currentToPreviousTransform = _previousToBaseTransform.inverse() * 
+                                               _currentToBaseTransform;
+
+            // create a fixed constraint between the previous and the current bodies
+            auto _fixedConstraint = _createFixedConstraint( _currentBtBody,
+                                                            _previousBtBody,
+                                                            _currentToPreviousTransform );
+
+            // save the resources in the compound
+            _bodyCompound->btBodiesInChain.push_back( _currentBtBody );
+            _bodyCompound->btConstraintsInChain.push_back( _fixedConstraint );
+            _bodyCompound->relTransformsInChain.push_back( _currentToPreviousTransform );
+
+            // register the bt resources in the world
+            m_btWorldPtr->addRigidBody( _currentBtBody );
+            m_btWorldPtr->addConstraint( _fixedConstraint, true );// disable collision between linked bodies
+
+            // and prepare for the next iteration
+            _previousBtBody = _currentBtBody;
+            _previousToBaseTransform = _currentToBaseTransform;
+        }
+
+        // and set the references related to the last body of the chain
+        _bodyCompound->btEndBody = _bodyCompound->btBodiesInChain.back();
+        _bodyCompound->endBodyToBaseTransform = _kinCollisions.back()->relTransform;
+
+        /***********************************************************************/
+
+        /* Create the constraint from the joints of this kintree body **********/
+
+        auto _nodeConstraint = _createNodeBtConstraintFromCompound( kinTreeBodyPtr,
+                                                                    _bodyCompound,
+                                                                    parentBodyCompound );
+
+        if ( _nodeConstraint )
+            m_btWorldPtr->addConstraint( _nodeConstraint, true );
+
+        /***********************************************************************/
+
+        /* Recurse for the other bodies (children of this body) ****************/
+
+        for ( size_t i = 0; i < kinTreeBodyPtr->childBodies.size(); i++ )
+            _createBtCompoundFromBodyNode( kinTreeBodyPtr->childBodies[i], _bodyCompound );
+
+        /***********************************************************************/
+
+        return _bodyCompound;
+    }
+
+    btRigidBody* TBtKinTreeAgentWrapper::_createBtRigidBodyForChain( agent::TKinTreeCollision* kinTreeCollisionPtr )
+    {
+        auto _btCollisionShapePtr = _createBtCollisionShapeSingle( kinTreeCollisionPtr );
+
+        // create initial pos/rot from kintree collision (at initialization every ...
+        // body, collision and visual are set to the corresponding pos/rot)
+        auto _rbTransform = utils::toBtTransform( kinTreeCollisionPtr->geometry.worldTransform );
         auto _rbMotionState = new btDefaultMotionState( _rbTransform );
 
-        // in case no inertia props computed (non given by user), then ...
-        // compute default props from collision shape. Mass is initialize ...
-        // in the previous method from the inertial props. If non given, then ...
-        // compute mass from shape volume and default density.
-        if ( !_hasInertialProps )
-        {
-            if ( _inertiaMass == 0.0f )
-            {
-                // @TODO: Change volume computation to a more accurate calculation ...
-                // using the actual shapes instead of the overall AABB
-                btVector3 _aabbMin;
-                btVector3 _aabbMax;
+        // @TODO: Allow the user define the density for the objects (or mass as well), ...
+        // and depending of the specified data by the user, do the required computations.
 
-                _collisionShapePtr->getAabb( _rbTransform, _aabbMin, _aabbMax );
+        // create initial properties, and compute them from the shape and density (default density for now)
+        btVector3 _inertiaDiag;
+        btScalar _inertiaMass;
+        btScalar _shapeVolume;
 
-                auto _vmin2max = _aabbMax - _aabbMin;
-                auto _dx = _vmin2max.dot( _rbTransform.getBasis().getColumn( 0 ) );
-                auto _dy = _vmin2max.dot( _rbTransform.getBasis().getColumn( 1 ) );
-                auto _dz = _vmin2max.dot( _rbTransform.getBasis().getColumn( 2 ) );
+        // compute volume from the given collision shape, and mass from volume and density
+        _shapeVolume = _computeVolumeFromShape( _btCollisionShapePtr, _rbTransform );
+        _inertiaMass = TYSOC_DEFAULT_DENSITY * _shapeVolume;
 
-                auto _volume = btFabs( _dx * _dy * _dz );
-
-                _inertiaMass = TYSOC_DEFAULT_DENSITY * _volume;
-            }
-
-            _collisionShapePtr->calculateLocalInertia( _inertiaMass, _inertiaDiag );
-        }
+        // compute inertia props for the given shape using the mass computed above
+        _btCollisionShapePtr->calculateLocalInertia( _inertiaMass, _inertiaDiag );
 
         // assemble all previous info into the struct used for rigid body creation
         btRigidBody::btRigidBodyConstructionInfo _rbConstructionInfo(
                                                             _inertiaMass,
                                                             _rbMotionState,
-                                                            _collisionShapePtr,
+                                                            _btCollisionShapePtr,
                                                             _inertiaDiag );
 
         // construct the rigid body for this kintree body object
@@ -163,69 +233,25 @@ namespace bullet {
         // make sure the object is going to be simulated by forcing activation
         _rigidBodyPtr->forceActivationState( DISABLE_DEACTIVATION );
 
-        // // @DEBUG: set initial velocity to see if everything is simulating (no torques jet)
-        // _rigidBodyPtr->setLinearVelocity( utils::toBtVec3( { 0.2, 0.2, 0.2 } ) );
-
         return _rigidBodyPtr;
     }
 
-    bool TBtKinTreeAgentWrapper::_computeInertialProperties( agent::TKinTreeBody* kinTreeBodyPtr,
-                                                             btTransform& inertialFrame,
-                                                             btVector3& inertiaDiag,
-                                                             btScalar& inertiaMass )
+    btScalar TBtKinTreeAgentWrapper::_computeVolumeFromShape( btCollisionShape* collisionShapePtr,
+                                                              const btTransform& frameTransform )
     {
-        inertialFrame.setIdentity();
-        inertiaMass = 0.0f;
+        // @TODO: Change volume computation to a more accurate calculation ...
+        // using the actual shapes instead of the overall AABB
+        btVector3 _aabbMin;
+        btVector3 _aabbMax;
 
-        // @WIP
+        collisionShapePtr->getAabb( frameTransform, _aabbMin, _aabbMax );
 
-        return false;
-    }
+        auto _vmin2max = _aabbMax - _aabbMin;
+        auto _dx = _vmin2max.dot( frameTransform.getBasis().getColumn( 0 ) );
+        auto _dy = _vmin2max.dot( frameTransform.getBasis().getColumn( 1 ) );
+        auto _dz = _vmin2max.dot( frameTransform.getBasis().getColumn( 2 ) );
 
-    btCollisionShape* TBtKinTreeAgentWrapper::_createBtCollisionShape( agent::TKinTreeBody* kinTreeBodyPtr,
-                                                                       bool compensateLocalInertialFrame,
-                                                                       const btTransform& inertialLocalFrame )
-    {
-        btCollisionShape* _btCollisionShape = NULL;
-
-        auto _kinTreeCollisions = kinTreeBodyPtr->childCollisions;
-
-        /* @DOCS */
-        // create a single collision shape out of all collisions attached to the body
-        auto _compoundCollisionShape = new btCompoundShape();
-        for ( size_t i = 0; i < _kinTreeCollisions.size(); i++ )
-        {
-            auto _collisionShape = _createBtCollisionShapeSingle( _kinTreeCollisions[i] );
-            if ( !_collisionShape )
-                continue;
-
-            if ( compensateLocalInertialFrame )
-            {
-                /* @DOCS */
-                // construct the transform from the collision frame to the ...
-                // inertial frame, which is not aligned to the body frame, as ...
-                // the inertial frame had to be compensated to be axis-aligned ...
-                // with the principal axes of inertia (given by user inertia props)
-                auto _tfCollisionToBody = utils::toBtTransform( _kinTreeCollisions[i]->relTransform );
-                auto _tfCollisionToInertial = inertialLocalFrame.inverse() * _tfCollisionToBody;
-                // and add the shape to the compound according to this transform
-                _compoundCollisionShape->addChildShape( _tfCollisionToInertial,
-                                                        _collisionShape );
-            }
-            else
-            {
-                /* @DOCS */
-                // construct the transform from the collision frame to the ...
-                // inertial frame, which in this case is the same as the body ...
-                // frame, so the transform is the same
-                auto _tfCollisionToInertial = utils::toBtTransform( _kinTreeCollisions[i]->relTransform );
-                // and add the shape to the compound according to this transform
-                _compoundCollisionShape->addChildShape( _tfCollisionToInertial,
-                                                        _collisionShape );
-            }
-        }
-
-        return _compoundCollisionShape;
+        return btFabs( _dx * _dy * _dz );
     }
 
     btCollisionShape* TBtKinTreeAgentWrapper::_createBtCollisionShapeSingle( agent::TKinTreeCollision* kinTreeCollisionPtr )
@@ -265,22 +291,48 @@ namespace bullet {
         return _collisionShapePtr;
     }
 
-    btTypedConstraint* TBtKinTreeAgentWrapper::_createBtConstraint( agent::TKinTreeBody* kinTreeBodyPtr,
-                                                                    btRigidBody* currentBtBodyPtr,
-                                                                    btRigidBody* parentBtBodyPtr )
+    btTypedConstraint* TBtKinTreeAgentWrapper::_createNodeBtConstraintFromCompound( agent::TKinTreeBody* kinTreeBodyPtr,
+                                                                                    TBtBodyCompound* currentBodyCompound,
+                                                                                    TBtBodyCompound* parentBodyCompound )
     {
         btTypedConstraint* _btConstraint = NULL;
 
+        // Declare some variables we will use in all cases
+        TMat4 _firstInCurrentToLastInParentTransform = TMat4();
+        btRigidBody* _currentFirstBtBodyPtr = currentBodyCompound->btStartBody;
+        btRigidBody* _parentEndBtBodyPtr = NULL;
+
+        // compute the transform from the first body in the current chain (current ...
+        // compound) to the end body of the parent chain (parent compound). If no ...
+        // parent, just pass an identity matrix, and NULL as parent
+        if ( parentBodyCompound )
+        {
+            _parentEndBtBodyPtr = parentBodyCompound->btEndBody;
+
+            auto _baseToParentTransform = kinTreeBodyPtr->relTransform;
+            auto _startBodyToBaseTransform = currentBodyCompound->startBodyToBaseTransform;
+            auto _startBodyToParentTransform = _baseToParentTransform * _startBodyToBaseTransform;
+
+            auto _parentEndBodyToParentBaseTransform = parentBodyCompound->endBodyToBaseTransform;
+            auto _parentBaseToParentEndBodyTransform = _parentEndBodyToParentBaseTransform.inverse();
+
+            auto _firstInCurrentToLastInParentTransform = _parentBaseToParentEndBodyTransform * _startBodyToParentTransform;
+        }
+
         if ( kinTreeBodyPtr->childJoints.size() == 0 )
         {
-            // create a fixed joint, as the related body has no dofs
-            _btConstraint = _createFixedConstraint( kinTreeBodyPtr, currentBtBodyPtr, parentBtBodyPtr );
+            
+            // Create a fixed joint, as the related body has no dofs 
+            _btConstraint = _createFixedConstraint( _currentFirstBtBodyPtr, 
+                                                    _parentEndBtBodyPtr, 
+                                                    _firstInCurrentToLastInParentTransform );
         }
         else if ( kinTreeBodyPtr->childJoints.size() == 1 )
         {
             // check the type, and create one constraint according to the type
             auto _kinTreeJointPtr = kinTreeBodyPtr->childJoints[0];
             auto _type = _kinTreeJointPtr->type;
+            // auto _type = std::string( "ball" );
 
             if ( !_kinTreeJointPtr )
             {
@@ -288,14 +340,23 @@ namespace bullet {
                 return NULL;
             }
 
+            auto _pivotInBase = _kinTreeJointPtr->relTransform.getPosition();
+            auto _axisInBase = _kinTreeJointPtr->axis;
+
+            auto _baseToStartBodyTransform = currentBodyCompound->baseToStartBodyTransform;
+            auto _pivotInCurrentStartBody = _baseToStartBodyTransform.getRotation() * _pivotInBase +
+                                            _baseToStartBodyTransform.getPosition();
+            auto _axisInCurrentStartBody = _baseToStartBodyTransform.getRotation() *
+                                           _axisInBase;
+
             if ( _type == "world" || _type == "fixed" )
             {
                 // attached to world, so fixed
-                if ( parentBtBodyPtr )
+                if ( parentBodyCompound )
                     std::cout << "WARNING> body: " << kinTreeBodyPtr->name 
                               << " is attached to world, but it has a parent???" << std::endl;
 
-                _btConstraint = _createFixedConstraint( kinTreeBodyPtr, currentBtBodyPtr, NULL );
+                _btConstraint = _createFixedConstraint( _currentFirstBtBodyPtr, NULL, TMat4() );
             }
             else if ( _type == "free" || _type == "floating" )
             {
@@ -304,15 +365,30 @@ namespace bullet {
             }
             else if ( _type == "hinge" || _type == "continuous" || _type == "revolute" )
             {
-                _btConstraint = _createHingeConstraint( _kinTreeJointPtr, currentBtBodyPtr, parentBtBodyPtr );
+                _btConstraint = _createHingeConstraint( _currentFirstBtBodyPtr, 
+                                                        _parentEndBtBodyPtr, 
+                                                        _pivotInCurrentStartBody,
+                                                        _axisInCurrentStartBody,
+                                                        _firstInCurrentToLastInParentTransform,
+                                                        { _kinTreeJointPtr->lowerLimit,
+                                                          _kinTreeJointPtr->upperLimit } );
             }
             else if ( _type == "slide" || _type == "prismatic" )
             {
-                _btConstraint = _createSliderConstraint( _kinTreeJointPtr, currentBtBodyPtr, parentBtBodyPtr );
+                _btConstraint = _createSliderConstraint( _currentFirstBtBodyPtr, 
+                                                         _parentEndBtBodyPtr,
+                                                         _pivotInCurrentStartBody,
+                                                         _axisInCurrentStartBody,
+                                                         _firstInCurrentToLastInParentTransform,
+                                                         { _kinTreeJointPtr->lowerLimit,
+                                                           _kinTreeJointPtr->upperLimit } );
             }
             else if ( _type == "ball" || _type == "spheric" || _type == "spherical" )
             {
-                _btConstraint = _createPoint2PointConstraint( _kinTreeJointPtr, currentBtBodyPtr, parentBtBodyPtr );
+                _btConstraint = _createPoint2PointConstraint( _currentFirstBtBodyPtr,
+                                                              _parentEndBtBodyPtr,
+                                                              _pivotInCurrentStartBody,
+                                                              _firstInCurrentToLastInParentTransform );
             }
             else
             {
@@ -322,15 +398,18 @@ namespace bullet {
         else
         {
             // create a single generic constraint with limits|dofs configured appropriately
-            _btConstraint = _createGenericConstraintFromJoints( kinTreeBodyPtr, currentBtBodyPtr, parentBtBodyPtr );
+            _btConstraint = _createGenericConstraintFromJoints( _currentFirstBtBodyPtr, 
+                                                                _parentEndBtBodyPtr,
+                                                                kinTreeBodyPtr->childJoints,
+                                                                _firstInCurrentToLastInParentTransform );
         }
 
         return _btConstraint;
     }
 
-    btGeneric6DofConstraint* TBtKinTreeAgentWrapper::_createFixedConstraint( agent::TKinTreeBody* kinTreeBodyPtr,
-                                                                             btRigidBody* currentBtBodyPtr,
-                                                                             btRigidBody* parentBtBodyPtr )
+    btGeneric6DofConstraint* TBtKinTreeAgentWrapper::_createFixedConstraint( btRigidBody* currentBtBodyPtr,
+                                                                             btRigidBody* parentBtBodyPtr,
+                                                                             const TMat4& currentToParentTransform )
     {
         btGeneric6DofConstraint* _btConstraint = NULL;
 
@@ -338,7 +417,7 @@ namespace bullet {
         {
             // Just use '''currentBtBodyPtr=bodyB''' for fixed-constraint creation
             _btConstraint = new btGeneric6DofConstraint( *currentBtBodyPtr,
-                                                         utils::toBtTransform( tysoc::TMat4() ),
+                                                         utils::toBtTransform( currentToParentTransform ),
                                                          true );
 
             // Lock all 6 axes
@@ -355,7 +434,7 @@ namespace bullet {
             // for fixed-constraint creation
 
             auto _frameInA = utils::toBtTransform( tysoc::TMat4() ); // Identity, fixed in own body frame
-            auto _frameInB = utils::toBtTransform( kinTreeBodyPtr->relTransform );// Relative transform of body to parent
+            auto _frameInB = utils::toBtTransform( currentToParentTransform );// Relative transform of body to parent
 
             _btConstraint = new btGeneric6DofConstraint( *currentBtBodyPtr,
                                                          *parentBtBodyPtr,
@@ -375,9 +454,12 @@ namespace bullet {
         return _btConstraint;
     }
 
-    btHingeConstraint* TBtKinTreeAgentWrapper::_createHingeConstraint( agent::TKinTreeJoint* kinTreeJointPtr,
-                                                                       btRigidBody* currentBtBodyPtr,
-                                                                       btRigidBody* parentBtBodyPtr )
+    btHingeConstraint* TBtKinTreeAgentWrapper::_createHingeConstraint( btRigidBody* currentBtBodyPtr,
+                                                                       btRigidBody* parentBtBodyPtr,
+                                                                       const TVec3& pivotInCurrent,
+                                                                       const TVec3& axisInCurrent,
+                                                                       const TMat4& currentToParentTransform,
+                                                                       const TVec2& limits )
     {
         btHingeConstraint* _btConstraint = NULL;
 
@@ -385,28 +467,20 @@ namespace bullet {
         {
             // Just use '''currentBtBodyPtr=bodyA''' for hinge-constraint creation
             _btConstraint = new btHingeConstraint( *currentBtBodyPtr, 
-                                                   utils::toBtVec3( kinTreeJointPtr->relTransform.getPosition() ),
-                                                   utils::toBtVec3( kinTreeJointPtr->axis ) );
+                                                   utils::toBtVec3( pivotInCurrent ),
+                                                   utils::toBtVec3( axisInCurrent ) );
         }
         else
         {
             // Use '''parentBtBodyPtr=bodyB''' and '''currentBtBodyPtr=bodyA''' ...
             // for hinge-constraint creation
 
-            auto _kinTreeBodyPtr = kinTreeJointPtr->parentBodyPtr;
-            if ( !_kinTreeBodyPtr )
-            {
-                std::cout << "WARNING> It seems you left a joint: " 
-                          << kinTreeJointPtr->name << " without its parent" << std::endl;
-                return NULL;
-            }
+            auto _axisInA = axisInCurrent;
+            auto _pivotInA = pivotInCurrent;
 
-            auto _axisInA = kinTreeJointPtr->axis;
-            auto _pivotInA = kinTreeJointPtr->relTransform.getPosition();
-
-            auto _axisInB = _kinTreeBodyPtr->relTransform.getRotation() * _axisInA;
-            auto _pivotInB = _kinTreeBodyPtr->relTransform.getRotation() * _pivotInA +
-                             _kinTreeBodyPtr->relTransform.getPosition();
+            auto _axisInB = currentToParentTransform.getRotation() * axisInCurrent;
+            auto _pivotInB = currentToParentTransform.getRotation() * pivotInCurrent +
+                                  currentToParentTransform.getPosition();
 
             _btConstraint = new btHingeConstraint( *currentBtBodyPtr, 
                                                    *parentBtBodyPtr,
@@ -416,15 +490,17 @@ namespace bullet {
                                                    utils::toBtVec3( _axisInB ) );
         }
 
-        _btConstraint->setLimit( kinTreeJointPtr->lowerLimit * TYSOC_PI / 180.0, 
-                                 kinTreeJointPtr->upperLimit * TYSOC_PI / 180.0 );
+        _btConstraint->setLimit( limits.x * TYSOC_PI / 180.0, limits.y * TYSOC_PI / 180.0 );
 
         return _btConstraint;
     }
 
-    btSliderConstraint* TBtKinTreeAgentWrapper::_createSliderConstraint( agent::TKinTreeJoint* kinTreeJointPtr,
-                                                                         btRigidBody* currentBtBodyPtr,
-                                                                         btRigidBody* parentBtBodyPtr )
+    btSliderConstraint* TBtKinTreeAgentWrapper::_createSliderConstraint( btRigidBody* currentBtBodyPtr,
+                                                                         btRigidBody* parentBtBodyPtr,
+                                                                         const TVec3& pivotInCurrent,
+                                                                         const TVec3& axisInCurrent,
+                                                                         const TMat4& currentToParentTransform,
+                                                                         const TVec2& limits )
     {
         btSliderConstraint* _btConstraint = NULL;
 
@@ -435,8 +511,8 @@ namespace bullet {
             // it seems that the transform implicitly defines the sliding axis
 
             auto _transform = tysoc::TMat4();
-            _transform.setPosition( kinTreeJointPtr->relTransform.getPosition() );
-            _transform.setRotation( tysoc::shortestArcQuat( { 1, 0, 0 }, kinTreeJointPtr->axis ) );
+            _transform.setPosition( pivotInCurrent );
+            _transform.setRotation( tysoc::shortestArcQuat( { 1, 0, 0 }, axisInCurrent ) );
 
             _btConstraint = new btSliderConstraint( *currentBtBodyPtr,
                                                     utils::toBtTransform( _transform ),
@@ -447,23 +523,16 @@ namespace bullet {
             // Use '''parentBtBodyPtr=bodyB''' and '''currentBtBodyPtr=bodyA''' ...
             // for slider-constraint creation
 
-            auto _kinTreeBodyPtr = kinTreeJointPtr->parentBodyPtr;
-            if ( !_kinTreeBodyPtr )
-            {
-                std::cout << "WARNING> It seems you left a joint: " 
-                          << kinTreeJointPtr->name << " without its parent" << std::endl;
-                return NULL;
-            }
+            auto _axisInA = axisInCurrent;
+            auto _pivotInA = pivotInCurrent;
 
-            auto _axisInA = kinTreeJointPtr->axis;
-            auto _pivotInA = kinTreeJointPtr->relTransform.getPosition();
             auto _frameInA = tysoc::TMat4();
             _frameInA.setPosition( _pivotInA );
             _frameInA.setRotation( tysoc::shortestArcQuat( { 1, 0, 0 }, _axisInA ) );
 
-            auto _axisInB = _kinTreeBodyPtr->relTransform.getRotation() * _axisInA;
-            auto _pivotInB = _kinTreeBodyPtr->relTransform.getRotation() * _pivotInA +
-                             _kinTreeBodyPtr->relTransform.getPosition();
+            auto _axisInB = currentToParentTransform.getRotation() * _axisInA;
+            auto _pivotInB = currentToParentTransform.getRotation() * _pivotInA +
+                             currentToParentTransform.getPosition();
             auto _frameInB = tysoc::TMat4();
             _frameInB.setPosition( _pivotInB );
             _frameInB.setRotation( tysoc::shortestArcQuat( { 1, 0, 0 }, _axisInB ) );
@@ -475,17 +544,18 @@ namespace bullet {
                                                     true );
         }
 
-        _btConstraint->setLowerLinLimit( kinTreeJointPtr->lowerLimit );
-        _btConstraint->setUpperLinLimit( kinTreeJointPtr->upperLimit );
+        _btConstraint->setLowerLinLimit( limits.x );
+        _btConstraint->setUpperLinLimit( limits.y );
         _btConstraint->setLowerAngLimit( 0 );
         _btConstraint->setUpperAngLimit( 0 );
 
         return _btConstraint;
     }
 
-    btPoint2PointConstraint* TBtKinTreeAgentWrapper::_createPoint2PointConstraint( agent::TKinTreeJoint* kinTreeJointPtr,
-                                                                                   btRigidBody* currentBtBodyPtr,
-                                                                                   btRigidBody* parentBtBodyPtr )
+    btPoint2PointConstraint* TBtKinTreeAgentWrapper::_createPoint2PointConstraint( btRigidBody* currentBtBodyPtr,
+                                                                                   btRigidBody* parentBtBodyPtr,
+                                                                                   const TVec3& pivotInCurrent,
+                                                                                   const TMat4& currentToParentTransform )
     {
         // @TODO: Replace with btGeneric6DofSpring2Constraint, as in :
         // https://github.com/xbpeng/DeepLoco/blob/c4e2db93fefcd49ee7a2481918e2f7db1c1da733/sim/World.cpp#L755
@@ -496,24 +566,16 @@ namespace bullet {
         {
             // Just use '''currentBtBodyPtr=bodyA''' for hinge-constraint creation
             _btConstraint = new btPoint2PointConstraint( *currentBtBodyPtr, 
-                                                         utils::toBtVec3( kinTreeJointPtr->relTransform.getPosition() ) );
+                                                         utils::toBtVec3( pivotInCurrent ) );
         }
         else
         {
             // Use '''parentBtBodyPtr=bodyB''' and '''currentBtBodyPtr=bodyA''' ...
             // for hinge-constraint creation
 
-            auto _kinTreeBodyPtr = kinTreeJointPtr->parentBodyPtr;
-            if ( !_kinTreeBodyPtr )
-            {
-                std::cout << "WARNING> It seems you left a joint: " 
-                          << kinTreeJointPtr->name << " without its parent" << std::endl;
-                return NULL;
-            }
-
-            auto _pivotInA = kinTreeJointPtr->relTransform.getPosition();
-            auto _pivotInB = _kinTreeBodyPtr->relTransform.getRotation() * _pivotInA +
-                             _kinTreeBodyPtr->relTransform.getPosition();
+            auto _pivotInA = pivotInCurrent;
+            auto _pivotInB = currentToParentTransform.getRotation() * _pivotInA +
+                             currentToParentTransform.getPosition();
 
             _btConstraint = new btPoint2PointConstraint( *currentBtBodyPtr, 
                                                          *parentBtBodyPtr,
@@ -524,18 +586,18 @@ namespace bullet {
         return _btConstraint;
     }
 
-    btGeneric6DofConstraint* TBtKinTreeAgentWrapper::_createGenericConstraintFromJoints( agent::TKinTreeBody* kinTreeBodyPtr,
-                                                                                         btRigidBody* currentBtBodyPtr,
-                                                                                         btRigidBody* parentBtBodyPtr )
+    btGeneric6DofConstraint* TBtKinTreeAgentWrapper::_createGenericConstraintFromJoints( btRigidBody* currentBtBodyPtr,
+                                                                                         btRigidBody* parentBtBodyPtr,
+                                                                                         const std::vector< agent::TKinTreeJoint* >& joints,
+                                                                                         const TMat4& currentToParentTransform )
     {
         btGeneric6DofConstraint* _btConstraint = NULL;
 
         // Grab only the DOFs whose axes map to basis vectors, only ...
         // those that consist of 'slide' or 'hinge' joints, and max 6 joints
-        auto _joints = kinTreeBodyPtr->childJoints;
         std::vector< int > _dofIndices;
         std::vector< tysoc::TVec2 > _dofLimits;
-        for ( size_t q = 0; q < _joints.size(); q++ )
+        for ( size_t q = 0; q < joints.size(); q++ )
         {
             if ( q > 5 )
             {
@@ -544,54 +606,54 @@ namespace bullet {
                 break;
             }
 
-            if ( _joints[q]->type != "hinge" && _joints[q]->type != "slide" )
+            if ( joints[q]->type != "hinge" && joints[q]->type != "slide" )
             {
-                std::cout << "WARNING> tried to configure " << _joints[q]->type
+                std::cout << "WARNING> tried to configure " << joints[q]->type
                           << " for generic joint, which is not supported (only slide and hinge)" << std::endl;
                 continue;
             }
 
             // map joint AXIS to DOF index
-            if ( _joints[q]->type == "slide" )
+            if ( joints[q]->type == "slide" )
             {
-                if ( std::fabs( _joints[q]->axis.x ) > 0 )
+                if ( std::fabs( joints[q]->axis.x ) > 0 )
                 {
                     // std::cout << "LOG> Setting dof: " << "lin-x" << std::endl;
                     _dofIndices.push_back( 0 );
-                    _dofLimits.push_back( { _joints[q]->lowerLimit, _joints[q]->upperLimit } );
+                    _dofLimits.push_back( { joints[q]->lowerLimit, joints[q]->upperLimit } );
                 }
-                else if ( std::fabs( _joints[q]->axis.y ) > 0 )
+                else if ( std::fabs( joints[q]->axis.y ) > 0 )
                 {
                     // std::cout << "LOG> Setting dof: " << "lin-y" << std::endl;
                     _dofIndices.push_back( 1 );
-                    _dofLimits.push_back( { _joints[q]->lowerLimit, _joints[q]->upperLimit } );
+                    _dofLimits.push_back( { joints[q]->lowerLimit, joints[q]->upperLimit } );
                 }
-                else if ( std::fabs( _joints[q]->axis.z ) > 0 )
+                else if ( std::fabs( joints[q]->axis.z ) > 0 )
                 {
                     // std::cout << "LOG> Setting dof: " << "lin-z" << std::endl;
                     _dofIndices.push_back( 2 );
-                    _dofLimits.push_back( { _joints[q]->lowerLimit, _joints[q]->upperLimit } );
+                    _dofLimits.push_back( { joints[q]->lowerLimit, joints[q]->upperLimit } );
                 }
             }
             else
             {
-                if ( std::fabs( _joints[q]->axis.x ) > 0 )
+                if ( std::fabs( joints[q]->axis.x ) > 0 )
                 {
                     // std::cout << "LOG> Setting dof: " << "ang-x" << std::endl;
                     _dofIndices.push_back( 3 );
-                    _dofLimits.push_back( { _joints[q]->lowerLimit, _joints[q]->upperLimit } );
+                    _dofLimits.push_back( { joints[q]->lowerLimit, joints[q]->upperLimit } );
                 }
-                else if ( std::fabs( _joints[q]->axis.y ) > 0 )
+                else if ( std::fabs( joints[q]->axis.y ) > 0 )
                 {
                     // std::cout << "LOG> Setting dof: " << "ang-y" << std::endl;
                     _dofIndices.push_back( 4 );
-                    _dofLimits.push_back( { _joints[q]->lowerLimit, _joints[q]->upperLimit } );
+                    _dofLimits.push_back( { joints[q]->lowerLimit, joints[q]->upperLimit } );
                 }
-                else if ( std::fabs( _joints[q]->axis.z ) > 0 )
+                else if ( std::fabs( joints[q]->axis.z ) > 0 )
                 {
                     // std::cout << "LOG> Setting dof: " << "ang-z" << std::endl;
                     _dofIndices.push_back( 5 );
-                    _dofLimits.push_back( { _joints[q]->lowerLimit, _joints[q]->upperLimit } );
+                    _dofLimits.push_back( { joints[q]->lowerLimit, joints[q]->upperLimit } );
                 }
             }
         }
@@ -624,7 +686,7 @@ namespace bullet {
             // for fixed-constraint creation
 
             auto _frameInA = utils::toBtTransform( tysoc::TMat4() ); // Identity, fixed in own body frame
-            auto _frameInB = utils::toBtTransform( kinTreeBodyPtr->relTransform );// Relative transform of body to parent
+            auto _frameInB = utils::toBtTransform( currentToParentTransform );// Relative transform of body to parent
 
             _btConstraint = new btGeneric6DofConstraint( *currentBtBodyPtr,
                                                          *parentBtBodyPtr,
