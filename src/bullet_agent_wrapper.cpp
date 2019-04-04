@@ -323,8 +323,8 @@ namespace bullet {
         // make sure the object is going to be simulated by forcing activation
         _rigidBodyPtr->forceActivationState( DISABLE_DEACTIVATION );
 
-        // and set the initial velocity
-        _rigidBodyPtr->setLinearVelocity( utils::toBtVec3( { 0.1f, 0.1f, 0.1f } ) );
+        // // and set the initial velocity
+        // _rigidBodyPtr->setLinearVelocity( utils::toBtVec3( { 0.1f, 0.1f, 0.1f } ) );
 
         return _rigidBodyPtr;
     }
@@ -409,7 +409,7 @@ namespace bullet {
             auto _parentEndBodyToParentBaseTransform = parentBodyCompound->endBodyToBaseTransform;
             auto _parentBaseToParentEndBodyTransform = _parentEndBodyToParentBaseTransform.inverse();
 
-            auto _firstInCurrentToLastInParentTransform = _parentBaseToParentEndBodyTransform * _startBodyToParentTransform;
+            _firstInCurrentToLastInParentTransform = _parentBaseToParentEndBodyTransform * _startBodyToParentTransform;
         }
 
         if ( kinTreeBodyPtr->childJoints.size() == 0 )
@@ -500,11 +500,11 @@ namespace bullet {
         return _btConstraint;
     }
 
-    btGeneric6DofConstraint* TBtKinTreeAgentWrapper::_createFixedConstraint( btRigidBody* currentBtBodyPtr,
-                                                                             btRigidBody* parentBtBodyPtr,
-                                                                             const TMat4& currentToParentTransform )
+    btTypedConstraint* TBtKinTreeAgentWrapper::_createFixedConstraint( btRigidBody* currentBtBodyPtr,
+                                                                       btRigidBody* parentBtBodyPtr,
+                                                                       const TMat4& currentToParentTransform )
     {
-        btGeneric6DofConstraint* _btConstraint = NULL;
+        btTypedConstraint* _btConstraint = NULL;
 
         if ( !parentBtBodyPtr )
         {
@@ -514,34 +514,48 @@ namespace bullet {
                                                          true );
 
             // Lock all 6 axes
-            _btConstraint->setLimit( 0, 0, 0 );
-            _btConstraint->setLimit( 1, 0, 0 );
-            _btConstraint->setLimit( 2, 0, 0 );
-            _btConstraint->setLimit( 3, 0, 0 );
-            _btConstraint->setLimit( 4, 0, 0 );
-            _btConstraint->setLimit( 5, 0, 0 );
+            reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 0, 0, 0 );
+            reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 1, 0, 0 );
+            reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 2, 0, 0 );
+            reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 3, 0, 0 );
+            reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 4, 0, 0 );
+            reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 5, 0, 0 );
         }
         else
         {
             // Use '''parentBtBodyPtr=bodyB''' and '''currentBtBodyPtr=bodyA''' ...
             // for fixed-constraint creation
 
-            auto _frameInA = utils::toBtTransform( tysoc::TMat4() ); // Identity, fixed in own body frame
-            auto _frameInB = utils::toBtTransform( currentToParentTransform );// Relative transform of body to parent
+            auto _cframeInParent = utils::toBtTransform( tysoc::TMat4() ); // Identity, fixed in own body frame
+            auto _cframeInChild = utils::toBtTransform( currentToParentTransform.inverse() );// Relative transform of body to parent
 
-            _btConstraint = new btGeneric6DofConstraint( *currentBtBodyPtr,
-                                                         *parentBtBodyPtr,
-                                                         _frameInA,
-                                                         _frameInB,
-                                                         false );
+            _btConstraint = new btHingeConstraint( *currentBtBodyPtr,
+                                                   *parentBtBodyPtr,
+                                                   _cframeInChild.getOrigin(),
+                                                   _cframeInParent.getOrigin(),
+                                                   _cframeInChild.getBasis().getColumn( 2 ),
+                                                   _cframeInParent.getBasis().getColumn( 2 ) );
 
-            // Lock all 6 axes
-            _btConstraint->setLimit( 0, 0, 0 );
-            _btConstraint->setLimit( 1, 0, 0 );
-            _btConstraint->setLimit( 2, 0, 0 );
-            _btConstraint->setLimit( 3, 0, 0 );
-            _btConstraint->setLimit( 4, 0, 0 );
-            _btConstraint->setLimit( 5, 0, 0 );
+            reinterpret_cast< btHingeConstraint* >( _btConstraint )->setLimit( 0, 0 );
+
+//             _btConstraint = new btFixedConstraint( *currentBtBodyPtr,
+//                                                    *parentBtBodyPtr,
+//                                                    _cframeInChild,
+//                                                    _cframeInParent );
+
+//             _btConstraint = new btGeneric6DofConstraint( *currentBtBodyPtr,
+//                                                          *parentBtBodyPtr,
+//                                                         _cframeInChild,
+//                                                         _cframeInParent,
+//                                                         false );
+// 
+//             // Lock all 6 axes
+//             reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 0, 0, 0 );
+//             reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 1, 0, 0 );
+//             reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 2, 0, 0 );
+//             reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 3, 0, 0 );
+//             reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 4, 0, 0 );
+//             reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 5, 0, 0 );
         }
 
         return _btConstraint;
@@ -562,6 +576,8 @@ namespace bullet {
             _btConstraint = new btHingeConstraint( *currentBtBodyPtr, 
                                                    utils::toBtVec3( pivotInCurrent ),
                                                    utils::toBtVec3( axisInCurrent ) );
+
+            tysoc::log( "Created hinge constraint for single body" );
         }
         else
         {

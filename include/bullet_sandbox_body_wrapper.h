@@ -66,9 +66,9 @@ namespace bullet {
 
         // Helper constraint-creation methods
 
-        btGeneric6DofConstraint* _createFixedConstraint( sandbox::TBody* bodyPtr,
-                                                         btRigidBody* currentBtBodyPtr,
-                                                         btRigidBody* parentBtBodyPtr );
+        btTypedConstraint* _createFixedConstraint( sandbox::TBody* bodyPtr,
+                                                   btRigidBody* currentBtBodyPtr,
+                                                   btRigidBody* parentBtBodyPtr );
 
         btHingeConstraint* _createHingeConstraint( sandbox::TJoint* jointPtr,
                                                    btRigidBody* currentBtBodyPtr,
@@ -93,17 +93,9 @@ namespace bullet {
         */
         void _updateBodyRecursively( sandbox::TBody* bodyPtr );
 
-        /**
-        *   Initialize the body information recursively from user data back into simulation
-        *
-        *   @param bodyPtr  The body we want to initialize its data
-        */
-        void _initBodyRecursively( sandbox::TBody* bodyPtr );
-
         protected :
 
         void _initializeInternal() override;
-        void _initializeWorldTransformsInternal() override;
         void _resetInternal() override;
         void _preStepInternal() override;
         void _postStepInternal() override;

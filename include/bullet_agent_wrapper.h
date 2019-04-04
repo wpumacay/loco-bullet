@@ -120,9 +120,9 @@ namespace bullet {
 
         /****** Helper constraint-creation methods ******/
 
-        btGeneric6DofConstraint* _createFixedConstraint( btRigidBody* currentBtBodyPtr,
-                                                         btRigidBody* parentBtBodyPtr,
-                                                         const TMat4& currentToParentTransform );
+        btTypedConstraint* _createFixedConstraint( btRigidBody* currentBtBodyPtr,
+                                                   btRigidBody* parentBtBodyPtr,
+                                                   const TMat4& currentToParentTransform );
 
         btHingeConstraint* _createHingeConstraint( btRigidBody* currentBtBodyPtr,
                                                    btRigidBody* parentBtBodyPtr,

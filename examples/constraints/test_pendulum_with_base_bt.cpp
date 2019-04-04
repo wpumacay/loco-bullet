@@ -9,19 +9,19 @@ int main()
 
     auto _bbase = new tysoc::sandbox::TBody();
     _bbase->name = "bbase";
-    _bbase->type = "sphere";
-    _bbase->mass = 1.0;
-    _bbase->size = { 0.021, 0.021, 0.021 };
+    _bbase->type = "box";
+    _bbase->mass = 5.0;
+    _bbase->size = { 0.2, 0.05, 0.05 };
     _bbase->worldTransform.setPosition( { 0.0, 0.0, 2.5 } );
-    _bbase->vel = { 0.1, 0.1, 0.1 };
+    _bbase->vel = { 0.4, 0.4, 0.4 };
 
     auto _jhinge1 = new tysoc::sandbox::TJoint();
     _jhinge1->name = "jhinge1";
     _jhinge1->type = "hinge";
     _jhinge1->axis = { 0, 1, 0 };
-    _jhinge1->limits = { -0.5 * TYSOC_PI, 0.5 * TYSOC_PI };
+    _jhinge1->limits = { 0.5 * TYSOC_PI, -0.5 * TYSOC_PI };
     _jhinge1->parentBodyPtr = _bbase;
-     _bbase->joints.push_back( _jhinge1 );
+    _bbase->joints.push_back( _jhinge1 );
 
     auto _bpole = new tysoc::sandbox::TBody();
     _bpole->name = "bpole";
@@ -32,7 +32,7 @@ int main()
     _bpole->parentBodyPtr = _bbase;
     _bbase->bodies.push_back( _bpole );
     _bpole->relTransform.setPosition( { 0.0, 0.0, 0.25 } );
-    _bpole->vel = { 0.1, 0.1, 0.1 };
+    _bpole->vel = { 0.4, 0.4, 0.4 };
 
     auto _bplane = new tysoc::sandbox::TBody();
     _bplane->name = "bplane";

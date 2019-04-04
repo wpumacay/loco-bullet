@@ -35,14 +35,6 @@ namespace bullet {
             std::cout << "WARNING> did not set root body properly" << std::endl;
     }
 
-    void TBtBodyWrapper::_initializeWorldTransformsInternal()
-    {
-        if ( !m_bodyPtr )
-            return;
-
-        _initBodyRecursively( m_bodyPtr );
-    }
-
     void TBtBodyWrapper::_resetInternal()
     {
         if ( !m_bodyPtr )
@@ -360,11 +352,11 @@ namespace bullet {
         return _btConstraint;
     }
 
-    btGeneric6DofConstraint* TBtBodyWrapper::_createFixedConstraint( sandbox::TBody* bodyPtr,
-                                                                     btRigidBody* currentBtBodyPtr,
-                                                                     btRigidBody* parentBtBodyPtr )
+    btTypedConstraint* TBtBodyWrapper::_createFixedConstraint( sandbox::TBody* bodyPtr,
+                                                               btRigidBody* currentBtBodyPtr,
+                                                               btRigidBody* parentBtBodyPtr )
     {
-        btGeneric6DofConstraint* _btConstraint = NULL;
+        btTypedConstraint* _btConstraint = NULL;
 
         if ( !parentBtBodyPtr )
         {
@@ -374,12 +366,12 @@ namespace bullet {
                                                          true );
 
             // Lock all 6 axes
-            _btConstraint->setLimit( 0, 0, 0 );
-            _btConstraint->setLimit( 1, 0, 0 );
-            _btConstraint->setLimit( 2, 0, 0 );
-            _btConstraint->setLimit( 3, 0, 0 );
-            _btConstraint->setLimit( 4, 0, 0 );
-            _btConstraint->setLimit( 5, 0, 0 );
+            reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 0, 0, 0 );
+            reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 1, 0, 0 );
+            reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 2, 0, 0 );
+            reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 3, 0, 0 );
+            reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 4, 0, 0 );
+            reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 5, 0, 0 );
 
             tysoc::log( std::string( "Created fixed constraint for single body: " ) +
                         bodyPtr->name );
@@ -387,24 +379,38 @@ namespace bullet {
         else
         {
             // Use '''parentBtBodyPtr=bodyB''' and '''currentBtBodyPtr=bodyA''' ...
-            // for fixed-constraint creation
+            // for fixed-constraint creation. Use btFixedConstraint for this case
 
-            auto _frameInA = utils::toBtTransform( tysoc::TMat4() ); // Identity, fixed in own body frame
-            auto _frameInB = utils::toBtTransform( bodyPtr->relTransform );// Relative transform of body to parent
+            auto _cframeInParent = utils::toBtTransform( tysoc::TMat4() ); // Identity, fixed in own body frame
+            auto _cframeInChild = utils::toBtTransform( bodyPtr->relTransform.inverse() );// Relative transform of body to parent
 
-            _btConstraint = new btGeneric6DofConstraint( *currentBtBodyPtr,
-                                                         *parentBtBodyPtr,
-                                                         _frameInA,
-                                                         _frameInB,
-                                                         true );
+//             _btConstraint = new btHingeConstraint( *currentBtBodyPtr,
+//                                                    *parentBtBodyPtr,
+//                                                    _cframeInChild.getOrigin(),
+//                                                    _cframeInParent.getOrigin(),
+//                                                    _cframeInChild.getBasis().getColumn( 2 ),
+//                                                    _cframeInParent.getBasis().getColumn( 2 ) );
+// 
+//             reinterpret_cast< btHingeConstraint* >( _btConstraint )->setLimit( 0, 0 );
 
-            // Lock all 6 axes
-            _btConstraint->setLimit( 0, 0, 0 );
-            _btConstraint->setLimit( 1, 0, 0 );
-            _btConstraint->setLimit( 2, 0, 0 );
-            _btConstraint->setLimit( 3, 0, 0 );
-            _btConstraint->setLimit( 4, 0, 0 );
-            _btConstraint->setLimit( 5, 0, 0 );
+            _btConstraint = new btFixedConstraint( *parentBtBodyPtr,
+                                                   *currentBtBodyPtr,
+                                                   _cframeInParent,
+                                                   _cframeInChild );
+
+//             _btConstraint = new btGeneric6DofConstraint( *currentBtBodyPtr,
+//                                                          *parentBtBodyPtr,
+//                                                         _cframeInChild,
+//                                                         _cframeInParent,
+//                                                         false );
+// 
+//             // Lock all 6 axes
+//             reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 0, 0, 0 );
+//             reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 1, 0, 0 );
+//             reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 2, 0, 0 );
+//             reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 3, 0, 0 );
+//             reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 4, 0, 0 );
+//             reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 5, 0, 0 );
 
             tysoc::log( "Created fixed constraint between two bodies" );
         }
@@ -731,21 +737,6 @@ namespace bullet {
         else
         {
             std::cout << "WARNING> body with name: " << bodyPtr->name << " not initialized" << std::endl;
-        }
-    }
-
-    void TBtBodyWrapper::_initBodyRecursively( sandbox::TBody* bodyPtr )
-    {
-        if ( m_btBodies.find( bodyPtr->name ) != m_btBodies.end() )
-        {
-            auto _btRigidBodyPtr = m_btBodies[ bodyPtr->name ];
-            auto _rbTransform = utils::toBtTransform( bodyPtr->worldTransform );
-            
-            _btRigidBodyPtr->setWorldTransform( _rbTransform );
-
-            // and the child bodies as well
-            for ( size_t q = 0; q < bodyPtr->bodies.size(); q++ )
-                _initBodyRecursively( bodyPtr->bodies[q] );
         }
     }
 
