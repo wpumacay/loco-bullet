@@ -20,6 +20,9 @@ namespace bullet {
                                                     m_btConstraintSolverPtr,
                                                     m_btCollisionConfigurationPtr );
 
+        m_btDebugDrawer = new utils::TBtDebugDrawer();
+        m_btWorldPtr->setDebugDrawer( m_btDebugDrawer );
+
         m_btWorldPtr->setGravity( btVector3( 0, 0, -10 ) );
 
         m_runtimeType = "bullet";
@@ -88,6 +91,7 @@ namespace bullet {
             auto _btBodyWrapper = reinterpret_cast< TBtBodyWrapper* >( m_bodyWrappers[q] );
 
             _btBodyWrapper->setBtWorld( m_btWorldPtr );
+            _btBodyWrapper->setParentSimulation( this );
             _btBodyWrapper->initialize();
         }
 
@@ -135,6 +139,13 @@ namespace bullet {
 
         for ( size_t q = 0; q < m_bodyWrappers.size(); q++ )
             m_bodyWrappers[q]->postStep();
+
+        // @DEBUG: calls own debug drawing functionality
+        if ( m_btWorldPtr )
+        {
+            m_btDebugDrawer->setVisualizer( m_visualizerPtr );
+            m_btWorldPtr->debugDrawWorld();
+        }
     }
 
     void TBtSimulation::_resetInternal()

@@ -118,4 +118,68 @@ namespace utils {
         return btTransform( _basis, _origin );
     }
 
+    // Debug drawer
+
+    TBtDebugDrawer::TBtDebugDrawer()
+    {
+        m_visualizerPtr = NULL;
+        m_debugMode = btIDebugDraw::DBG_DrawWireframe | 
+                      btIDebugDraw::DBG_DrawAabb |
+                      btIDebugDraw::DBG_DrawFrames |
+                      btIDebugDraw::DBG_DrawConstraints;
+    }
+
+    TBtDebugDrawer::~TBtDebugDrawer()
+    {
+        m_visualizerPtr = NULL;
+    }
+
+    void TBtDebugDrawer::setVisualizer( viz::TIVisualizer* visualizerPtr )
+    {
+        m_visualizerPtr = visualizerPtr;
+    }
+
+    void TBtDebugDrawer::drawLine( const btVector3& from, const btVector3& to, const btVector3& color )
+    {
+        if ( !m_visualizerPtr )
+            return;
+
+        m_visualizerPtr->drawLine( fromBtVec3( from ), fromBtVec3( to ), fromBtVec3( color ) );
+    }
+
+    void TBtDebugDrawer::drawContactPoint( const btVector3& PointOnB, const btVector3& normalOnB, btScalar distance, int lifeTime, const btVector3& color )
+    {
+        if ( !m_visualizerPtr )
+            return;
+
+        m_visualizerPtr->drawLine( fromBtVec3( PointOnB ), 
+                                   fromBtVec3( PointOnB + normalOnB * distance ), 
+                                   fromBtVec3( color ) );
+
+        m_visualizerPtr->drawLine( fromBtVec3( PointOnB ), 
+                                   fromBtVec3( PointOnB + normalOnB * 0.01 ), 
+                                   { 0.2, 0.4, 0.5 } );
+    }
+
+    void TBtDebugDrawer::reportErrorWarning( const char* warningString )
+    {
+        std::cout << "WARNING> BtDebugDrawer says: " << warningString << std::endl;
+    }
+
+    void TBtDebugDrawer::draw3dText( const btVector3& location, const char* textString )
+    {
+        // do nothing
+    }
+
+    void TBtDebugDrawer::setDebugMode( int debugMode )
+    {
+        m_debugMode = debugMode;
+    }
+
+    int TBtDebugDrawer::getDebugMode() const
+    {
+        return m_debugMode;
+    }
+
+
 }}}

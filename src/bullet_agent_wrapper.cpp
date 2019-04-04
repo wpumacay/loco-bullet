@@ -60,95 +60,95 @@ namespace bullet {
             _kinBodies[i]->worldTransform = _baseWorldTransform;
         }
 
-        // @DEBUG: draw AABB for all bodies
-        if ( !m_simulationPtr )
-            return;
-
-        auto _visualizerPtr = m_simulationPtr->getVisualizer();
-
-        if ( !_visualizerPtr )
-            return;
-
-        for ( auto it = m_bodyCompounds.begin();
-                   it != m_bodyCompounds.end();
-                   it++ )
-        {
-            auto _compound = it->second;
-
-            for ( size_t i = 0; i < _compound->btBodiesInChain.size(); i++ )
-            {
-                auto _btBodyInChain = _compound->btBodiesInChain[i];
-
-                // Extract the aabb from the bullet body
-                btTransform _aabbWorldTransform;
-                btVector3 _aabbMin, _aabbMax;
-
-                _btBodyInChain->getAabb( _aabbMin, _aabbMax );
-
-                // auto _diff = _aabbMax - _aabbMin;
-                // auto _norm = _diff.length();
-
-                // std::cout << "diag: " << _norm << std::endl;
-
-                // _aabbWorldTransform = _btBodyInChain->getWorldTransform();
-
-                // request the visualizer to draw the aabb
-                // _visualizerPtr->drawAABB( utils::fromBtVec3( _aabbMin ),
-                //                           utils::fromBtVec3( _aabbMax ),
-                //                           utils::fromBtTransform( _aabbWorldTransform ),
-                //                           { 0.8, 0.1, 0.1 } );
-
-                // Taken from getAABB.py example from pybullet. It seems that ...
-                // the AABB info should be used in a different way to what I thought :(.
-                _visualizerPtr->drawLine( { _aabbMin.x(), _aabbMin.y(), _aabbMin.z() },
-                                          { _aabbMax.x(), _aabbMin.y(), _aabbMin.z() },
-                                          { 0.1, 0.1, 0.8 } );
-
-                _visualizerPtr->drawLine( { _aabbMin.x(), _aabbMin.y(), _aabbMin.z() },
-                                          { _aabbMin.x(), _aabbMax.y(), _aabbMin.z() },
-                                          { 0.1, 0.1, 0.8 } );
-
-                _visualizerPtr->drawLine( { _aabbMin.x(), _aabbMin.y(), _aabbMin.z() },
-                                          { _aabbMin.x(), _aabbMin.y(), _aabbMax.z() },
-                                          { 0.1, 0.1, 0.8 } );
-
-                _visualizerPtr->drawLine( { _aabbMin.x(), _aabbMin.y(), _aabbMax.z() },
-                                          { _aabbMin.x(), _aabbMax.y(), _aabbMax.z() },
-                                          { 0.1, 0.1, 0.8 } );
-
-                _visualizerPtr->drawLine( { _aabbMin.x(), _aabbMin.y(), _aabbMax.z() },
-                                          { _aabbMax.x(), _aabbMin.y(), _aabbMax.z() },
-                                          { 0.1, 0.1, 0.8 } );
-
-                _visualizerPtr->drawLine( { _aabbMax.x(), _aabbMin.y(), _aabbMin.z() },
-                                          { _aabbMax.x(), _aabbMin.y(), _aabbMax.z() },
-                                          { 0.1, 0.1, 0.8 } );
-
-                _visualizerPtr->drawLine( { _aabbMax.x(), _aabbMin.y(), _aabbMin.z() },
-                                          { _aabbMax.x(), _aabbMax.y(), _aabbMin.z() },
-                                          { 0.1, 0.1, 0.8 } );
-
-                _visualizerPtr->drawLine( { _aabbMax.x(), _aabbMax.y(), _aabbMin.z() },
-                                          { _aabbMin.x(), _aabbMax.y(), _aabbMin.z() },
-                                          { 0.1, 0.1, 0.8 } );
-
-                _visualizerPtr->drawLine( { _aabbMin.x(), _aabbMax.y(), _aabbMin.z() },
-                                          { _aabbMin.x(), _aabbMax.y(), _aabbMax.z() },
-                                          { 0.1, 0.1, 0.8 } );
-
-                _visualizerPtr->drawLine( { _aabbMax.x(), _aabbMax.y(), _aabbMax.z() },
-                                          { _aabbMin.x(), _aabbMax.y(), _aabbMax.z() },
-                                          { 0.1, 0.1, 0.8 } );
-
-                _visualizerPtr->drawLine( { _aabbMax.x(), _aabbMax.y(), _aabbMax.z() },
-                                          { _aabbMax.x(), _aabbMin.y(), _aabbMax.z() },
-                                          { 0.1, 0.1, 0.8 } );
-
-                _visualizerPtr->drawLine( { _aabbMax.x(), _aabbMax.y(), _aabbMax.z() },
-                                          { _aabbMax.x(), _aabbMax.y(), _aabbMin.z() },
-                                          { 0.1, 0.1, 0.8 } );
-            }
-        }
+//         // @DEBUG: draw AABB for all bodies
+//         if ( !m_simulationPtr )
+//             return;
+// 
+//         auto _visualizerPtr = m_simulationPtr->getVisualizer();
+// 
+//         if ( !_visualizerPtr )
+//             return;
+// 
+//         for ( auto it = m_bodyCompounds.begin();
+//                    it != m_bodyCompounds.end();
+//                    it++ )
+//         {
+//             auto _compound = it->second;
+// 
+//             for ( size_t i = 0; i < _compound->btBodiesInChain.size(); i++ )
+//             {
+//                 auto _btBodyInChain = _compound->btBodiesInChain[i];
+// 
+//                 // Extract the aabb from the bullet body
+//                 btTransform _aabbWorldTransform;
+//                 btVector3 _aabbMin, _aabbMax;
+// 
+//                 _btBodyInChain->getAabb( _aabbMin, _aabbMax );
+// 
+//                 // auto _diff = _aabbMax - _aabbMin;
+//                 // auto _norm = _diff.length();
+// 
+//                 // std::cout << "diag: " << _norm << std::endl;
+// 
+//                 // _aabbWorldTransform = _btBodyInChain->getWorldTransform();
+// 
+//                 // request the visualizer to draw the aabb
+//                 // _visualizerPtr->drawAABB( utils::fromBtVec3( _aabbMin ),
+//                 //                           utils::fromBtVec3( _aabbMax ),
+//                 //                           utils::fromBtTransform( _aabbWorldTransform ),
+//                 //                           { 0.8, 0.1, 0.1 } );
+// 
+//                 // Taken from getAABB.py example from pybullet. It seems that ...
+//                 // the AABB info should be used in a different way to what I thought :(.
+//                 _visualizerPtr->drawLine( { _aabbMin.x(), _aabbMin.y(), _aabbMin.z() },
+//                                           { _aabbMax.x(), _aabbMin.y(), _aabbMin.z() },
+//                                           { 0.1, 0.1, 0.8 } );
+// 
+//                 _visualizerPtr->drawLine( { _aabbMin.x(), _aabbMin.y(), _aabbMin.z() },
+//                                           { _aabbMin.x(), _aabbMax.y(), _aabbMin.z() },
+//                                           { 0.1, 0.1, 0.8 } );
+// 
+//                 _visualizerPtr->drawLine( { _aabbMin.x(), _aabbMin.y(), _aabbMin.z() },
+//                                           { _aabbMin.x(), _aabbMin.y(), _aabbMax.z() },
+//                                           { 0.1, 0.1, 0.8 } );
+// 
+//                 _visualizerPtr->drawLine( { _aabbMin.x(), _aabbMin.y(), _aabbMax.z() },
+//                                           { _aabbMin.x(), _aabbMax.y(), _aabbMax.z() },
+//                                           { 0.1, 0.1, 0.8 } );
+// 
+//                 _visualizerPtr->drawLine( { _aabbMin.x(), _aabbMin.y(), _aabbMax.z() },
+//                                           { _aabbMax.x(), _aabbMin.y(), _aabbMax.z() },
+//                                           { 0.1, 0.1, 0.8 } );
+// 
+//                 _visualizerPtr->drawLine( { _aabbMax.x(), _aabbMin.y(), _aabbMin.z() },
+//                                           { _aabbMax.x(), _aabbMin.y(), _aabbMax.z() },
+//                                           { 0.1, 0.1, 0.8 } );
+// 
+//                 _visualizerPtr->drawLine( { _aabbMax.x(), _aabbMin.y(), _aabbMin.z() },
+//                                           { _aabbMax.x(), _aabbMax.y(), _aabbMin.z() },
+//                                           { 0.1, 0.1, 0.8 } );
+// 
+//                 _visualizerPtr->drawLine( { _aabbMax.x(), _aabbMax.y(), _aabbMin.z() },
+//                                           { _aabbMin.x(), _aabbMax.y(), _aabbMin.z() },
+//                                           { 0.1, 0.1, 0.8 } );
+// 
+//                 _visualizerPtr->drawLine( { _aabbMin.x(), _aabbMax.y(), _aabbMin.z() },
+//                                           { _aabbMin.x(), _aabbMax.y(), _aabbMax.z() },
+//                                           { 0.1, 0.1, 0.8 } );
+// 
+//                 _visualizerPtr->drawLine( { _aabbMax.x(), _aabbMax.y(), _aabbMax.z() },
+//                                           { _aabbMin.x(), _aabbMax.y(), _aabbMax.z() },
+//                                           { 0.1, 0.1, 0.8 } );
+// 
+//                 _visualizerPtr->drawLine( { _aabbMax.x(), _aabbMax.y(), _aabbMax.z() },
+//                                           { _aabbMax.x(), _aabbMin.y(), _aabbMax.z() },
+//                                           { 0.1, 0.1, 0.8 } );
+// 
+//                 _visualizerPtr->drawLine( { _aabbMax.x(), _aabbMax.y(), _aabbMax.z() },
+//                                           { _aabbMax.x(), _aabbMax.y(), _aabbMin.z() },
+//                                           { 0.1, 0.1, 0.8 } );
+//             }
+//         }
     }
 
     void TBtKinTreeAgentWrapper::_createBtResourcesFromKinTree()
@@ -267,8 +267,8 @@ namespace bullet {
                                                                     _bodyCompound,
                                                                     parentBodyCompound );
 
-        // if ( _nodeConstraint )
-        //     m_btWorldPtr->addConstraint( _nodeConstraint, true );
+        if ( _nodeConstraint )
+            m_btWorldPtr->addConstraint( _nodeConstraint, true );
 
         /***********************************************************************/
 
@@ -323,6 +323,9 @@ namespace bullet {
         // make sure the object is going to be simulated by forcing activation
         _rigidBodyPtr->forceActivationState( DISABLE_DEACTIVATION );
 
+        // and set the initial velocity
+        _rigidBodyPtr->setLinearVelocity( utils::toBtVec3( { 0.1f, 0.1f, 0.1f } ) );
+
         return _rigidBodyPtr;
     }
 
@@ -337,9 +340,9 @@ namespace bullet {
         collisionShapePtr->getAabb( frameTransform, _aabbMin, _aabbMax );
 
         auto _vmin2max = _aabbMax - _aabbMin;
-        auto _dx = _vmin2max.dot( frameTransform.getBasis().getColumn( 0 ) );
-        auto _dy = _vmin2max.dot( frameTransform.getBasis().getColumn( 1 ) );
-        auto _dz = _vmin2max.dot( frameTransform.getBasis().getColumn( 2 ) );
+        auto _dx = btFabs( _vmin2max.x() );
+        auto _dy = btFabs( _vmin2max.y() );
+        auto _dz = btFabs( _vmin2max.z() );
 
         return btFabs( _dx * _dy * _dz );
     }
@@ -364,7 +367,7 @@ namespace bullet {
         }
         else if ( _type == "capsule" )
         {
-            _size = { _size.z, _size.x, _size.y };
+            _size = { _size.x, _size.x, _size.y };
             _collisionShapePtr = new btCapsuleShapeZ( 1.0, 1.0 );
         }
         else if ( _type == "cylinder" )
@@ -530,7 +533,7 @@ namespace bullet {
                                                          *parentBtBodyPtr,
                                                          _frameInA,
                                                          _frameInB,
-                                                         true );
+                                                         false );
 
             // Lock all 6 axes
             _btConstraint->setLimit( 0, 0, 0 );
@@ -580,7 +583,7 @@ namespace bullet {
                                                    utils::toBtVec3( _axisInB ) );
         }
 
-        _btConstraint->setLimit( limits.x * TYSOC_PI / 180.0, limits.y * TYSOC_PI / 180.0 );
+        // _btConstraint->setLimit( limits.x * TYSOC_PI / 180.0, limits.y * TYSOC_PI / 180.0 );
 
         return _btConstraint;
     }

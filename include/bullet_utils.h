@@ -8,6 +8,9 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+// visualizer, for debug drawer
+#include <viz/viz.h>
+
 namespace tysoc {
 namespace bullet {
 namespace utils {
@@ -88,5 +91,34 @@ namespace utils {
     *   @param mesh             A reference to the mesh to be populated in-place
     */
     void _processAssimpMesh( aiMesh* assimpMeshPtr, TMeshObject& mesh );
+
+    /**
+    *   Debug drawer, implemeting interface btIDebugDraw, to handle drawing of ...
+    *   all debugdraw functionality provided (and tested) by bullet itself
+    */
+    class TBtDebugDrawer : public btIDebugDraw
+    {
+        private :
+
+        // visualizer reference
+        viz::TIVisualizer* m_visualizerPtr;
+
+        // bit fields used for the mode
+        int m_debugMode;
+
+        public : 
+
+        TBtDebugDrawer();
+        virtual ~TBtDebugDrawer();
+
+        void setVisualizer( viz::TIVisualizer* visualizerPtr );
+
+        void drawLine( const btVector3& from, const btVector3& to, const btVector3& color ) override;
+        void drawContactPoint( const btVector3& PointOnB, const btVector3& normalOnB, btScalar distance, int lifeTime, const btVector3& color ) override;
+        void reportErrorWarning( const char* warningString ) override;
+        void draw3dText( const btVector3& location, const char* textString ) override;
+        void setDebugMode( int debugMode ) override;
+        int getDebugMode() const override;
+    };
 
 }}}

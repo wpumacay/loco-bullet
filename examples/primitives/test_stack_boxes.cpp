@@ -12,7 +12,7 @@ tysoc::sandbox::TBody* createBody( const std::string& name,
 {
     auto _bbox = new tysoc::sandbox::TFreeBody();
     _bbox->name = name;
-    _bbox->type = "box";
+    _bbox->type = "capsule";
     _bbox->mass = 0.1;
     _bbox->size = size;
     _bbox->color = color;
@@ -26,11 +26,11 @@ int main()
 {
     auto _bplane = new tysoc::sandbox::TBody();
     _bplane->name = "bplane";
-    _bplane->type = "plane";
+    _bplane->type = "box";
     _bplane->friction = { 1.0, 1.0, 1.0 };
-    _bplane->size = { 10.0, 10.0, 0.1 };
+    _bplane->size = { 10.0, 10.0, 1.0 };
     _bplane->color = { 0.3, 0.3, 0.3 };
-    _bplane->worldTransform.setPosition( { 0, 0, 0 } );
+    _bplane->worldTransform.setPosition( { 0, 0, -0.5 } );
 
     auto _scenario = new tysoc::TScenario();
     _scenario->addBody( _bplane );
@@ -44,7 +44,7 @@ int main()
                 auto _name = std::string( "bbox" ) + "_" + std::to_string( i ) + "_" + std::to_string( j ) + "_" + std::to_string( k );
                 auto _body = createBody( _name,
                                          { 0.2f * i, 0.2f * j, 2 + 0.2f * k },
-                                         { 0.15, 0.15, 0.15 },
+                                         { 0.1, 0.4, 0.2 },
                                          { 0.25f + 0.75f * ( i / 4.0f ),
                                            0.25f + 0.75f * ( j / 4.0f ),
                                            0.25f + 0.75f * ( k / 4.0f ) } );
@@ -63,15 +63,12 @@ int main()
     auto _visualizer = _runtime->createVisualizer( _scenario );
     _visualizer->initialize();
 
-    bool _running = false;
-
     while ( _visualizer->isActive() )
     {
         if ( _visualizer->checkSingleKeyPress( 15 ) )
-            _running = ( _running ) ? false : true;
+            _simulation->togglePause();
 
-        if ( _running )
-            _simulation->step();
+        _simulation->step();
 
         _visualizer->update();
     }

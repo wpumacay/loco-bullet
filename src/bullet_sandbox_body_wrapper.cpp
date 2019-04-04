@@ -71,6 +71,78 @@ namespace bullet {
             return;
 
         _updateBodyRecursively( m_bodyPtr );
+
+//         // @DEBUG: draw AABB for all bodies
+//         if ( !m_simulationPtr )
+//             return;
+// 
+//         auto _visualizerPtr = m_simulationPtr->getVisualizer();
+// 
+//         if ( !_visualizerPtr )
+//             return;
+// 
+//         for ( auto it = m_btBodies.begin();
+//                    it != m_btBodies.end();
+//                    it++ )
+//         {
+//             auto _btBody = it->second;
+// 
+//             // Extract the aabb from the bullet body
+//             btTransform _aabbWorldTransform;
+//             btVector3 _aabbMin, _aabbMax;
+// 
+//             _btBody->getAabb( _aabbMin, _aabbMax );
+// 
+//             // Taken from getAABB.py example from pybullet. It seems that ...
+//             // the AABB info should be used in a different way to what I thought :(.
+//             _visualizerPtr->drawLine( { _aabbMin.x(), _aabbMin.y(), _aabbMin.z() },
+//                                       { _aabbMax.x(), _aabbMin.y(), _aabbMin.z() },
+//                                       { 0.1, 0.1, 0.8 } );
+// 
+//             _visualizerPtr->drawLine( { _aabbMin.x(), _aabbMin.y(), _aabbMin.z() },
+//                                       { _aabbMin.x(), _aabbMax.y(), _aabbMin.z() },
+//                                       { 0.1, 0.1, 0.8 } );
+// 
+//             _visualizerPtr->drawLine( { _aabbMin.x(), _aabbMin.y(), _aabbMin.z() },
+//                                       { _aabbMin.x(), _aabbMin.y(), _aabbMax.z() },
+//                                       { 0.1, 0.1, 0.8 } );
+// 
+//             _visualizerPtr->drawLine( { _aabbMin.x(), _aabbMin.y(), _aabbMax.z() },
+//                                       { _aabbMin.x(), _aabbMax.y(), _aabbMax.z() },
+//                                       { 0.1, 0.1, 0.8 } );
+// 
+//             _visualizerPtr->drawLine( { _aabbMin.x(), _aabbMin.y(), _aabbMax.z() },
+//                                       { _aabbMax.x(), _aabbMin.y(), _aabbMax.z() },
+//                                       { 0.1, 0.1, 0.8 } );
+// 
+//             _visualizerPtr->drawLine( { _aabbMax.x(), _aabbMin.y(), _aabbMin.z() },
+//                                       { _aabbMax.x(), _aabbMin.y(), _aabbMax.z() },
+//                                       { 0.1, 0.1, 0.8 } );
+// 
+//             _visualizerPtr->drawLine( { _aabbMax.x(), _aabbMin.y(), _aabbMin.z() },
+//                                       { _aabbMax.x(), _aabbMax.y(), _aabbMin.z() },
+//                                       { 0.1, 0.1, 0.8 } );
+// 
+//             _visualizerPtr->drawLine( { _aabbMax.x(), _aabbMax.y(), _aabbMin.z() },
+//                                       { _aabbMin.x(), _aabbMax.y(), _aabbMin.z() },
+//                                       { 0.1, 0.1, 0.8 } );
+// 
+//             _visualizerPtr->drawLine( { _aabbMin.x(), _aabbMax.y(), _aabbMin.z() },
+//                                       { _aabbMin.x(), _aabbMax.y(), _aabbMax.z() },
+//                                       { 0.1, 0.1, 0.8 } );
+// 
+//             _visualizerPtr->drawLine( { _aabbMax.x(), _aabbMax.y(), _aabbMax.z() },
+//                                       { _aabbMin.x(), _aabbMax.y(), _aabbMax.z() },
+//                                       { 0.1, 0.1, 0.8 } );
+// 
+//             _visualizerPtr->drawLine( { _aabbMax.x(), _aabbMax.y(), _aabbMax.z() },
+//                                       { _aabbMax.x(), _aabbMin.y(), _aabbMax.z() },
+//                                       { 0.1, 0.1, 0.8 } );
+// 
+//             _visualizerPtr->drawLine( { _aabbMax.x(), _aabbMax.y(), _aabbMax.z() },
+//                                       { _aabbMax.x(), _aabbMax.y(), _aabbMin.z() },
+//                                       { 0.1, 0.1, 0.8 } );
+//         }
     }
 
     void TBtBodyWrapper::_changePositionInternal()
@@ -219,13 +291,13 @@ namespace bullet {
         }
         else if ( _type == "capsule" )
         {
-            _size = { _size.z, _size.x, _size.y };
+            _size = { _size.x, _size.x, _size.y };
             _collisionShapePtr = new btCapsuleShapeZ( 1.0, 1.0 );
         }
         else if ( _type == "cylinder" )
         {
             _size = { _size.x, _size.x, _size.y };
-            _collisionShapePtr = new btCylinderShapeZ( btVector3( 1.0, 1.0, 1.0 ) );
+            _collisionShapePtr = new btCylinderShapeZ( btVector3( 1.0, 1.0, 0.5 ) );
         }
         else if ( _type == "plane" )
         {
@@ -289,8 +361,8 @@ namespace bullet {
     }
 
     btGeneric6DofConstraint* TBtBodyWrapper::_createFixedConstraint( sandbox::TBody* bodyPtr,
-                                                                            btRigidBody* currentBtBodyPtr,
-                                                                            btRigidBody* parentBtBodyPtr )
+                                                                     btRigidBody* currentBtBodyPtr,
+                                                                     btRigidBody* parentBtBodyPtr )
     {
         btGeneric6DofConstraint* _btConstraint = NULL;
 
@@ -308,6 +380,9 @@ namespace bullet {
             _btConstraint->setLimit( 3, 0, 0 );
             _btConstraint->setLimit( 4, 0, 0 );
             _btConstraint->setLimit( 5, 0, 0 );
+
+            tysoc::log( std::string( "Created fixed constraint for single body: " ) +
+                        bodyPtr->name );
         }
         else
         {
@@ -330,6 +405,8 @@ namespace bullet {
             _btConstraint->setLimit( 3, 0, 0 );
             _btConstraint->setLimit( 4, 0, 0 );
             _btConstraint->setLimit( 5, 0, 0 );
+
+            tysoc::log( "Created fixed constraint between two bodies" );
         }
 
         return _btConstraint;
@@ -347,6 +424,8 @@ namespace bullet {
             _btConstraint = new btHingeConstraint( *currentBtBodyPtr, 
                                                    utils::toBtVec3( jointPtr->relTransform.getPosition() ),
                                                    utils::toBtVec3( jointPtr->axis ) );
+
+            tysoc::log( "Created hinge constraint for single body" );
         }
         else
         {
@@ -374,6 +453,8 @@ namespace bullet {
                                                    utils::toBtVec3( _pivotInB ),
                                                    utils::toBtVec3( _axisInA ), 
                                                    utils::toBtVec3( _axisInB ) );
+
+            tysoc::log( "Created hinge constraint between two bodies" );
         }
 
         _btConstraint->setLimit( jointPtr->limits.x, jointPtr->limits.y );
@@ -400,6 +481,8 @@ namespace bullet {
             _btConstraint = new btSliderConstraint( *currentBtBodyPtr,
                                                     utils::toBtTransform( _transform ),
                                                     true );
+
+            tysoc::log( "Created slider constraint for a single body" );
         }
         else
         {
@@ -432,6 +515,8 @@ namespace bullet {
                                                     utils::toBtTransform( _frameInA ),
                                                     utils::toBtTransform( _frameInB ), 
                                                     true );
+
+            tysoc::log( "Created slider constraint between two bodies" );
         }
 
         _btConstraint->setLowerLinLimit( jointPtr->limits.x );
@@ -456,6 +541,8 @@ namespace bullet {
             // Just use '''currentBtBodyPtr=bodyA''' for hinge-constraint creation
             _btConstraint = new btPoint2PointConstraint( *currentBtBodyPtr, 
                                                          utils::toBtVec3( jointPtr->relTransform.getPosition() ) );
+
+            tysoc::log( "Created ball constraint for a single body" );
         }
         else
         {
@@ -478,6 +565,8 @@ namespace bullet {
                                                          *parentBtBodyPtr,
                                                          utils::toBtVec3( _pivotInA ), 
                                                          utils::toBtVec3( _pivotInB ) );
+
+            tysoc::log( "Created ball constraint between two bodies" );
         }
 
         return _btConstraint;
@@ -576,6 +665,8 @@ namespace bullet {
                 std::cout << "LOG> Setting dof: " << _dofIndices[q] << std::endl;
                 _btConstraint->setLimit( _dofIndices[q], _dofLimits[q].x, _dofLimits[q].y );
             }
+
+            tysoc::log( "Created generic 6dof constraint for a single body" );
         }
         else
         {
@@ -605,6 +696,8 @@ namespace bullet {
                 std::cout << "LOG> Setting dof: " << _dofIndices[q] << std::endl;
                 _btConstraint->setLimit( _dofIndices[q], _dofLimits[q].x, _dofLimits[q].y );
             }
+
+            tysoc::log( "Created generic 6dof constraint between two bodies" );
         }
 
         return _btConstraint;
