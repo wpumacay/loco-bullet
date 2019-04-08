@@ -198,7 +198,16 @@ namespace bullet {
         }
 
         // add front of the chain to the world
-        m_btWorldPtr->addRigidBody( _bodyCompound->btStartBody );
+        if ( _firstCollision->contype != -1 && _firstCollision->conaffinity != -1 )
+        {
+            m_btWorldPtr->addRigidBody( _bodyCompound->btStartBody, 
+                                        _firstCollision->contype,
+                                        _firstCollision->conaffinity );
+        }
+        else
+        {
+            m_btWorldPtr->addRigidBody( _bodyCompound->btStartBody );
+        }
 
         // create all other rigid bodies in the chain
         auto _previousBtBody = _bodyCompound->btStartBody;
@@ -247,7 +256,16 @@ namespace bullet {
             _bodyCompound->relTransformsInChain.push_back( _currentToPreviousTransform );
 
             // register the bt resources in the world
-            m_btWorldPtr->addRigidBody( _currentBtBody );
+            if ( _kinCollisions[i]->contype != -1 && _kinCollisions[i]->conaffinity != -1 )
+            {
+                m_btWorldPtr->addRigidBody( _currentBtBody,
+                                            _kinCollisions[i]->contype,
+                                            _kinCollisions[i]->conaffinity );
+            }
+            else
+            {
+                m_btWorldPtr->addRigidBody( _currentBtBody );
+            }
             m_btWorldPtr->addConstraint( _fixedConstraint, true );// disable collision between linked bodies
 
             // and prepare for the next iteration
@@ -324,7 +342,8 @@ namespace bullet {
         _rigidBodyPtr->forceActivationState( DISABLE_DEACTIVATION );
 
         // // and set the initial velocity
-        // _rigidBodyPtr->setLinearVelocity( utils::toBtVec3( { 0.1f, 0.1f, 0.1f } ) );
+        _rigidBodyPtr->setLinearVelocity( utils::toBtVec3( { -0.1f, -0.1f, -0.1f } ) );
+        _rigidBodyPtr->setAngularVelocity( utils::toBtVec3( { -1.0f, -1.0f, -1.0f } ) );
 
         return _rigidBodyPtr;
     }
@@ -529,19 +548,19 @@ namespace bullet {
             auto _cframeInParent = utils::toBtTransform( tysoc::TMat4() ); // Identity, fixed in own body frame
             auto _cframeInChild = utils::toBtTransform( currentToParentTransform.inverse() );// Relative transform of body to parent
 
-            _btConstraint = new btHingeConstraint( *currentBtBodyPtr,
-                                                   *parentBtBodyPtr,
-                                                   _cframeInChild.getOrigin(),
-                                                   _cframeInParent.getOrigin(),
-                                                   _cframeInChild.getBasis().getColumn( 2 ),
-                                                   _cframeInParent.getBasis().getColumn( 2 ) );
-
-            reinterpret_cast< btHingeConstraint* >( _btConstraint )->setLimit( 0, 0 );
-
-//             _btConstraint = new btFixedConstraint( *currentBtBodyPtr,
+//             _btConstraint = new btHingeConstraint( *currentBtBodyPtr,
 //                                                    *parentBtBodyPtr,
-//                                                    _cframeInChild,
-//                                                    _cframeInParent );
+//                                                    _cframeInChild.getOrigin(),
+//                                                    _cframeInParent.getOrigin(),
+//                                                    _cframeInChild.getBasis().getColumn( 2 ),
+//                                                    _cframeInParent.getBasis().getColumn( 2 ) );
+// 
+//             reinterpret_cast< btHingeConstraint* >( _btConstraint )->setLimit( 0, 0 );
+
+            _btConstraint = new btFixedConstraint( *currentBtBodyPtr,
+                                                   *parentBtBodyPtr,
+                                                   _cframeInChild,
+                                                   _cframeInParent );
 
 //             _btConstraint = new btGeneric6DofConstraint( *currentBtBodyPtr,
 //                                                          *parentBtBodyPtr,
@@ -653,8 +672,8 @@ namespace bullet {
                                                     true );
         }
 
-        _btConstraint->setLowerLinLimit( limits.x );
-        _btConstraint->setUpperLinLimit( limits.y );
+        // _btConstraint->setLowerLinLimit( limits.x );
+        // _btConstraint->setUpperLinLimit( limits.y );
         _btConstraint->setLowerAngLimit( 0 );
         _btConstraint->setUpperAngLimit( 0 );
 
@@ -695,12 +714,12 @@ namespace bullet {
         return _btConstraint;
     }
 
-    btGeneric6DofConstraint* TBtKinTreeAgentWrapper::_createGenericConstraintFromJoints( btRigidBody* currentBtBodyPtr,
-                                                                                         btRigidBody* parentBtBodyPtr,
-                                                                                         const std::vector< agent::TKinTreeJoint* >& joints,
-                                                                                         const TMat4& currentToParentTransform )
+    btTypedConstraint* TBtKinTreeAgentWrapper::_createGenericConstraintFromJoints( btRigidBody* currentBtBodyPtr,
+                                                                                   btRigidBody* parentBtBodyPtr,
+                                                                                   const std::vector< agent::TKinTreeJoint* >& joints,
+                                                                                   const TMat4& currentToParentTransform )
     {
-        btGeneric6DofConstraint* _btConstraint = NULL;
+        btTypedConstraint* _btConstraint = NULL;
 
         // Grab only the DOFs whose axes map to basis vectors, only ...
         // those that consist of 'slide' or 'hinge' joints, and max 6 joints
@@ -774,20 +793,52 @@ namespace bullet {
                                                          utils::toBtTransform( tysoc::TMat4() ),
                                                          true );
 
+//             _btConstraint = new btGeneric6DofSpring2Constraint( *currentBtBodyPtr,
+//                                                                 utils::toBtTransform( tysoc::TMat4() ) );
+
             // Lock all 6 axes
-            _btConstraint->setLimit( 0, 0, 0 );
-            _btConstraint->setLimit( 1, 0, 0 );
-            _btConstraint->setLimit( 2, 0, 0 );
-            _btConstraint->setLimit( 3, 0, 0 );
-            _btConstraint->setLimit( 4, 0, 0 );
-            _btConstraint->setLimit( 5, 0, 0 );
+            reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 0, 0, 0 );
+            reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 1, 0, 0 );
+            reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 2, 0, 0 );
+            reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 3, 0, 0 );
+            reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 4, 0, 0 );
+            reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 5, 0, 0 );
+//             reinterpret_cast< btGeneric6DofSpring2Constraint* >( _btConstraint )->setLinearLowerLimit( btVector3( 0, 0, 0 ) );
+//             reinterpret_cast< btGeneric6DofSpring2Constraint* >( _btConstraint )->setLinearUpperLimit( btVector3( 0, 0, 0 ) );
+//             reinterpret_cast< btGeneric6DofSpring2Constraint* >( _btConstraint )->setAngularLowerLimit( btVector3( 0, 0, 0 ) );
+//             reinterpret_cast< btGeneric6DofSpring2Constraint* >( _btConstraint )->setAngularUpperLimit( btVector3( 0, 0, 0 ) );
+
 
             // Free only the axes that have DOFs
             for ( size_t q = 0; q < _dofIndices.size(); q++ )
             {
                 // std::cout << "LOG> Setting dof: " << _dofIndices[q] << std::endl;
-                _btConstraint->setLimit( _dofIndices[q], _dofLimits[q].x, _dofLimits[q].y );
+                reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( _dofIndices[q], _dofLimits[q].x, _dofLimits[q].y );
             }
+
+//             btVector3 _lowerLinear = btVector3( 0, 0, 0 );
+//             btVector3 _upperLinear = btVector3( 0, 0, 0 );
+//             btVector3 _lowerAngular = btVector3( 0, 0, 0 );
+//             btVector3 _upperAngular = btVector3( 0, 0, 0 );
+//             
+//             for ( size_t q = 0; q < _dofIndices.size(); q++ )
+//             {
+//                 if ( _dofIndices[q] < 3 ) // linear
+//                 {
+//                     _lowerLinear[_dofIndices[q]] = _dofLimits[q].x;
+//                     _upperLinear[_dofIndices[q]] = _dofLimits[q].y;
+//                 }
+//                 else // angular
+//                 {
+//                     _lowerAngular[_dofIndices[q] - 3] = _dofLimits[q].x;
+//                     _upperAngular[_dofIndices[q] - 3] = _dofLimits[q].y;
+//                 }
+//             }
+// 
+//             reinterpret_cast< btGeneric6DofSpring2Constraint* >( _btConstraint )->setLinearLowerLimit( _lowerLinear );
+//             reinterpret_cast< btGeneric6DofSpring2Constraint* >( _btConstraint )->setLinearUpperLimit( _upperLinear );
+//             reinterpret_cast< btGeneric6DofSpring2Constraint* >( _btConstraint )->setAngularLowerLimit( _lowerAngular );
+//             reinterpret_cast< btGeneric6DofSpring2Constraint* >( _btConstraint )->setAngularUpperLimit( _upperAngular );
         }
         else
         {
@@ -804,18 +855,18 @@ namespace bullet {
                                                          true );
 
             // Lock all 6 axes
-            _btConstraint->setLimit( 0, 0, 0 );
-            _btConstraint->setLimit( 1, 0, 0 );
-            _btConstraint->setLimit( 2, 0, 0 );
-            _btConstraint->setLimit( 3, 0, 0 );
-            _btConstraint->setLimit( 4, 0, 0 );
-            _btConstraint->setLimit( 5, 0, 0 );
+            reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 0, 0, 0 );
+            reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 1, 0, 0 );
+            reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 2, 0, 0 );
+            reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 3, 0, 0 );
+            reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 4, 0, 0 );
+            reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 5, 0, 0 );
 
             // Free only the axes that have DOFs
             for ( size_t q = 0; q < _dofIndices.size(); q++ )
             {
                 // std::cout << "LOG> Setting dof: " << _dofIndices[q] << std::endl;
-                _btConstraint->setLimit( _dofIndices[q], _dofLimits[q].x, _dofLimits[q].y );
+                reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( _dofIndices[q], _dofLimits[q].x, _dofLimits[q].y );
             }
         }
 

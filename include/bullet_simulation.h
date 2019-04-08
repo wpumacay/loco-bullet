@@ -21,6 +21,7 @@ namespace bullet {
         btDefaultCollisionConfiguration*        m_btCollisionConfigurationPtr;
         btBroadphaseInterface*                  m_btBroadphaseInterfacePtr;
 
+        utils::TBtOverlapFilterCallback* m_btFilterCallback;
         utils::TBtDebugDrawer* m_btDebugDrawer;
 
         protected :

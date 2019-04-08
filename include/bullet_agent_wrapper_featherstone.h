@@ -6,14 +6,10 @@
 
 #include <agent_wrapper.h>
 
-#define TYSOC_BULLET_USE_MULTIBODY false
+#include <BulletDynamics/Featherstone/btMultiBody.h>
 
 namespace tysoc {
 namespace bullet {
-
-    // @TODO|@MUST: Change the representation from single bodies to ...
-    // Bullet's multibody, which seems to support the features ...
-    // required for mjcf models as well (multi)
 
     /* 
     *   This object encloses all collisions and fixed-constraints used while ...
@@ -51,7 +47,7 @@ namespace bullet {
         TMat4 endBodyToBaseTransform;
     };
 
-    class TBtKinTreeAgentWrapper : public TKinTreeAgentWrapper
+    class TBtFeatherstoneKinTreeAgentWrapper : public TKinTreeAgentWrapper
     {
 
         private :

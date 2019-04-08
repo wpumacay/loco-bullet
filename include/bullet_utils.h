@@ -121,4 +121,19 @@ namespace utils {
         int getDebugMode() const override;
     };
 
+    /**
+    *   Custom broadphase filer callback, to allow collision checks similar ...
+    *   to MuJoCo. We will check in the following way:
+    *   
+    *   |   MuJoCo     |   Bullet   |
+    *   |--------------|------------|
+    *   | contype     <-> collgroup | 
+    *   | conaffinity <-> collmask  |
+    */
+    struct TBtOverlapFilterCallback : public btOverlapFilterCallback
+    {
+        // custom collision checking
+        bool needBroadphaseCollision( btBroadphaseProxy* proxy0, btBroadphaseProxy* proxy1 ) const override;
+    };
+
 }}}

@@ -23,7 +23,10 @@ namespace bullet {
         m_btDebugDrawer = new utils::TBtDebugDrawer();
         m_btWorldPtr->setDebugDrawer( m_btDebugDrawer );
 
-        m_btWorldPtr->setGravity( btVector3( 0, 0, -10 ) );
+        m_btFilterCallback = new utils::TBtOverlapFilterCallback();
+        m_btWorldPtr->getPairCache()->setOverlapFilterCallback( m_btFilterCallback );
+
+        m_btWorldPtr->setGravity( btVector3( 0, 0, -2 ) );
 
         m_runtimeType = "bullet";
 
@@ -50,6 +53,18 @@ namespace bullet {
     TBtSimulation::~TBtSimulation()
     {
         // @WIP: see method "exitPhysics" in bullet example "CommonRigidBodyBase.h"
+
+        if ( m_btDebugDrawer )
+        {
+            delete m_btDebugDrawer;
+            m_btDebugDrawer = NULL;
+        }
+
+        if ( m_btFilterCallback )
+        {
+            // @TODO: Should delete here?
+            m_btFilterCallback = NULL;
+        }
 
         if ( m_btWorldPtr )
         {

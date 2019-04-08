@@ -124,7 +124,7 @@ namespace utils {
     {
         m_visualizerPtr = NULL;
         m_debugMode = btIDebugDraw::DBG_DrawWireframe | 
-                      btIDebugDraw::DBG_DrawAabb |
+                      /*btIDebugDraw::DBG_DrawAabb |*/
                       btIDebugDraw::DBG_DrawFrames |
                       btIDebugDraw::DBG_DrawConstraints;
     }
@@ -179,6 +179,16 @@ namespace utils {
     int TBtDebugDrawer::getDebugMode() const
     {
         return m_debugMode;
+    }
+
+    bool TBtOverlapFilterCallback::needBroadphaseCollision( btBroadphaseProxy* proxy0, btBroadphaseProxy* proxy1 ) const 
+    {
+        // tysoc::log( "Testing broadphase collision checking" );
+
+        bool _proxy0Affinity1 = ( proxy0->m_collisionFilterGroup & proxy1->m_collisionFilterMask ) != 0;
+        bool _proxy1Affinity0 = ( proxy1->m_collisionFilterGroup & proxy0->m_collisionFilterMask ) != 0;
+
+        return _proxy0Affinity1 || _proxy1Affinity0;
     }
 
 
