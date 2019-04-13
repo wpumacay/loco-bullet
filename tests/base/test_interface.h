@@ -2,7 +2,20 @@
 #pragma once
 
 // Bullet API functionality
+// Base bullet functionality
 #include <btBulletDynamicsCommon.h>
+// Multibody bullet functionality
+#include <BulletDynamics/Featherstone/btMultiBody.h>
+#include <BulletDynamics/Featherstone/btMultiBodyConstraintSolver.h>
+#include <BulletDynamics/Featherstone/btMultiBodyMLCPConstraintSolver.h>
+#include <BulletDynamics/Featherstone/btMultiBodyDynamicsWorld.h>
+#include <BulletDynamics/Featherstone/btMultiBodyLinkCollider.h>
+#include <BulletDynamics/Featherstone/btMultiBodyLink.h>
+#include <BulletDynamics/Featherstone/btMultiBodyJointLimitConstraint.h>
+#include <BulletDynamics/Featherstone/btMultiBodyJointMotor.h>
+#include <BulletDynamics/Featherstone/btMultiBodyPoint2Point.h>
+#include <BulletDynamics/Featherstone/btMultiBodyFixedConstraint.h>
+#include <BulletDynamics/Featherstone/btMultiBodySliderConstraint.h>
 // Rendering functionality from 'cat1' engine
 #include <LApp.h>
 #include <LFpsCamera.h>
@@ -60,6 +73,11 @@ namespace bullet
 
         protected :
 
+        btConstraintSolver*                     m_btConstraintSolverPtr;
+        btCollisionDispatcher*                  m_btCollisionDispatcherPtr;
+        btDefaultCollisionConfiguration*        m_btCollisionConfigurationPtr;
+        btBroadphaseInterface*                  m_btBroadphaseInterfacePtr;
+
         btDynamicsWorld* m_btWorldPtr;
         btIDebugDraw* m_btDebugDrawer;
 
@@ -87,29 +105,11 @@ namespace bullet
 
         void start();
         void step();
-    };
 
+        /* Helper functions */
 
-    class SimpleTestApplication : public ITestApplication
-    {
-
-        private :
-
-        btSequentialImpulseConstraintSolver*    m_btConstraintSolverPtr;
-        btCollisionDispatcher*                  m_btCollisionDispatcherPtr;
-        btDefaultCollisionConfiguration*        m_btCollisionConfigurationPtr;
-        btBroadphaseInterface*                  m_btBroadphaseInterfacePtr;
-
-        protected :
-
-        void _initPhysicsInternal() override;
-        void _startInternal() override;
-        void _stepInternal() override;
-
-        public :
-
-        SimpleTestApplication();
-        ~SimpleTestApplication();
+        btCollisionShape* createCollisionShape( const std::string& shape,
+                                                const btVector3& size );
 
         SimObj* createBody( const std::string& shape,
                             const btVector3& size,
@@ -120,19 +120,76 @@ namespace bullet
     };
 
 
-//     class MultibodyTestApplication : public ITestApplication
-//     {
-// 
-//         protected :
-// 
-//         void _initPhysics() override;
-//         void _initScenario() override;
-// 
-//         public :
-// 
-//         MultibodyTestApplication();
-//         ~MultibodyTestApplication();
-// 
-//     };
+    class SimpleTestApplication : public ITestApplication
+    {
+        protected :
+
+        void _initPhysicsInternal() override;
+        void _startInternal() override;
+        void _stepInternal() override;
+
+        public :
+
+        SimpleTestApplication();
+        ~SimpleTestApplication();
+    };
+
+    class SimMultibodyLink : SimObj
+    {
+        private :
+
+        SimMultibodyLink* m_parentObj;
+
+        public :
+
+        SimMultibodyLink( btCollisionObject* colObj,
+                          SimMultibodyLink* parentObj );
+        ~SimMultibodyLink();
+
+        SimMultibodyLink* parentObj();
+    };
+
+    class SimMultibody
+    {
+        private :
+
+        btMultiBody* m_btMultibody;
+        std::vector< SimMultibodyLink* > m_simLinks;
+
+        public :
+
+        SimMultibody();
+        ~SimMultibody();
+
+        SimMultibodyLink* addLink( const std::string& shapeType,
+                                   const btVector3& shapeSize,
+                                   const btTransform& localTransform,
+                                   SimMultibodyLink* parentObj,
+                                   const std::string& jointType,
+                                   const btVector3& jointAxis,
+                                   const btTransform& jointLocalTransform );
+
+        void update();
+    };
+
+
+    class MultibodyTestApplication : public ITestApplication
+    {
+        private :
+
+        std::vector< SimMultibody* > m_simMultibodies;
+
+        protected :
+
+        void _initPhysicsInternal() override;
+        void _startInternal() override;
+        void _stepInternal() override;
+
+        public :
+
+        MultibodyTestApplication();
+        ~MultibodyTestApplication();
+
+    };
 
 }

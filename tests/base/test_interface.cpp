@@ -62,6 +62,11 @@ namespace bullet
         update();
     }
 
+    SimObj::~SimObj()
+    {
+        // nothing for now
+    }
+
     btCollisionObject* SimObj::colObj()
     {
         return m_colObj;
@@ -155,6 +160,11 @@ namespace bullet
 
     ITestApplication::ITestApplication()
     {
+        m_btConstraintSolverPtr = NULL;
+        m_btCollisionDispatcherPtr = NULL;
+        m_btCollisionConfigurationPtr = NULL;
+        m_btBroadphaseInterfacePtr = NULL;
+
         m_btWorldPtr = NULL;
         m_btDebugDrawer = NULL;
 
@@ -227,6 +237,9 @@ namespace bullet
         if ( m_btWorldPtr )
             m_btWorldPtr->stepSimulation( 1. / 60. );
 
+        for ( size_t i = 0; i < m_simObjs.size(); i++ )
+            m_simObjs[i]->update();
+
         _stepInternal();
 
         if ( engine::InputSystem::isKeyDown( GLFW_KEY_SPACE ) )
@@ -247,30 +260,11 @@ namespace bullet
 
     }
 
-    /* SimpleTestApplication ***************************************************/
-
-    SimpleTestApplication::SimpleTestApplication()
-        : ITestApplication()
+    btCollisionShape* ITestApplication::createCollisionShape( const std::string& shape,
+                                                              const btVector3& size )
     {
-        // nothing extra to do for now
-    }
-
-    SimpleTestApplication::~SimpleTestApplication()
-    {
-        // nothing extra to do for now
-    }
-
-    SimObj* SimpleTestApplication::createBody( const std::string& shape,
-                                               const btVector3& size,
-                                               const btVector3& pos,
-                                               const btVector3& rot,
-                                               const btVector3& color,
-                                               float mass )
-    {
-        SimObj* _obj = NULL;
-
-        // collision shape
         btCollisionShape* _colShape = NULL;
+
         if ( shape == "box" )
             _colShape = new btBoxShape( btVector3( 0.5 * size.x(), 0.5 * size.y(), 0.5 * size.z() ) );
         else if ( shape == "sphere" )
@@ -286,6 +280,21 @@ namespace bullet
             return NULL;
 
         _colShape->setMargin( 0.0f );
+
+        return _colShape;
+    }
+
+    SimObj* ITestApplication::createBody( const std::string& shape,
+                                          const btVector3& size,
+                                          const btVector3& pos,
+                                          const btVector3& rot,
+                                          const btVector3& color,
+                                          float mass )
+    {
+        SimObj* _simobj = NULL;
+
+        // collision shape
+        btCollisionShape* _colShape = createCollisionShape( shape, size );
 
         // motion state
         btTransform _rbTransform;
@@ -315,20 +324,32 @@ namespace bullet
             m_btWorldPtr->addRigidBody( _rigidBody );
 
         // add a wrapper for this body
-        _obj = new SimObj( _rigidBody );
-        m_simObjs.push_back( _obj );
+        _simobj = new SimObj( _rigidBody );
+        m_simObjs.push_back( _simobj );
 
         // configure graphics object
         {
-            auto _mesh = _obj->graphicsObj();
+            auto _mesh = _simobj->graphicsObj();
             auto _material = _mesh->getMaterial();
             _material->setColor( { color.x(), color.y(), color.z() } );
 
             m_graphicsScene->addRenderable( _mesh );
         }
-        
 
-        return _obj;
+        return _simobj;
+    }
+
+    /* SimpleTestApplication ***************************************************/
+
+    SimpleTestApplication::SimpleTestApplication()
+        : ITestApplication()
+    {
+        // nothing extra to do for now
+    }
+
+    SimpleTestApplication::~SimpleTestApplication()
+    {
+        // nothing extra to do for now
     }
 
     void SimpleTestApplication::_initPhysicsInternal()
@@ -353,8 +374,75 @@ namespace bullet
 
     void SimpleTestApplication::_stepInternal()
     {
-        for ( size_t i = 0; i < m_simObjs.size(); i++ )
-            m_simObjs[i]->update();
+        // nothing to do here
     }
+
+    /* SimMultibodyLink ***************************************************/
+    
+    SimMultibodyLink::SimMultibodyLink( btCollisionObject* colObj,
+                                        SimMultibodyLink* parentObj )
+        : SimObj( colObj )
+    {
+        m_parentObj = parentObj;
+    }
+
+    SimMultibodyLink::~SimMultibodyLink()
+    {
+        m_parentObj = NULL;
+    }
+
+    SimMultibodyLink* SimMultibodyLink::parentObj()
+    {
+        return m_parentObj;
+    }
+
+    /* SimMultibody ********************************************************/
+
+    SimMultibody::SimMultibody()
+    {
+
+    }
+
+    SimMultibody::~SimMultibody()
+    {
+        // nothing for now
+    }
+
+    /* MultibodyTestApplication ***************************************************/
+
+    MultibodyTestApplication::MultibodyTestApplication()
+        : ITestApplication()
+    {
+        // nothing to do here for now
+    }
+
+    MultibodyTestApplication::~MultibodyTestApplication()
+    {
+        // nothing to do here for now
+    }
+
+    void MultibodyTestApplication::_initPhysicsInternal()
+    {
+        m_btBroadphaseInterfacePtr      = new btDbvtBroadphase();
+        m_btCollisionConfigurationPtr   = new btDefaultCollisionConfiguration();
+        m_btCollisionDispatcherPtr      = new btCollisionDispatcher( m_btCollisionConfigurationPtr );
+        m_btConstraintSolverPtr         = new btMultiBodyConstraintSolver();
+
+        m_btWorldPtr = new btMultiBodyDynamicsWorld( m_btCollisionDispatcherPtr,
+                                                     m_btBroadphaseInterfacePtr,
+                                                     (btMultiBodyConstraintSolver*) m_btConstraintSolverPtr,
+                                                     m_btCollisionConfigurationPtr );
+    }
+
+    void MultibodyTestApplication::_startInternal()
+    {
+        // nothing to do here
+    }
+
+    void MultibodyTestApplication::_stepInternal()
+    {
+        
+    }
+
 
 }
