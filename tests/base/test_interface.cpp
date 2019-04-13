@@ -6,6 +6,30 @@ using namespace engine;
 namespace bullet
 {
 
+    btCollisionShape* createCollisionShape( const std::string& shape,
+                                            const btVector3& size )
+    {
+        btCollisionShape* _colShape = NULL;
+
+        if ( shape == "box" )
+            _colShape = new btBoxShape( btVector3( 0.5 * size.x(), 0.5 * size.y(), 0.5 * size.z() ) );
+        else if ( shape == "sphere" )
+            _colShape = new btSphereShape( size.x() );
+        else if ( shape == "capsule" )
+            _colShape = new btCapsuleShapeZ( size.x(), size.y() );
+        else if ( shape == "cylinder" )
+            _colShape = new btCylinderShapeZ( btVector3( size.x(), size.x(), size.y() ) );
+        else
+            std::cout << "ERROR> shape: " << shape << " not supported" << std::endl;
+
+        if ( !_colShape )
+            return NULL;
+
+        _colShape->setMargin( 0.0f );
+
+        return _colShape;
+    }
+
     /* SimObj ******************************************************************/
 
     SimObj::SimObj( btCollisionObject* colObj )
@@ -260,30 +284,6 @@ namespace bullet
 
     }
 
-    btCollisionShape* ITestApplication::createCollisionShape( const std::string& shape,
-                                                              const btVector3& size )
-    {
-        btCollisionShape* _colShape = NULL;
-
-        if ( shape == "box" )
-            _colShape = new btBoxShape( btVector3( 0.5 * size.x(), 0.5 * size.y(), 0.5 * size.z() ) );
-        else if ( shape == "sphere" )
-            _colShape = new btSphereShape( size.x() );
-        else if ( shape == "capsule" )
-            _colShape = new btCapsuleShapeZ( size.x(), size.y() );
-        else if ( shape == "cylinder" )
-            _colShape = new btCylinderShapeZ( btVector3( size.x(), size.x(), size.y() ) );
-        else
-            std::cout << "ERROR> shape: " << shape << " not supported" << std::endl;
-
-        if ( !_colShape )
-            return NULL;
-
-        _colShape->setMargin( 0.0f );
-
-        return _colShape;
-    }
-
     SimObj* ITestApplication::createBody( const std::string& shape,
                                           const btVector3& size,
                                           const btVector3& pos,
@@ -398,14 +398,62 @@ namespace bullet
 
     /* SimMultibody ********************************************************/
 
-    SimMultibody::SimMultibody()
+    SimMultibody::SimMultibody( size_t numLinks, 
+                                const btVector3& position,
+                                const std::string& baseShape,
+                                const btVector3& baseSize,
+                                float baseMass, 
+                                bool baseIsFixed )
     {
+        // create the shape of the base
+        auto _bShape = createCollisionShape( baseShape, baseSize );
 
+        // compute inertial properties required for base when creating a multibody
+        btScalar _bMass( baseMass );
+        btVector3 _bInertia;
+
+        if ( _bMass != 0.0f )
+            _bShape->calculateLocalInertia( _bMass, _bInertia );
+
+        // create the multibody
+        m_btMultibody = new btMultiBody( numLinks, _bMass, _bInertia, baseIsFixed, false );
+        
+        // create a SimMultibodyLink for the base
+        auto _bCollider = new btMultiBodyLinkCollider( m_btMultibody, -1 );
+        _bCollider->setCollisionShape( _bShape );
+
+        btTransform _bTransform;
+        _bTransform.setIdentity();
+        _bTransform.setOrigin( position );
+        _bCollider->setWorldTransform( _bTransform );
+
+        auto _bSimMultibodyLink = new SimMultibodyLink( _bCollider, NULL );
+
+        m_btMultibody->setBaseCollider( _bCollider );
+        m_simLinks.push_back( _bSimMultibodyLink );
     }
 
     SimMultibody::~SimMultibody()
     {
         // nothing for now
+    }
+
+    SimMultibodyLink* SimMultibody::setupLink( size_t linkIndx,
+                                               const std::string& shapeType,
+                                               const btVector3& shapeSize,
+                                               const btTransform& localTransform,
+                                               SimMultibodyLink* parentObj,
+                                               const std::string& jointType,
+                                               const btVector3& jointAxis,
+                                               const btTransform& jointLocalTransform )
+    {
+
+    }
+
+    void SimMultibody::update()
+    {
+        for ( size_t i = 0; i < m_simLinks.size(); i++ )
+            m_simLinks[i]->update();
     }
 
     /* MultibodyTestApplication ***************************************************/
@@ -432,6 +480,8 @@ namespace bullet
                                                      m_btBroadphaseInterfacePtr,
                                                      (btMultiBodyConstraintSolver*) m_btConstraintSolverPtr,
                                                      m_btCollisionConfigurationPtr );
+
+        m_btWorldPtr->setGravity( btVector3( 0, 0, -10 ) );
     }
 
     void MultibodyTestApplication::_startInternal()
@@ -441,8 +491,13 @@ namespace bullet
 
     void MultibodyTestApplication::_stepInternal()
     {
-        
+        for ( size_t i = 0; i < m_simMultibodies.size(); i++ )
+            m_simMultibodies[i]->update();
     }
 
+    void MultibodyTestApplication::addSimMultibody( SimMultibody* simMultibodyPtr )
+    {
+        m_simMultibodies.push_back( simMultibodyPtr );
+    }
 
 }

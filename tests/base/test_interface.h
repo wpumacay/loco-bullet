@@ -30,9 +30,16 @@ using namespace engine;
 namespace bullet
 {
 
+    /* Some helpers */
+
+    btCollisionShape* createCollisionShape( const std::string& shape,
+                                            const btVector3& size );
+
+    /* SimObj: simple wrapper for collision objects being simulated by the engine */
+
     class SimObj
     {
-        private :
+        protected :
 
         btCollisionObject* m_colObj;
         LMesh* m_graphicsObj;
@@ -108,9 +115,6 @@ namespace bullet
 
         /* Helper functions */
 
-        btCollisionShape* createCollisionShape( const std::string& shape,
-                                                const btVector3& size );
-
         SimObj* createBody( const std::string& shape,
                             const btVector3& size,
                             const btVector3& pos,
@@ -134,7 +138,7 @@ namespace bullet
         ~SimpleTestApplication();
     };
 
-    class SimMultibodyLink : SimObj
+    class SimMultibodyLink : public SimObj
     {
         private :
 
@@ -158,16 +162,22 @@ namespace bullet
 
         public :
 
-        SimMultibody();
+        SimMultibody( size_t numLinks, 
+                      const btVector3& position,
+                      const std::string& baseShape,
+                      const btVector3& baseSize,
+                      float baseMass, 
+                      bool baseIsFixed );
         ~SimMultibody();
 
-        SimMultibodyLink* addLink( const std::string& shapeType,
-                                   const btVector3& shapeSize,
-                                   const btTransform& localTransform,
-                                   SimMultibodyLink* parentObj,
-                                   const std::string& jointType,
-                                   const btVector3& jointAxis,
-                                   const btTransform& jointLocalTransform );
+        SimMultibodyLink* setupLink( size_t linkIndx,
+                                     const std::string& shapeType,
+                                     const btVector3& shapeSize,
+                                     const btTransform& localTransform,
+                                     SimMultibodyLink* parentObj,
+                                     const std::string& jointType,
+                                     const btVector3& jointAxis,
+                                     const btTransform& jointLocalTransform );
 
         void update();
     };
@@ -189,6 +199,8 @@ namespace bullet
 
         MultibodyTestApplication();
         ~MultibodyTestApplication();
+
+        void addSimMultibody( SimMultibody* simMultibodyPtr );
 
     };
 
