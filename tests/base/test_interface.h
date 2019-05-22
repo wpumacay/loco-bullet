@@ -97,6 +97,8 @@ namespace bullet
 
         std::vector< SimObj* > m_simObjs;
 
+        bool m_isRunning;
+
         void _init();
         void _initGraphics();
         // Derived base-application types should override this and create ...
@@ -116,6 +118,7 @@ namespace bullet
 
         void start();
         void step();
+        void togglePause();
 
         /* Helper functions */
 

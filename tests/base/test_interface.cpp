@@ -259,6 +259,8 @@ namespace bullet
 
         m_graphicsApp = NULL;
         m_graphicsScene = NULL;
+
+        m_isRunning = true;
     }
 
     ITestApplication::~ITestApplication()
@@ -323,7 +325,7 @@ namespace bullet
 
     void ITestApplication::step()
     {
-        if ( m_btWorldPtr )
+        if ( m_btWorldPtr && m_isRunning )
             m_btWorldPtr->stepSimulation( 1. / 60. );
 
         for ( size_t i = 0; i < m_simObjs.size(); i++ )
@@ -355,6 +357,11 @@ namespace bullet
 
         m_graphicsApp->end();
 
+    }
+
+    void ITestApplication::togglePause()
+    {
+        m_isRunning = ( m_isRunning ) ? false : true;
     }
 
     SimObj* ITestApplication::createBody( const std::string& shape,
@@ -501,6 +508,7 @@ namespace bullet
         // create a SimMultibodyLink for the base
         auto _bCollider = new btMultiBodyLinkCollider( m_btMultibody, -1 );
         _bCollider->setCollisionShape( _bShape );
+        _bCollider->getWorldTransform().setOrigin( position );
 
         auto _bSimMultibodyLink = new SimMultibodyLink( _bCollider, -1, NULL );
 
@@ -574,10 +582,51 @@ namespace bullet
                                           -jointPivot,
                                           true );
         }
-//         else if ( jointType == "ball" || jointType == "spheric" || jointType == "spherical" )
-//         {
-// 
-//         }
+        else if ( jointType == "slider" || jointType == "slide" || jointType == "prismatic" )
+        {
+            m_btMultibody->setupPrismatic( linkIndx,
+                                           _linkMass,
+                                           _linkInertia,
+                                           _linkParentIndx,
+                                           _parent2this_quat,
+                                           jointAxis,
+                                           _pivot2parent_pos,
+                                           -jointPivot,
+                                           true );
+        }
+        else if ( jointType == "planar" )
+        {
+            m_btMultibody->setupPlanar( linkIndx,
+                                        _linkMass,
+                                        _linkInertia,
+                                        _linkParentIndx,
+                                        _parent2this_quat,
+                                        jointAxis,
+                                        _pivot2parent_pos,
+                                        true );
+        }
+        else if ( jointType == "ball" || jointType == "spheric" || jointType == "spherical" )
+        {
+            m_btMultibody->setupSpherical( linkIndx,
+                                           _linkMass,
+                                           _linkInertia,
+                                           _linkParentIndx,
+                                           _parent2this_quat,
+                                           _pivot2parent_pos,
+                                           -jointPivot,
+                                           true );
+        }
+        else if ( jointType == "fixed" )
+        {
+            m_btMultibody->setupFixed( linkIndx,
+                                       _linkMass,
+                                       _linkInertia,
+                                       _linkParentIndx,
+                                       _parent2this_quat,
+                                       _pivot2parent_pos,
+                                       -jointPivot,
+                                       true );
+        }
         else
         {
             std::cout << "ERROR> joint type: " << jointType << " not supported" << std::endl;
@@ -588,9 +637,12 @@ namespace bullet
         _linkCollider->setCollisionShape( _linkShape );
         m_btMultibody->getLink( linkIndx ).m_collider = _linkCollider;
 
+        // initialize worldtransform from parent
+        auto _parentWorldTransform = parentObj->colObj()->getWorldTransform();
+        _linkCollider->setWorldTransform( _parentWorldTransform * localTransform );
+
         // create SimMultibodyLink wrapper
         auto _linkSimMultibodyLink = new SimMultibodyLink( _linkCollider, linkIndx, parentObj );
-
 
         // cache the simlink for later usage
         m_simLinks.push_back( _linkSimMultibodyLink );
