@@ -27,6 +27,8 @@
 
 using namespace engine;
 
+#define DEFAULT_DENSITY 1000.0f // density of water, same default as in mujoco
+
 namespace bullet
 {
 
@@ -34,6 +36,8 @@ namespace bullet
 
     btCollisionShape* createCollisionShape( const std::string& shape,
                                             const btVector3& size );
+
+    btScalar computeMassFromShape( btCollisionShape* colShape );
 
     /* SimObj: simple wrapper for collision objects being simulated by the engine */
 
@@ -142,15 +146,18 @@ namespace bullet
     {
         private :
 
+        int m_linkIndx;
         SimMultibodyLink* m_parentObj;
 
         public :
 
         SimMultibodyLink( btCollisionObject* colObj,
+                          int linkIndx,
                           SimMultibodyLink* parentObj );
         ~SimMultibodyLink();
 
         SimMultibodyLink* parentObj();
+        int getIndx();
     };
 
     class SimMultibody
@@ -170,16 +177,21 @@ namespace bullet
                       bool baseIsFixed );
         ~SimMultibody();
 
-        SimMultibodyLink* setupLink( size_t linkIndx,
-                                     const std::string& shapeType,
-                                     const btVector3& shapeSize,
-                                     const btTransform& localTransform,
-                                     SimMultibodyLink* parentObj,
-                                     const std::string& jointType,
-                                     const btVector3& jointAxis,
-                                     const btTransform& jointLocalTransform );
+        SimMultibodyLink* setupLinkSingleJoint( int linkIndx,
+                                                const std::string& shapeType,
+                                                const btVector3& shapeSize,
+                                                const btTransform& localTransform,
+                                                SimMultibodyLink* parentObj,
+                                                const std::string& jointType,
+                                                const btVector3& jointAxis,
+                                                const btVector3& jointPivot );
 
         void update();
+
+        std::vector< SimMultibodyLink* > linksPtrs();
+
+        SimMultibodyLink* ptrRootLink();
+        btMultiBody* ptrBtMultibody();
     };
 
 

@@ -30,6 +30,71 @@ namespace bullet
         return _colShape;
     }
 
+    btScalar computeMassFromShape( btCollisionShape* colShape )
+    {
+        if ( !colShape )
+        {
+            std::cout << "ERROR> no collision shape provided for mass calculation" << std::endl;
+            return btScalar( 0.0f );
+        }
+
+        int _type = colShape->getShapeType();
+
+        btScalar _volume;
+        btScalar _pi = 3.141592653589793;
+
+        if ( _type == BOX_SHAPE_PROXYTYPE )
+        {
+            auto _boxShape = reinterpret_cast< btBoxShape* >( colShape );
+            auto _boxDimensions = _boxShape->getHalfExtentsWithoutMargin();
+
+            _volume = ( _boxDimensions.x() * _boxDimensions.y() * _boxDimensions.z() );
+        }
+        else if ( _type == SPHERE_SHAPE_PROXYTYPE )
+        {
+            auto _sphereShape = reinterpret_cast< btSphereShape* >( colShape );
+            auto _sphereRadius = _sphereShape->getRadius();
+
+            _volume = _pi * ( _sphereRadius * _sphereRadius * _sphereRadius );
+        }
+        else if ( _type == CYLINDER_SHAPE_PROXYTYPE )
+        {
+            auto _cylinderShape = reinterpret_cast< btCylinderShape* >( colShape );
+            auto _cylinderUpAxis = _cylinderShape->getUpAxis();
+            auto _cylinderRadius = _cylinderShape->getRadius();
+            auto _cylinderHalfExtents = _cylinderShape->getHalfExtentsWithoutMargin();
+            auto _cylinderHeight = 2.0 * _cylinderHalfExtents[_cylinderUpAxis];
+
+            _volume = ( _pi * _cylinderRadius * _cylinderRadius ) * _cylinderHeight;
+        }
+        else if ( _type == CAPSULE_SHAPE_PROXYTYPE )
+        {
+            auto _capsuleShape = reinterpret_cast< btCapsuleShape* >( colShape );
+            auto _capsuleUpAxis = _capsuleShape->getUpAxis();
+            auto _capsuleRadius = _capsuleShape->getRadius();
+            auto _capsuleHeight = 2.0 * _capsuleShape->getHalfHeight();
+
+            _volume = ( _pi * _capsuleRadius * _capsuleRadius ) * _capsuleHeight +
+                      ( _pi * _capsuleRadius * _capsuleRadius * _capsuleRadius );
+        }
+        else
+        {
+            // compute from aabb
+            btVector3 _aabbMin, _aabbMax;
+
+            btTransform _identityTransform;
+            _identityTransform.setIdentity();
+
+            colShape->getAabb( _identityTransform, _aabbMin, _aabbMax );
+
+            _volume = btFabs( ( _aabbMax.x() - _aabbMin.x() ) * 
+                              ( _aabbMax.y() - _aabbMin.y() ) *
+                              ( _aabbMax.z() - _aabbMin.z() ) );
+        }
+
+        return _volume * DEFAULT_DENSITY;
+    }
+
     /* SimObj ******************************************************************/
 
     SimObj::SimObj( btCollisionObject* colObj )
@@ -128,7 +193,7 @@ namespace bullet
     CustomDebugDrawer::CustomDebugDrawer()
     {
         m_debugMode = btIDebugDraw::DBG_DrawWireframe | 
-                      /*btIDebugDraw::DBG_DrawAabb |*/
+                      btIDebugDraw::DBG_DrawAabb |
                       btIDebugDraw::DBG_DrawFrames |
                       btIDebugDraw::DBG_DrawConstraints;
     }
@@ -280,6 +345,14 @@ namespace bullet
 
         m_graphicsApp->begin();
         m_graphicsApp->update();
+
+        engine::DebugSystem::drawLine( { 0.0f, 0.0f, 0.0f }, { 5.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } );
+        engine::DebugSystem::drawLine( { 0.0f, 0.0f, 0.0f }, { 0.0f, 5.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } );
+        engine::DebugSystem::drawLine( { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 5.0f }, { 0.0f, 0.0f, 1.0f } );
+        
+        if ( m_btWorldPtr )
+            m_btWorldPtr->debugDrawWorld();
+
         m_graphicsApp->end();
 
     }
@@ -347,7 +420,7 @@ namespace bullet
         // nothing extra to do for now
     }
 
-    SimpleTestApplication::~SimpleTestApplication()
+        SimpleTestApplication::~SimpleTestApplication()
     {
         // nothing extra to do for now
     }
@@ -380,9 +453,11 @@ namespace bullet
     /* SimMultibodyLink ***************************************************/
     
     SimMultibodyLink::SimMultibodyLink( btCollisionObject* colObj,
+                                        int linkIndx,
                                         SimMultibodyLink* parentObj )
         : SimObj( colObj )
     {
+        m_linkIndx = linkIndx;
         m_parentObj = parentObj;
     }
 
@@ -394,6 +469,11 @@ namespace bullet
     SimMultibodyLink* SimMultibodyLink::parentObj()
     {
         return m_parentObj;
+    }
+
+    int SimMultibodyLink::getIndx()
+    {
+        return m_linkIndx;
     }
 
     /* SimMultibody ********************************************************/
@@ -422,14 +502,11 @@ namespace bullet
         auto _bCollider = new btMultiBodyLinkCollider( m_btMultibody, -1 );
         _bCollider->setCollisionShape( _bShape );
 
-        btTransform _bTransform;
-        _bTransform.setIdentity();
-        _bTransform.setOrigin( position );
-        _bCollider->setWorldTransform( _bTransform );
-
-        auto _bSimMultibodyLink = new SimMultibodyLink( _bCollider, NULL );
+        auto _bSimMultibodyLink = new SimMultibodyLink( _bCollider, -1, NULL );
 
         m_btMultibody->setBaseCollider( _bCollider );
+        m_btMultibody->setBasePos( position );
+
         m_simLinks.push_back( _bSimMultibodyLink );
     }
 
@@ -438,22 +515,108 @@ namespace bullet
         // nothing for now
     }
 
-    SimMultibodyLink* SimMultibody::setupLink( size_t linkIndx,
-                                               const std::string& shapeType,
-                                               const btVector3& shapeSize,
-                                               const btTransform& localTransform,
-                                               SimMultibodyLink* parentObj,
-                                               const std::string& jointType,
-                                               const btVector3& jointAxis,
-                                               const btTransform& jointLocalTransform )
+    SimMultibodyLink* SimMultibody::setupLinkSingleJoint( int linkIndx,
+                                                          const std::string& shapeType,
+                                                          const btVector3& shapeSize,
+                                                          const btTransform& localTransform,
+                                                          SimMultibodyLink* parentObj,
+                                                          const std::string& jointType,
+                                                          const btVector3& jointAxis,
+                                                          const btVector3& jointPivot )
     {
+        if ( !m_btMultibody )
+        {
+            std::cout << "ERROR> no btMultibody created for this object" << std::endl;
+            return NULL;
+        }
 
+        if ( !parentObj )
+        {
+            std::cout << "ERROR> this link (non-root) has no parent" << std::endl;
+            return NULL;
+        }
+
+        // grab parent index for latex usage 
+        int _linkParentIndx = parentObj->getIndx();
+
+        // first just create the shape required for the link
+        auto _linkShape = createCollisionShape( shapeType, shapeSize );
+
+        // compute inertial properties from this shape
+        btScalar _linkMass = computeMassFromShape( _linkShape );
+        btVector3 _linkInertia;
+        if ( _linkMass != 0.0f )
+        {
+            _linkShape->calculateLocalInertia( _linkMass, _linkInertia );
+        }
+
+        // grab localPos and localRot from localTransform. Recall this=local, ...
+        // which is respect to the parent link. Also, get the inverse of these ...
+        // quantities, as the setupXYZ methods required them
+        auto _this2parent_quat  = localTransform.getRotation();
+        auto _this2parent_pos   = localTransform.getOrigin();
+        auto _parent2this_quat  = _this2parent_quat.inverse();
+        auto _parent2this_pos   = -quatRotate( _parent2this_quat, _this2parent_pos );
+
+        // compute pivot w.r.t. parent COM
+        auto _pivot2parent_pos = _this2parent_pos - quatRotate( _this2parent_quat, -jointPivot );
+
+        // setup the constraint for this link
+        if ( jointType == "hinge" || jointType == "continuous" || jointType == "revolute" )
+        {
+            m_btMultibody->setupRevolute( linkIndx, 
+                                          _linkMass, 
+                                          _linkInertia,
+                                          _linkParentIndx,
+                                          _parent2this_quat,
+                                          jointAxis,
+                                          _pivot2parent_pos,
+                                          -jointPivot,
+                                          true );
+        }
+//         else if ( jointType == "ball" || jointType == "spheric" || jointType == "spherical" )
+//         {
+// 
+//         }
+        else
+        {
+            std::cout << "ERROR> joint type: " << jointType << " not supported" << std::endl;
+        }
+
+        // collider managment
+        auto _linkCollider = new btMultiBodyLinkCollider( m_btMultibody, linkIndx );
+        _linkCollider->setCollisionShape( _linkShape );
+        m_btMultibody->getLink( linkIndx ).m_collider = _linkCollider;
+
+        // create SimMultibodyLink wrapper
+        auto _linkSimMultibodyLink = new SimMultibodyLink( _linkCollider, linkIndx, parentObj );
+
+
+        // cache the simlink for later usage
+        m_simLinks.push_back( _linkSimMultibodyLink );
+
+        return _linkSimMultibodyLink;
     }
 
     void SimMultibody::update()
     {
         for ( size_t i = 0; i < m_simLinks.size(); i++ )
             m_simLinks[i]->update();
+    }
+
+    std::vector< SimMultibodyLink* > SimMultibody::linksPtrs()
+    {
+        return m_simLinks;
+    }
+
+    SimMultibodyLink* SimMultibody::ptrRootLink()
+    {
+        return m_simLinks[0];
+    }
+
+    btMultiBody* SimMultibody::ptrBtMultibody()
+    {
+        return m_btMultibody;
     }
 
     /* MultibodyTestApplication ***************************************************/
@@ -497,6 +660,28 @@ namespace bullet
 
     void MultibodyTestApplication::addSimMultibody( SimMultibody* simMultibodyPtr )
     {
+        // add internal btMultibody resource
+        reinterpret_cast< btMultiBodyDynamicsWorld* >
+                            ( m_btWorldPtr )->addMultiBody( simMultibodyPtr->ptrBtMultibody() );
+
+        // add all graphics resources to the scene
+        auto _linksPtrs = simMultibodyPtr->linksPtrs();
+        for ( size_t q = 0; q < _linksPtrs.size(); q++ )
+        {
+            auto _mesh = _linksPtrs[q]->graphicsObj();
+            auto _material = _mesh->getMaterial();
+            _material->setColor( { 0.7, 0.5, 0.3 } );
+
+            m_graphicsScene->addRenderable( _mesh );
+        }
+
+        // add all multibody-links resources (even base) to the world
+        for ( size_t q = 0; q < _linksPtrs.size(); q++ )
+        {
+            m_btWorldPtr->addCollisionObject( _linksPtrs[q]->colObj() );
+        }
+
+        // cache the reference for later usage
         m_simMultibodies.push_back( simMultibodyPtr );
     }
 
