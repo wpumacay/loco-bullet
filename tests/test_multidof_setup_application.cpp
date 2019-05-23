@@ -6,6 +6,7 @@ class AppExample : public bullet::MultibodyTestApplication
     private :
 
     bullet::SimMultibody* _createHumanoidShoulder( const btVector3& position );
+    bullet::SimMultibody* _createWalkerPlanarTorso( const btVector3& position );
 
     protected :
 
@@ -46,9 +47,11 @@ void AppExample::_initScenario()
                                 btVector3( 0.7, 0.5, 0.3 ),
                                 0.5f );
 
-    auto _humanoidShoulder = _createHumanoidShoulder( { 0, 0, 1. } );
+    auto _humanoidShoulder  = _createHumanoidShoulder( { 0, 0, 0. } );
+    auto _walkerPlanarTorso = _createWalkerPlanarTorso( { 0., 0., 1. } );
 
     addSimMultibody( _humanoidShoulder );
+    addSimMultibody( _walkerPlanarTorso );
 }
 
 bullet::SimMultibody* AppExample::_createHumanoidShoulder( const btVector3& position )
@@ -60,7 +63,7 @@ bullet::SimMultibody* AppExample::_createHumanoidShoulder( const btVector3& posi
                                               1.,
                                               true );
 
-    // define the components of the shoulder
+    // define the dofs of the shoulder
     std::vector< std::string > _jointsTypes = { "revolute", "revolute" };
     std::vector< btVector3 > _jointsAxes    = { { -1., -1., 1. }, { 1., -1., 1. } };
     std::vector< btVector3 > _jointsPivots  = { { 0., 0.15, 0. }, { 0., 0.15, 0. } };
@@ -91,6 +94,39 @@ bullet::SimMultibody* AppExample::_createHumanoidShoulder( const btVector3& posi
                                                 "revolute",
                                                 { 1., 0., 0. },
                                                 { 0., 0.2, 0. } );
+
+    _simbody->ptrBtMultibody()->setHasSelfCollision( false );
+    _simbody->ptrBtMultibody()->finalizeMultiDof();
+
+    return _simbody;
+}
+
+bullet::SimMultibody* AppExample::_createWalkerPlanarTorso( const btVector3& position )
+{
+    auto _simbody = new bullet::SimMultibody( (3 + 1),
+                                              position,
+                                              "none",
+                                              { 0., 0., 0. },
+                                              0.,
+                                              true );
+
+    // define the dofs of the torso
+    std::vector< std::string > _jointsTypes = { "prismatic", "prismatic", "revolute" };
+    std::vector< btVector3 > _jointsAxes    = { { 1., 0., 0. }, { 0., 0., 1. }, { 0., 1., 0. } };
+    std::vector< btVector3 > _jointsPivots  = { { 0., 0., 0. }, { 0., 0., 0. }, { 0., 0., 0. } };
+
+    // define the transform of the torso w.r.t. the base (the coincide, so identity)
+    btTransform _trTorsoToBase;
+    _trTorsoToBase.setIdentity();
+
+    auto _torsoLinks = _simbody->setupLinkMultiDof( 0,
+                                                    "box",
+                                                    { 0.1, 0.1, 0.1 },
+                                                    _trTorsoToBase,
+                                                    _simbody->ptrRootLink(),
+                                                    _jointsTypes,
+                                                    _jointsAxes,
+                                                    _jointsPivots );
 
     _simbody->ptrBtMultibody()->setHasSelfCollision( false );
     _simbody->ptrBtMultibody()->finalizeMultiDof();

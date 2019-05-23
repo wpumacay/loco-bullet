@@ -4,6 +4,8 @@ message( "Configuring tysocBullet::tests" )
 
 include_directories( "../ext/bullet/src" )
 include_directories( "../tysoc/ext/cat1/include" )
+include_directories( "../tysoc/ext/imgui" )
+include_directories( "../tysoc/ext/imgui/examples" )
 
 add_subdirectory( base )
 include_directories( base )

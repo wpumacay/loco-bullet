@@ -320,6 +320,18 @@ namespace bullet
 
         // create debug drawer helper
         m_btDebugDrawer = new CustomDebugDrawer();
+
+        // Initialize UI resources
+        IMGUI_CHECKVERSION();
+        ImGui::CreateContext();
+        ImGuiIO& _io = ImGui::GetIO(); (void) _io;
+    #ifdef __APPLE__
+        ImGui_ImplOpenGL3_Init( "#version 150" );
+    #else
+        ImGui_ImplOpenGL3_Init( "#version 130" );
+    #endif
+        ImGui_ImplGlfw_InitForOpenGL( m_graphicsApp->window()->getGLFWwindow(), false );
+        ImGui::StyleColorsDark();
     }
 
     void ITestApplication::start()
@@ -361,8 +373,29 @@ namespace bullet
         if ( m_btWorldPtr )
             m_btWorldPtr->debugDrawWorld();
 
+        // render the UI
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+        if ( true )
+        {
+            _renderUI();
+        }
+
+        ImGui::Render();
+        int _ww, _wh;
+        glfwGetFramebufferSize( m_graphicsApp->window()->getGLFWwindow(), &_ww, &_wh );
+        glViewport( 0, 0, _ww, _wh );
+        ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
+
         m_graphicsApp->end();
 
+    }
+
+    void ITestApplication::_renderUI()
+    {
+        // Override this
     }
 
     void ITestApplication::togglePause()
@@ -587,6 +620,18 @@ namespace bullet
                                           _pivot2parent_pos,
                                           -jointPivot,
                                           true );
+
+            {
+                m_btMultibody->getLink( linkIndx ).m_jointLowerLimit = -1.57;
+                m_btMultibody->getLink( linkIndx ).m_jointUpperLimit = 1.57;
+                
+                auto _constraint = new btMultiBodyJointMotor( m_btMultibody, linkIndx, 0, 0, 5. );
+                _constraint->setErp( 0.1 );
+                _constraint->setPositionTarget( 0.25 );
+
+                m_constraints.push_back( _constraint );
+                m_motors.push_back( _constraint );
+            }
         }
         else if ( jointType == "slider" || jointType == "slide" || jointType == "prismatic" )
         {
@@ -599,6 +644,18 @@ namespace bullet
                                            _pivot2parent_pos,
                                            -jointPivot,
                                            true );
+
+            {
+                m_btMultibody->getLink( linkIndx ).m_jointLowerLimit = -10.;
+                m_btMultibody->getLink( linkIndx ).m_jointUpperLimit = 10.;
+                
+                auto _constraint = new btMultiBodyJointMotor( m_btMultibody, linkIndx, 0, 0, 5. );
+                _constraint->setErp( 0.1 );
+                _constraint->setPositionTarget( 0. );
+
+                m_constraints.push_back( _constraint );
+                m_motors.push_back( _constraint );
+            }
         }
         else if ( jointType == "planar" )
         {
@@ -824,6 +881,16 @@ namespace bullet
         return m_simLinks;
     }
 
+    std::vector< btMultiBodyConstraint* > SimMultibody::constraintsPtrs()
+    {
+        return m_constraints;
+    }
+
+    std::vector< btMultiBodyJointMotor* > SimMultibody::motorsPtrs()
+    {
+        return m_motors;
+    }
+
     SimMultibodyLink* SimMultibody::ptrRootLink()
     {
         return m_simLinks[0];
@@ -900,8 +967,37 @@ namespace bullet
             m_btWorldPtr->addCollisionObject( _linksPtrs[q]->colObj() );
         }
 
+        // add all constraints resources
+        auto _constraintsPtrs = simMultibodyPtr->constraintsPtrs();
+        for ( size_t q = 0; q < _constraintsPtrs.size(); q++ )
+        {
+            reinterpret_cast< btMultiBodyDynamicsWorld* >
+                            ( m_btWorldPtr )->addMultiBodyConstraint( _constraintsPtrs[q] );
+        }
+
         // cache the reference for later usage
         m_simMultibodies.push_back( simMultibodyPtr );
+    }
+
+    void MultibodyTestApplication::_renderUI()
+    {
+        ImGui::Begin( "Kinematic Tree actuator options" );
+
+        auto _motors = m_simMultibodies.back()->motorsPtrs();
+
+        for ( size_t q = 0; q < _motors.size(); q++ )
+        {
+            std::string _motorId = "motor(" + std::to_string( q ) + ")";
+            float _val = 0.0f;
+            ImGui::SliderFloat( _motorId.c_str(), 
+                                &_val,
+                                -1.57,
+                                1.57 );
+            
+            _motors[q]->setPositionTarget( _val );
+        }
+
+        ImGui::End();
     }
 
 }

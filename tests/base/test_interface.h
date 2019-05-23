@@ -6,6 +6,7 @@
 #include <btBulletDynamicsCommon.h>
 // Multibody bullet functionality
 #include <BulletDynamics/Featherstone/btMultiBody.h>
+#include <BulletDynamics/Featherstone/btMultiBodyConstraint.h>
 #include <BulletDynamics/Featherstone/btMultiBodyConstraintSolver.h>
 #include <BulletDynamics/Featherstone/btMultiBodyMLCPConstraintSolver.h>
 #include <BulletDynamics/Featherstone/btMultiBodyDynamicsWorld.h>
@@ -22,6 +23,10 @@
 #include <LFixedCamera3d.h>
 #include <LLightDirectional.h>
 #include <LMeshBuilder.h>
+// UI functionality (from Dear ImGui)
+#include <imgui.h>
+#include <imgui_impl_glfw.h>
+#include <imgui_impl_opengl3.h>
 // Some functionality from std
 #include <vector>
 
@@ -110,6 +115,8 @@ namespace bullet
         virtual void _startInternal() = 0;
         // Same considerations as for _startInternal
         virtual void _stepInternal() = 0;
+        // UI functionality
+        virtual void _renderUI();
 
         public :
 
@@ -170,6 +177,9 @@ namespace bullet
         btMultiBody* m_btMultibody;
         std::vector< SimMultibodyLink* > m_simLinks;
 
+        std::vector< btMultiBodyConstraint* > m_constraints;
+        std::vector< btMultiBodyJointMotor* > m_motors;
+
         public :
 
         SimMultibody( size_t numLinks, 
@@ -201,6 +211,8 @@ namespace bullet
         void update();
 
         std::vector< SimMultibodyLink* > linksPtrs();
+        std::vector< btMultiBodyConstraint* > constraintsPtrs();
+        std::vector< btMultiBodyJointMotor* > motorsPtrs();
 
         SimMultibodyLink* ptrRootLink();
         btMultiBody* ptrBtMultibody();
@@ -218,6 +230,7 @@ namespace bullet
         void _initPhysicsInternal() override;
         void _startInternal() override;
         void _stepInternal() override;
+        void _renderUI() override;
 
         public :
 
