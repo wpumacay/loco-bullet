@@ -10,3 +10,4 @@ build/
 *.pyo
 .vscode/
 _legacy/
+*.ini

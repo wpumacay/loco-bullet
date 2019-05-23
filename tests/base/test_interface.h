@@ -233,6 +233,10 @@ namespace bullet
         SimMultibody* m_currentSimMultibody;
         std::string m_currentSimMultibodyName;
 
+        // some ui options
+        bool m_showWireframe;
+        bool m_useBtDebugDrawer;
+
         protected :
 
         void _initPhysicsInternal() override;

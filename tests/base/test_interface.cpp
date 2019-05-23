@@ -916,6 +916,8 @@ namespace bullet
     {
         m_currentSimMultibody = NULL;
         m_currentSimMultibodyName = "";
+        m_showWireframe = false;
+        m_useBtDebugDrawer = true;
     }
 
     MultibodyTestApplication::~MultibodyTestApplication()
@@ -947,6 +949,25 @@ namespace bullet
     {
         for ( size_t i = 0; i < m_simMultibodies.size(); i++ )
             m_simMultibodies[i]->update();
+
+        for ( size_t i = 0; i < m_simMultibodies.size(); i++ )
+        {
+            auto _links = m_simMultibodies[i]->linksPtrs();
+            for ( size_t j = 0; j < _links.size(); j++ )
+            {
+                auto _renderable = _links[j]->graphicsObj();
+                if ( _renderable )
+                    _renderable->setWireframeMode( m_showWireframe );
+            }
+        }
+
+        if ( m_useBtDebugDrawer )
+            m_btDebugDrawer->setDebugMode( btIDebugDraw::DBG_DrawWireframe | 
+                                           btIDebugDraw::DBG_DrawAabb |
+                                           btIDebugDraw::DBG_DrawFrames |
+                                           btIDebugDraw::DBG_DrawConstraints );
+        else
+            m_btDebugDrawer->setDebugMode( btIDebugDraw::DBG_NoDebug );
     }
 
     void MultibodyTestApplication::addSimMultibody( SimMultibody* simMultibodyPtr )
@@ -1015,6 +1036,14 @@ namespace bullet
 
             ImGui::EndCombo();
         }
+
+        // some checkboxes to enable/disable some features
+        ImGui::Begin( "Options" );
+
+        ImGui::Checkbox( "Show wireframe", &m_showWireframe );
+        ImGui::Checkbox( "Use BtDebugDrawer", &m_useBtDebugDrawer );
+
+        ImGui::End();
 
         if ( m_currentSimMultibody )
         {
