@@ -174,6 +174,8 @@ namespace bullet
     {
         private :
 
+        std::string m_name;
+
         btMultiBody* m_btMultibody;
         std::vector< SimMultibodyLink* > m_simLinks;
 
@@ -182,7 +184,8 @@ namespace bullet
 
         public :
 
-        SimMultibody( size_t numLinks, 
+        SimMultibody( const std::string& name,
+                      size_t numLinks, 
                       const btVector3& position,
                       const std::string& baseShape,
                       const btVector3& baseSize,
@@ -210,6 +213,8 @@ namespace bullet
 
         void update();
 
+        std::string name();
+
         std::vector< SimMultibodyLink* > linksPtrs();
         std::vector< btMultiBodyConstraint* > constraintsPtrs();
         std::vector< btMultiBodyJointMotor* > motorsPtrs();
@@ -224,6 +229,9 @@ namespace bullet
         private :
 
         std::vector< SimMultibody* > m_simMultibodies;
+
+        SimMultibody* m_currentSimMultibody;
+        std::string m_currentSimMultibodyName;
 
         protected :
 

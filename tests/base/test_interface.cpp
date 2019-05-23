@@ -524,13 +524,16 @@ namespace bullet
 
     /* SimMultibody ********************************************************/
 
-    SimMultibody::SimMultibody( size_t numLinks, 
+    SimMultibody::SimMultibody( const std::string& name,
+                                size_t numLinks, 
                                 const btVector3& position,
                                 const std::string& baseShape,
                                 const btVector3& baseSize,
                                 float baseMass, 
                                 bool baseIsFixed )
     {
+        m_name = name;
+
         // create the shape of the base
         auto _bShape = createCollisionShape( baseShape, baseSize );
 
@@ -876,6 +879,11 @@ namespace bullet
             m_simLinks[i]->update();
     }
 
+    std::string SimMultibody::name()
+    {
+        return m_name;
+    }
+
     std::vector< SimMultibodyLink* > SimMultibody::linksPtrs()
     {
         return m_simLinks;
@@ -906,12 +914,13 @@ namespace bullet
     MultibodyTestApplication::MultibodyTestApplication()
         : ITestApplication()
     {
-        // nothing to do here for now
+        m_currentSimMultibody = NULL;
+        m_currentSimMultibodyName = "";
     }
 
     MultibodyTestApplication::~MultibodyTestApplication()
     {
-        // nothing to do here for now
+        m_currentSimMultibody = NULL;
     }
 
     void MultibodyTestApplication::_initPhysicsInternal()
@@ -975,29 +984,77 @@ namespace bullet
                             ( m_btWorldPtr )->addMultiBodyConstraint( _constraintsPtrs[q] );
         }
 
+        if ( !m_currentSimMultibody )
+            m_currentSimMultibody = simMultibodyPtr;
+
         // cache the reference for later usage
         m_simMultibodies.push_back( simMultibodyPtr );
     }
 
     void MultibodyTestApplication::_renderUI()
     {
-        ImGui::Begin( "Kinematic Tree actuator options" );
-
-        auto _motors = m_simMultibodies.back()->motorsPtrs();
-
-        for ( size_t q = 0; q < _motors.size(); q++ )
+        // render the main menu (choose which multibody to use)
+        if ( ImGui::BeginCombo( "SimMultibodies", m_currentSimMultibodyName.c_str() ) )
         {
-            std::string _motorId = "motor(" + std::to_string( q ) + ")";
-            float _val = 0.0f;
-            ImGui::SliderFloat( _motorId.c_str(), 
-                                &_val,
-                                -1.57,
-                                1.57 );
-            
-            _motors[q]->setPositionTarget( _val );
+            for ( size_t i = 0; i < m_simMultibodies.size(); i++ )
+            {
+                auto _simMultibody = m_simMultibodies[i];
+                bool _isSelected = ( _simMultibody->name() == m_currentSimMultibodyName );
+
+                if ( ImGui::Selectable( _simMultibody->name().c_str(), _isSelected ) )
+                {
+                    m_currentSimMultibodyName = _simMultibody->name();
+                    m_currentSimMultibody = _simMultibody;
+                }
+
+                if ( _isSelected )
+                {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+
+            ImGui::EndCombo();
         }
 
-        ImGui::End();
+        if ( m_currentSimMultibody )
+        {
+            ImGui::Begin( "Kinematic Tree actuator options" );
+
+            auto _motors = m_currentSimMultibody->motorsPtrs();
+
+            for ( size_t q = 0; q < _motors.size(); q++ )
+            {
+                std::string _motorId = "motor(" + std::to_string( q ) + ")";
+                float _val = 0.0f;
+                ImGui::SliderFloat( _motorId.c_str(), 
+                                    &_val,
+                                    -1.57,
+                                    1.57 );
+                
+                _motors[q]->setPositionTarget( _val );
+            }
+
+//             for ( size_t q = 0; q < _motors.size(); q++ )
+//             {
+//                 int _linkId = _motors[q]->getLinkA();
+// 
+//                 auto _low   = m_currentSimMultibody->ptrBtMultibody()->getLink(_linkId).m_jointLowerLimit;
+//                 auto _high  = m_currentSimMultibody->ptrBtMultibody()->getLink(_linkId).m_jointUpperLimit;
+// 
+//                 std::string _strLinkId = "link(" + std::to_string( q ) + ")";
+//                 float _val = 0.0f;
+//                 ImGui::SliderFloat( _strLinkId.c_str(),
+//                                     &_val,
+//                                     -10,
+//                                     10 );
+//                 for ( size_t dof = 0; dof < m_currentSimMultibody->ptrBtMultibody()->getLink(_linkId).m_dofCount; dof++ )
+//                 {
+//                     m_currentSimMultibody->ptrBtMultibody()->addJointTorqueMultiDof( _linkId, dof, _val );
+//                 }
+//             }
+
+            ImGui::End();
+        }
     }
 
 }

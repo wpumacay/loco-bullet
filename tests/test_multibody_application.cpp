@@ -7,16 +7,17 @@ class AppExample : public bullet::MultibodyTestApplication
 {
     private :
 
-    bullet::SimMultibody* _createMultiPendulum( const btVector3& position,
+    bullet::SimMultibody* _createMultiPendulum( const std::string& name,
+                                                const btVector3& position,
                                                 size_t numLinks, 
                                                 bool useSpherical = false );
 
-    bullet::SimMultibody* _createPrismaticToy( const btVector3& position,
+    bullet::SimMultibody* _createPrismaticToy( const std::string& name,
+                                               const btVector3& position,
                                                bool useFixed = false );
 
-    bullet::SimMultibody* _createPlanarToy( const btVector3& position );
-
-    bullet::SimMultibody* _createNoBaseToy( const btVector3& position );
+    bullet::SimMultibody* _createNoBaseToy( const std::string& name,
+                                            const btVector3& position );
 
     protected :
 
@@ -57,16 +58,24 @@ void AppExample::_initScenario()
                                 btVector3( 0.7, 0.5, 0.3 ),
                                 0.5f );
 
-    auto _pendulum1 = _createMultiPendulum( { 0, 0, 1. + 3. * TEST_LINK_LENGTH }, 
+    auto _pendulum1 = _createMultiPendulum( "pendulum1",
+                                            { 0, 0, 1. + 3. * TEST_LINK_LENGTH }, 
                                             3,
                                             false );
-    auto _pendulum2 = _createMultiPendulum( { 1., 1., 1. + 3 * TEST_LINK_LENGTH },
+
+    auto _pendulum2 = _createMultiPendulum( "pendulum2",
+                                            { 1., 1., 1. + 3 * TEST_LINK_LENGTH },
                                             3,
                                             true );
 
-    auto _prismaticToy = _createPrismaticToy( { -1., 1., 1. }, false );
-    auto _fixedToy = _createPrismaticToy( { -1, -1, 1. }, true );
-    auto _noBaseToy = _createNoBaseToy( { 1., -1, 1. } );
+    auto _prismaticToy = _createPrismaticToy( "prismaticToy",
+                                              { -1., 1., 1. }, false );
+
+    auto _fixedToy = _createPrismaticToy( "fixedToy", 
+                                          { -1, -1, 1. }, true );
+
+    auto _noBaseToy = _createNoBaseToy( "noBaseToy", 
+                                        { 1., -1, 1. } );
 
     addSimMultibody( _pendulum1 );
     addSimMultibody( _pendulum2 );
@@ -75,11 +84,13 @@ void AppExample::_initScenario()
     addSimMultibody( _noBaseToy );
 }
 
-bullet::SimMultibody* AppExample::_createMultiPendulum( const btVector3& position ,
+bullet::SimMultibody* AppExample::_createMultiPendulum( const std::string& name,
+                                                        const btVector3& position ,
                                                         size_t numLinks, 
                                                         bool useSpherical )
 {
-    auto _pendulum = new bullet::SimMultibody( numLinks,
+    auto _pendulum = new bullet::SimMultibody( name,
+                                               numLinks,
                                                position,
                                                "sphere",
                                                btVector3( 0.1 * TEST_LINK_LENGTH,
@@ -135,7 +146,8 @@ bullet::SimMultibody* AppExample::_createMultiPendulum( const btVector3& positio
     return _pendulum;
 }
 
-bullet::SimMultibody* AppExample::_createPrismaticToy( const btVector3& position,
+bullet::SimMultibody* AppExample::_createPrismaticToy( const std::string& name,
+                                                       const btVector3& position,
                                                        bool useFixed )
 {
     /* The prismatic toy for this example has the following structure
@@ -153,7 +165,8 @@ bullet::SimMultibody* AppExample::_createPrismaticToy( const btVector3& position
     *                  ----          
     */
 
-    auto _toy = new bullet::SimMultibody( 2,
+    auto _toy = new bullet::SimMultibody( name,
+                                          2,
                                           position,
                                           "sphere",
                                           btVector3( 0.025, 0.025, 0.025 ),
@@ -241,14 +254,11 @@ bullet::SimMultibody* AppExample::_createPrismaticToy( const btVector3& position
     return _toy;
 }
 
-// bullet::SimMultibody* _createPlanarToy( const btVector3& position )
-// {
-//     return NULL;
-// }
-
-bullet::SimMultibody* AppExample::_createNoBaseToy( const btVector3& position )
+bullet::SimMultibody* AppExample::_createNoBaseToy( const std::string& name,
+                                                    const btVector3& position )
 {
-    auto _toy = new bullet::SimMultibody( 1,
+    auto _toy = new bullet::SimMultibody( name,
+                                          1,
                                           position,
                                           "none",
                                           btVector3( 0., 0., 0. ),

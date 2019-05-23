@@ -5,8 +5,10 @@ class AppExample : public bullet::MultibodyTestApplication
 {
     private :
 
-    bullet::SimMultibody* _createHumanoidShoulder( const btVector3& position );
-    bullet::SimMultibody* _createWalkerPlanarTorso( const btVector3& position );
+    bullet::SimMultibody* _createHumanoidShoulder( const std::string& name,
+                                                   const btVector3& position );
+    bullet::SimMultibody* _createWalkerPlanarTorso( const std::string& name,
+                                                    const btVector3& position );
 
     protected :
 
@@ -47,16 +49,18 @@ void AppExample::_initScenario()
                                 btVector3( 0.7, 0.5, 0.3 ),
                                 0.5f );
 
-    auto _humanoidShoulder  = _createHumanoidShoulder( { 0, 0, 0. } );
-    auto _walkerPlanarTorso = _createWalkerPlanarTorso( { 0., 0., 1. } );
+    auto _humanoidShoulder  = _createHumanoidShoulder( "shoulder", { 0, 0, 0. } );
+    auto _walkerPlanarTorso = _createWalkerPlanarTorso( "torso", { 0., 0., 1. } );
 
     addSimMultibody( _humanoidShoulder );
     addSimMultibody( _walkerPlanarTorso );
 }
 
-bullet::SimMultibody* AppExample::_createHumanoidShoulder( const btVector3& position )
+bullet::SimMultibody* AppExample::_createHumanoidShoulder( const std::string& name,
+                                                           const btVector3& position )
 {
-    auto _simbody = new bullet::SimMultibody( (2 + 1) + 1, // 3 for the multidof, 1 for the singlejoint dof
+    auto _simbody = new bullet::SimMultibody( name,
+                                              (2 + 1) + 1, // 3 for the multidof, 1 for the singlejoint dof
                                               position,
                                               "box",
                                               { 0.1, 0.4, 0.1 },
@@ -101,9 +105,11 @@ bullet::SimMultibody* AppExample::_createHumanoidShoulder( const btVector3& posi
     return _simbody;
 }
 
-bullet::SimMultibody* AppExample::_createWalkerPlanarTorso( const btVector3& position )
+bullet::SimMultibody* AppExample::_createWalkerPlanarTorso( const std::string& name,
+                                                            const btVector3& position )
 {
-    auto _simbody = new bullet::SimMultibody( (3 + 1),
+    auto _simbody = new bullet::SimMultibody( name,
+                                              (3 + 1),
                                               position,
                                               "none",
                                               { 0., 0., 0. },
