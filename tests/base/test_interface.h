@@ -189,6 +189,15 @@ namespace bullet
                                                 const btVector3& jointAxis,
                                                 const btVector3& jointPivot );
 
+        std::vector< SimMultibodyLink* > setupLinkMultiDof( int linkIndx,
+                                                            const std::string& shapeType,
+                                                            const btVector3& shapeSize,
+                                                            const btTransform& localTransform,
+                                                            SimMultibodyLink* parentObj,
+                                                            const std::vector< std::string >& jointsTypes,
+                                                            const std::vector< btVector3 >& jointsAxis,
+                                                            const std::vector< btVector3 >& jointsPivots );
+
         void update();
 
         std::vector< SimMultibodyLink* > linksPtrs();

@@ -19,6 +19,8 @@ namespace bullet
             _colShape = new btCapsuleShapeZ( size.x(), size.y() );
         else if ( shape == "cylinder" )
             _colShape = new btCylinderShapeZ( btVector3( size.x(), size.x(), size.y() ) );
+        else if ( shape == "none" )
+            _colShape = new btCompoundShape();
         else
             std::cout << "ERROR> shape: " << shape << " not supported" << std::endl;
 
@@ -145,6 +147,10 @@ namespace bullet
             m_graphicsObj = LMeshBuilder::createCylinder( _cylinderRadius,
                                                           _cylinderHeight,
                                                           _cylinderUpAxis );
+        }
+        else
+        {
+            m_graphicsObj = NULL;
         }
 
         // set the initial positions of the graphics object
@@ -497,7 +503,7 @@ namespace bullet
 
         // compute inertial properties required for base when creating a multibody
         btScalar _bMass( baseMass );
-        btVector3 _bInertia;
+        btVector3 _bInertia = btVector3( 0, 0, 0 );
 
         if ( _bMass != 0.0f )
             _bShape->calculateLocalInertia( _bMass, _bInertia );
@@ -552,7 +558,7 @@ namespace bullet
 
         // compute inertial properties from this shape
         btScalar _linkMass = computeMassFromShape( _linkShape );
-        btVector3 _linkInertia;
+        btVector3 _linkInertia = btVector3( 0., 0., 0. );
         if ( _linkMass != 0.0f )
         {
             _linkShape->calculateLocalInertia( _linkMass, _linkInertia );
@@ -650,6 +656,163 @@ namespace bullet
         return _linkSimMultibodyLink;
     }
 
+    std::vector< SimMultibodyLink* > SimMultibody::setupLinkMultiDof( int linkIndx,
+                                                                      const std::string& shapeType,
+                                                                      const btVector3& shapeSize,
+                                                                      const btTransform& localTransform,
+                                                                      SimMultibodyLink* parentObj,
+                                                                      const std::vector< std::string >& jointsTypes,
+                                                                      const std::vector< btVector3 >& jointsAxis,
+                                                                      const std::vector< btVector3 >& jointsPivots )
+    {
+        std::vector< SimMultibodyLink* > _links;
+
+        if ( !m_btMultibody )
+        {
+            std::cout << "ERROR> no btMultibody created for this object" << std::endl;
+            return _links;
+        }
+
+        if ( !parentObj )
+        {
+            std::cout << "ERROR> this link (non-root) has no parent" << std::endl;
+            return _links;
+        }
+
+        // sanity check (joints info arrays should be of the same size)
+        if ( jointsTypes.size() != jointsAxis.size() ||
+             jointsAxis.size() != jointsPivots.size() )
+        {
+            std::cout << "ERROR> joints info arrays should have the same size" << std::endl;
+            return _links;
+        }
+
+        // make sure the user sent some actual info
+        if ( jointsTypes.size() == 0 )
+        {
+            std::cout << "ERROR> must pass joint data for multidof setup" << std::endl;
+            return _links;
+        }
+
+        // also, make sure that the user is not passing a single joint, as it ...
+        // would be better of using the setupLinkSingleJoint method.
+        if ( jointsTypes.size() == 1 )
+        {
+            std::cout << "ERROR> should pass more than one dof for multidof setup" << std::endl;
+            return _links;
+        }
+
+        // Create as many links as dofs requested (dummies) + 1 for ...
+        // the actual link (fixed) which does have inertial props
+        size_t _numLinks = jointsTypes.size() + 1;
+
+        // grab the origin and orientation from the local transform, as ...
+        // we will use them to define the transforms of the links
+        auto _localOrigin   = localTransform.getOrigin();
+        auto _localRotation = localTransform.getRotation();
+
+        // a running reference to the parent, initialized to the given parent
+        auto _parentObj = parentObj;
+        for ( size_t q = 0; q < _numLinks; q++ )
+        {
+            SimMultibodyLink* _link = NULL;
+
+            if ( q == 0 )
+            {
+                /*  The first dummy link is constructed w.r.t. the parent, so its ...
+                *   transforms should be computed w.r.t. the given parent link
+                */
+
+                // The transform for this dummy link has to the same orientation ...
+                // (w.r.t. the parent body) of the true link, and as origin the ... 
+                // pivot of each dof w.r.t. the parent
+                btTransform _transform;
+                _transform.setIdentity();
+                // set same rotation as true body
+                _transform.setRotation( _localRotation );
+                // set the origin of the dummy body
+                auto _origin = _localOrigin + quatRotate( _localRotation, jointsPivots[q] );
+                _transform.setOrigin( _origin );
+
+                // setup a dummy link
+                _link = setupLinkSingleJoint( linkIndx + q,
+                                              "none",               // recall: dummy link
+                                              { 0., 0., 0. },       // recall: dummy link
+                                              _transform,
+                                              _parentObj,
+                                              jointsTypes[q],
+                                              jointsAxis[q],        // axis remains in true local-frame
+                                              { 0., 0., 0., } );    // pivot coincides with origin
+            }
+            else if ( q < ( _numLinks - 1 ) )
+            {
+                /*  The next dummy links are constructed w.r.t. the previous dummy ...
+                *   links. These have basically the same orientation and only differ ...
+                *   in the pivot.
+                */
+
+                // The transform for this dummy link has the same orientation ...
+                // (w.r.t. the parent body) as the previous dummy link, and as ...
+                // origin the relative position of its pivot w.r.t. the pivot ...
+                // of the previous dummy link.
+                btTransform _transform;
+                _transform.setIdentity();
+                // set only relative position w.r.t. previous dummy's pivot
+                auto _origin = jointsPivots[q] - jointsPivots[q-1];
+                _transform.setOrigin( _origin );
+
+                // setup a dummy link
+                _link = setupLinkSingleJoint( linkIndx + q,
+                                              "none",               // recall: dummy link
+                                              { 0., 0., 0. },       // recall: dummy link
+                                              _transform,
+                                              _parentObj,
+                                              jointsTypes[q],
+                                              jointsAxis[q],        // axis remains in true local-frame
+                                              { 0., 0., 0., } );    // pivot coincides with origin
+            }
+            else
+            {
+                /*  The last link (which is not a dummy) is constructed w.r.t. the ...
+                *   previous dummy link. These two have basically the same orientation ...
+                *   and only differ in the pivot.
+                */
+
+                // The transform for this last link has the same orientation ...
+                // (w.r.t. the parent body) as the previous dummy link, and as ...
+                // origin the relative position of its pivot w.r.t. the pivot ...
+                // of the previous dummy link.
+                btTransform _transform;
+                _transform.setIdentity();
+                // set only relative position w.r.t. previous dummy's pivot
+                auto _origin = -jointsPivots[q-1];
+                _transform.setOrigin( _origin );
+
+                // setup the actual link (has mass/inertia info)
+                _link = setupLinkSingleJoint( linkIndx + q,
+                                              shapeType,
+                                              shapeSize,
+                                              _transform,
+                                              _parentObj,
+                                              "fixed",
+                                              { 1., 0., 0. },
+                                              { 0., 0., 0. } );
+            }
+
+            if ( !_link )
+            {
+                std::cout << "ERROR> something went wrong creating the multidof links" << std::endl;
+                break;
+            }
+
+            _parentObj = _link;
+
+            _links.push_back( _link );
+        }
+
+        return _links;
+    }
+
     void SimMultibody::update()
     {
         for ( size_t i = 0; i < m_simLinks.size(); i++ )
@@ -721,6 +884,10 @@ namespace bullet
         for ( size_t q = 0; q < _linksPtrs.size(); q++ )
         {
             auto _mesh = _linksPtrs[q]->graphicsObj();
+
+            if ( !_mesh )
+                continue;
+
             auto _material = _mesh->getMaterial();
             _material->setColor( { 0.7, 0.5, 0.3 } );
 
