@@ -88,9 +88,9 @@ bullet::SimMultibody* AppExample::_createHumanoidShoulder( const std::string& na
                                                        _jointsTypes,
                                                        _jointsAxes,
                                                        _jointsPivots,
-                                                       _jointsUseMotors,
                                                        _jointsLowerLimits,
-                                                       _jointsUpperLimits );
+                                                       _jointsUpperLimits,
+                                                       _jointsUseMotors );
 
     btTransform _trArmToShoulder;
     _trArmToShoulder.setIdentity();
@@ -104,9 +104,9 @@ bullet::SimMultibody* AppExample::_createHumanoidShoulder( const std::string& na
                                                 "revolute",
                                                 { 1., 0., 0. },
                                                 { 0., 0.2, 0. },
-                                                false,   // use motor
-                                                -3.1415,  // lower limit
-                                                3.1415 ); // upper limit
+                                                -3.1415,    // lower limit
+                                                3.1415,     // upper limit
+                                                false );    // use motor
 
     _simbody->ptrBtMultibody()->setHasSelfCollision( false );
     _simbody->ptrBtMultibody()->finalizeMultiDof();
@@ -145,9 +145,9 @@ bullet::SimMultibody* AppExample::_createWalkerPlanarTorso( const std::string& n
                                                     _jointsTypes,
                                                     _jointsAxes,
                                                     _jointsPivots,
-                                                    _jointsUseMotors,
                                                     _jointsLowerLimits,
-                                                    _jointsUpperLimits );
+                                                    _jointsUpperLimits,
+                                                    _jointsUseMotors );
 
     _simbody->ptrBtMultibody()->setHasSelfCollision( false );
     _simbody->ptrBtMultibody()->finalizeMultiDof();

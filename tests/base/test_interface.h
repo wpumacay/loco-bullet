@@ -206,9 +206,9 @@ namespace bullet
                                                 const std::string& jointType,
                                                 const btVector3& jointAxis,
                                                 const btVector3& jointPivot,
-                                                bool useMotor = true,
-                                                float lowerLimit = -1.0f,
-                                                float upperLimit = 1.0f );
+                                                float lowerLimit = 1.0f,
+                                                float upperLimit = -1.0f,
+                                                bool useMotor = false );
 
         std::vector< SimMultibodyLink* > setupLinkMultiDof( int linkIndx,
                                                             const std::string& shapeType,
@@ -218,9 +218,9 @@ namespace bullet
                                                             const std::vector< std::string >& jointsTypes,
                                                             const std::vector< btVector3 >& jointsAxis,
                                                             const std::vector< btVector3 >& jointsPivots,
-                                                            const std::vector< bool >& jointsUseMotor,
-                                                            const std::vector< float >& jointsLowerLimits = { -1.0f },
-                                                            const std::vector< float >& jointsUpperLimits = { 1.0f } );
+                                                            const std::vector< float >& jointsLowerLimits,
+                                                            const std::vector< float >& jointsUpperLimits,
+                                                            const std::vector< bool >& jointsUseMotor );
 
         void update();
 

@@ -15,8 +15,12 @@ namespace bullet
             _colShape = new btBoxShape( btVector3( 0.5 * size.x(), 0.5 * size.y(), 0.5 * size.z() ) );
         else if ( shape == "sphere" )
             _colShape = new btSphereShape( size.x() );
-        else if ( shape == "capsule" )
+        else if ( shape == "capsule" || shape == "capsulez" )
             _colShape = new btCapsuleShapeZ( size.x(), size.y() );
+        else if ( shape == "capsulex" )
+            _colShape = new btCapsuleShapeX( size.x(), size.y() );
+        else if ( shape == "capsuley" )
+            _colShape = new btCapsuleShape( size.x(), size.y() );
         else if ( shape == "cylinder" )
             _colShape = new btCylinderShapeZ( btVector3( size.x(), size.x(), size.y() ) );
         else if ( shape == "none" )
@@ -586,9 +590,9 @@ namespace bullet
                                                           const std::string& jointType,
                                                           const btVector3& jointAxis,
                                                           const btVector3& jointPivot,
-                                                          bool useMotor,
                                                           float lowerLimit,
-                                                          float upperLimit )
+                                                          float upperLimit,
+                                                          bool useMotor )
     {
         if ( !m_btMultibody )
         {
@@ -646,17 +650,23 @@ namespace bullet
                                           -jointPivot,
                                           true );
 
+            m_btMultibody->getLink( linkIndx ).m_jointLowerLimit = lowerLimit;
+            m_btMultibody->getLink( linkIndx ).m_jointUpperLimit = upperLimit;
+
             if ( useMotor )
             {
-                m_btMultibody->getLink( linkIndx ).m_jointLowerLimit = lowerLimit;
-                m_btMultibody->getLink( linkIndx ).m_jointUpperLimit = upperLimit;
-                
                 auto _constraint = new btMultiBodyJointMotor( m_btMultibody, linkIndx, 0, 0, 5. );
                 _constraint->setErp( 0.1 );
                 _constraint->setPositionTarget( 0.25 );
 
                 m_constraints.push_back( _constraint );
                 m_jointMotors.push_back( _constraint );
+            }
+            else if ( lowerLimit <= upperLimit )
+            {
+                auto _constraint = new btMultiBodyJointLimitConstraint( m_btMultibody, linkIndx, lowerLimit, upperLimit );
+
+                m_constraints.push_back( _constraint );
             }
         }
         else if ( jointType == "slider" || jointType == "slide" || jointType == "prismatic" )
@@ -670,17 +680,24 @@ namespace bullet
                                            _pivot2parent_pos,
                                            -jointPivot,
                                            true );
+
+            m_btMultibody->getLink( linkIndx ).m_jointLowerLimit = lowerLimit;
+            m_btMultibody->getLink( linkIndx ).m_jointUpperLimit = upperLimit;
+
             if ( useMotor )
             {
-                m_btMultibody->getLink( linkIndx ).m_jointLowerLimit = lowerLimit;
-                m_btMultibody->getLink( linkIndx ).m_jointUpperLimit = upperLimit;
-                
                 auto _constraint = new btMultiBodyJointMotor( m_btMultibody, linkIndx, 0, 0, 5. );
                 _constraint->setErp( 0.1 );
                 _constraint->setPositionTarget( 0. );
 
                 m_constraints.push_back( _constraint );
                 m_jointMotors.push_back( _constraint );
+            }
+            else if ( lowerLimit <= upperLimit )
+            {
+                auto _constraint = new btMultiBodyJointLimitConstraint( m_btMultibody, linkIndx, lowerLimit, upperLimit );
+
+                m_constraints.push_back( _constraint );
             }
         }
         else if ( jointType == "planar" )
@@ -705,11 +722,11 @@ namespace bullet
                                            -jointPivot,
                                            true );
 
+            m_btMultibody->getLink( linkIndx ).m_jointLowerLimit = lowerLimit;
+            m_btMultibody->getLink( linkIndx ).m_jointUpperLimit = upperLimit;
+
             if ( useMotor )
             {
-                m_btMultibody->getLink( linkIndx ).m_jointLowerLimit = lowerLimit;
-                m_btMultibody->getLink( linkIndx ).m_jointUpperLimit = upperLimit;
-
                 auto _constraint = new btMultiBodySphericalJointMotor( m_btMultibody, linkIndx, 5. );
                 _constraint->setErp( 0.1 );
                 _constraint->setPositionTarget( { 0., 0., 0., 1. } );
@@ -760,9 +777,9 @@ namespace bullet
                                                                       const std::vector< std::string >& jointsTypes,
                                                                       const std::vector< btVector3 >& jointsAxis,
                                                                       const std::vector< btVector3 >& jointsPivots,
-                                                                      const std::vector< bool >& jointsUseMotor,
                                                                       const std::vector< float >& jointsLowerLimits,
-                                                                      const std::vector< float >& jointsUpperLimits )
+                                                                      const std::vector< float >& jointsUpperLimits,
+                                                                      const std::vector< bool >& jointsUseMotor )
     {
         std::vector< SimMultibodyLink* > _links;
 
@@ -843,9 +860,9 @@ namespace bullet
                                               jointsTypes[q],
                                               jointsAxis[q],        // axis remains in true local-frame
                                               { 0., 0., 0., },      // pivot coincides with origin
-                                              jointsUseMotor[q],
                                               jointsLowerLimits[q],
-                                              jointsUpperLimits[q] );
+                                              jointsUpperLimits[q],
+                                              jointsUseMotor[q] );
             }
             else if ( q < ( _numLinks - 1 ) )
             {
@@ -873,9 +890,9 @@ namespace bullet
                                               jointsTypes[q],
                                               jointsAxis[q],        // axis remains in true local-frame
                                               { 0., 0., 0., },      // pivot coincides with origin
-                                              jointsUseMotor[q],
                                               jointsLowerLimits[q],
-                                              jointsUpperLimits[q] );
+                                              jointsUpperLimits[q],
+                                              jointsUseMotor[q] );
             }
             else
             {
@@ -902,8 +919,7 @@ namespace bullet
                                               _parentObj,
                                               "fixed",
                                               { 1., 0., 0. },
-                                              { 0., 0., 0. },
-                                              false );
+                                              { 0., 0., 0. } );
             }
 
             if ( !_link )
@@ -1204,17 +1220,18 @@ namespace bullet
                     float _val = 0.0f;
                     ImGui::SliderFloat( _strLinkId.c_str(),
                                         &_val,
-                                        -1,
-                                        1 );
+                                        -50.,
+                                        50. );
 
-                    _btMultibodyPtr->addJointTorque( _linkId, _val );
+                    // _btMultibodyPtr->addJointTorque( _linkId, _val );
 
-//                     int _numDofs = _btMultibodyPtr->getLink( _linkId ).m_dofCount;
-// 
-//                     for ( size_t dof = 0; dof < _numDofs; dof++ )
-//                     {
-//                         _btMultibodyPtr->addJointTorqueMultiDof( _linkId, dof, _val );
-//                     }
+                    int _numDofs = _btMultibodyPtr->getLink( _linkId ).m_dofCount;
+
+                    for ( size_t dof = 0; dof < _numDofs; dof++ )
+                    {
+                        _btMultibodyPtr->addJointTorqueMultiDof( _linkId, dof, _val );
+                        // _btMultibodyPtr->addLinkForce( _linkId, { 0., 0., _val } ); // testing walker-torso planar movement
+                    }
                 }
             }
 
