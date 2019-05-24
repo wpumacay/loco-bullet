@@ -1,4 +1,9 @@
 
+[//]: # (References)
+
+<!-- IMAGES-GIFS -->
+[gif_planar_walker_wip_1]: ../../imgs/gif_multibody_planar_walker_wip.gif
+
 # Some dev-notes regarding multibody-support
 
 Finally, I'm back at trying to make this work :D. I already tried both using single
@@ -88,3 +93,55 @@ agents. So, these are the considerations I should check today:
 * Test the approach of non-dummy objects and check with the shoulder and torso test cases.
 * Wrap up tests with more tests on actuation limitations, and also add a simple
   model from mujoco (hard-coded) to see how everything goes.
+
+---
+
+Ok, using dummies kind of worked out for a simple planar walker (mujoco model). Some
+extra info can be found in commit 57ad3c0e930672e5c24a9be0238c1cf91416b809, which
+adds the walker demo. Regarding the non-dummies approach, I think I will need more 
+info/knowledge to implement this appropriately. The current implementation uses
+single vectors Rvector|Evector for their implementation, and it seems this wasn't
+designed to accommodate multidofs for a single link in different positions.
+
+So far, this is what we've got:
+
+- [x] Updated tests that take into account two different types of actuation, namely
+      torques and motors (seem like PD controllers).
+- [x] Added a small hack for the weird behaviour of massless dummy bodies. By adding
+      a bit of mass and inertia it seems to stabilize (I wonder if this is similar
+      to the armature that each mjcf model has).
+- [x] Updated UI to take into account these actuation options.
+- [x] Added reference frames to the bodies to check the links positions/orientations.
+- [x] Extracted the links world frames from the multibody, as we will need them for
+      our wrapper implementation (the base is the body, and everything else is defined
+      w.r.t. the body).
+- [x] Added a working planar walker demo as a proof of concept of the buller backend.
+
+![planar-walker-wip-1][gif_planar_walker_wip_1]
+
+### Implementing the wrappers for bullet as backend (5/24/19)
+
+Hopefully everything will work out. I've made the tests and they seem fine, so it
+looks like the implementation of thw agent_wrappers for bullet should go smoothly
+(with some issues here and there, but ultimately everything should work just fine).
+
+The idea is to implement the bullet agent wrappers using the multibody implementation
+and tests made so far. Previously we tried to implement it using non-multibody resources,
+like rigid bodies and constraints, but this didn't work out (issues with planar constraints,
+with multidofs, etc.). It could have worked out, but I think I was just forcing it too much
+(the walker was right, it just wasn't constraint to the plane, which could have been fixed
+forcing even more the implementation).
+
+For today (and perhaps tomorrow as well) I will be implementing these agent wrappers.
+The only issue that I anticipate is the fact that bodies have resources attached to them
+in the kintree (collisions, visuals, dofs), which adds an extra reference frame to take into
+account. The planar walker did not have any orientations mismatches between bodies, dofs and
+geoms, so everything was just translations. Other models do have this mismatch, so I'd have
+to take this into account. Hopefully, btMultiBodys allow you to grab the frame info in
+worldspace, so we can just use this and call it a day (we'll see though). So, these
+seem to be the key updates I'll have to make today+tomorrow:
+
+* Implement the agent-wrappers for bullet, and test and compare the implementation
+  to the mujoco implementation (they whould be very similar).
+* Add support for torques as default actuation (from mjcf, motor-actuators are
+  torques). Should map also gears, and link it to the UI for tests.
