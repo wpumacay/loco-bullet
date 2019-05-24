@@ -14,6 +14,7 @@
 #include <BulletDynamics/Featherstone/btMultiBodyLink.h>
 #include <BulletDynamics/Featherstone/btMultiBodyJointLimitConstraint.h>
 #include <BulletDynamics/Featherstone/btMultiBodyJointMotor.h>
+#include <BulletDynamics/Featherstone/btMultiBodySphericalJointMotor.h>
 #include <BulletDynamics/Featherstone/btMultiBodyPoint2Point.h>
 #include <BulletDynamics/Featherstone/btMultiBodyFixedConstraint.h>
 #include <BulletDynamics/Featherstone/btMultiBodySliderConstraint.h>
@@ -159,6 +160,8 @@ namespace bullet
         int m_linkIndx;
         SimMultibodyLink* m_parentObj;
 
+        engine::LModel* m_axesObj;
+
         public :
 
         SimMultibodyLink( btCollisionObject* colObj,
@@ -167,6 +170,7 @@ namespace bullet
         ~SimMultibodyLink();
 
         SimMultibodyLink* parentObj();
+        engine::LModel* axesObj();
         int getIndx();
     };
 
@@ -179,8 +183,9 @@ namespace bullet
         btMultiBody* m_btMultibody;
         std::vector< SimMultibodyLink* > m_simLinks;
 
-        std::vector< btMultiBodyConstraint* > m_constraints;
-        std::vector< btMultiBodyJointMotor* > m_motors;
+        std::vector< btMultiBodyConstraint* >           m_constraints;
+        std::vector< btMultiBodyJointMotor* >           m_jointMotors;
+        std::vector< btMultiBodySphericalJointMotor* >  m_jointSphericalMotors;
 
         public :
 
@@ -200,7 +205,10 @@ namespace bullet
                                                 SimMultibodyLink* parentObj,
                                                 const std::string& jointType,
                                                 const btVector3& jointAxis,
-                                                const btVector3& jointPivot );
+                                                const btVector3& jointPivot,
+                                                bool useMotor = true,
+                                                float lowerLimit = -1.0f,
+                                                float upperLimit = 1.0f );
 
         std::vector< SimMultibodyLink* > setupLinkMultiDof( int linkIndx,
                                                             const std::string& shapeType,
@@ -209,7 +217,10 @@ namespace bullet
                                                             SimMultibodyLink* parentObj,
                                                             const std::vector< std::string >& jointsTypes,
                                                             const std::vector< btVector3 >& jointsAxis,
-                                                            const std::vector< btVector3 >& jointsPivots );
+                                                            const std::vector< btVector3 >& jointsPivots,
+                                                            const std::vector< bool >& jointsUseMotor,
+                                                            const std::vector< float >& jointsLowerLimits = { -1.0f },
+                                                            const std::vector< float >& jointsUpperLimits = { 1.0f } );
 
         void update();
 
@@ -218,9 +229,13 @@ namespace bullet
         std::vector< SimMultibodyLink* > linksPtrs();
         std::vector< btMultiBodyConstraint* > constraintsPtrs();
         std::vector< btMultiBodyJointMotor* > motorsPtrs();
+        std::vector< btMultiBodySphericalJointMotor* > sphericalMotorsPtrs();
 
         SimMultibodyLink* ptrRootLink();
         btMultiBody* ptrBtMultibody();
+
+        bool hasJointMotors();
+        bool hasSphericalJointMotors();
     };
 
 

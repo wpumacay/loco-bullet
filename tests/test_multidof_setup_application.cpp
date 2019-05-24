@@ -71,6 +71,9 @@ bullet::SimMultibody* AppExample::_createHumanoidShoulder( const std::string& na
     std::vector< std::string > _jointsTypes = { "revolute", "revolute" };
     std::vector< btVector3 > _jointsAxes    = { { -1., -1., 1. }, { 1., -1., 1. } };
     std::vector< btVector3 > _jointsPivots  = { { 0., 0.15, 0. }, { 0., 0.15, 0. } };
+    std::vector< bool > _jointsUseMotors   = { false, false };
+    std::vector< float > _jointsLowerLimits = { -3.1415, -3.1415 };
+    std::vector< float > _jointsUpperLimits = { 3.1415, 3.1415 };
 
     // define the transform of the shoulder w.r.t. the base
     btTransform _trShoulderToBase;
@@ -84,7 +87,10 @@ bullet::SimMultibody* AppExample::_createHumanoidShoulder( const std::string& na
                                                        _simbody->ptrRootLink(),
                                                        _jointsTypes,
                                                        _jointsAxes,
-                                                       _jointsPivots );
+                                                       _jointsPivots,
+                                                       _jointsUseMotors,
+                                                       _jointsLowerLimits,
+                                                       _jointsUpperLimits );
 
     btTransform _trArmToShoulder;
     _trArmToShoulder.setIdentity();
@@ -97,7 +103,10 @@ bullet::SimMultibody* AppExample::_createHumanoidShoulder( const std::string& na
                                                 _shoulderLinks.back(),
                                                 "revolute",
                                                 { 1., 0., 0. },
-                                                { 0., 0.2, 0. } );
+                                                { 0., 0.2, 0. },
+                                                false,   // use motor
+                                                -3.1415,  // lower limit
+                                                3.1415 ); // upper limit
 
     _simbody->ptrBtMultibody()->setHasSelfCollision( false );
     _simbody->ptrBtMultibody()->finalizeMultiDof();
@@ -120,6 +129,9 @@ bullet::SimMultibody* AppExample::_createWalkerPlanarTorso( const std::string& n
     std::vector< std::string > _jointsTypes = { "prismatic", "prismatic", "revolute" };
     std::vector< btVector3 > _jointsAxes    = { { 1., 0., 0. }, { 0., 0., 1. }, { 0., 1., 0. } };
     std::vector< btVector3 > _jointsPivots  = { { 0., 0., 0. }, { 0., 0., 0. }, { 0., 0., 0. } };
+    std::vector< bool > _jointsUseMotors   = { true, true, true };
+    std::vector< float > _jointsLowerLimits = { -5., -5., -3.1415 };
+    std::vector< float > _jointsUpperLimits = { 5., 5., 3.1415 };
 
     // define the transform of the torso w.r.t. the base (the coincide, so identity)
     btTransform _trTorsoToBase;
@@ -132,7 +144,10 @@ bullet::SimMultibody* AppExample::_createWalkerPlanarTorso( const std::string& n
                                                     _simbody->ptrRootLink(),
                                                     _jointsTypes,
                                                     _jointsAxes,
-                                                    _jointsPivots );
+                                                    _jointsPivots,
+                                                    _jointsUseMotors,
+                                                    _jointsLowerLimits,
+                                                    _jointsUpperLimits );
 
     _simbody->ptrBtMultibody()->setHasSelfCollision( false );
     _simbody->ptrBtMultibody()->finalizeMultiDof();
