@@ -110,7 +110,7 @@ namespace bullet {
 
         ~TBtBodyWrapper();
 
-        void setBtWorld( btDiscreteDynamicsWorld* btWorldPtr );
+        void setBtWorld( btMultiBodyDynamicsWorld* btWorldPtr );
 
     };
 

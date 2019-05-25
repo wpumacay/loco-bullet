@@ -22,7 +22,7 @@ namespace bullet {
         m_btWorldPtr = NULL;
     }
 
-    void TBtBodyWrapper::setBtWorld( btDiscreteDynamicsWorld* btWorldPtr )
+    void TBtBodyWrapper::setBtWorld( btMultiBodyDynamicsWorld* btWorldPtr )
     {
         m_btWorldPtr = btWorldPtr;
     }

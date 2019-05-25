@@ -38,6 +38,161 @@ namespace utils {
         return _res;
     }
 
+    TMat4 fromBtTransform( const btTransform& tf )
+    {
+        auto _pos = fromBtVec3( tf.getOrigin() );
+        auto _rot = fromBtMat3( tf.getBasis() );
+
+        return TMat4::fromPositionAndRotation( _pos, _rot );
+    }
+
+    btTransform toBtTransform( const TMat4& mat )
+    {
+        auto _origin = toBtVec3( mat.getPosition() );
+        auto _basis = toBtMat3( mat.getRotation() );
+
+        return btTransform( _basis, _origin );
+    }
+
+    btCollisionShape* createCollisionShape( const std::string& type, const TVec3& size )
+    {
+        btCollisionShape* _collisionShapePtr = NULL;
+
+        auto _modSize = size;
+
+        if ( type == "box" )
+        {
+            _collisionShapePtr = new btBoxShape( btVector3( 0.5, 0.5, 0.5 ) );
+        }
+        else if ( type == "sphere" )
+        {
+            _collisionShapePtr = new btSphereShape( 1.0 );
+        }
+        else if ( type == "capsule" )
+        {
+            _modSize = { size.x, size.x, size.y };
+            _collisionShapePtr = new btCapsuleShapeZ( 1.0, 1.0 );
+        }
+        else if ( type == "cylinder" )
+        {
+            _modSize = { size.x, size.x, size.y };
+            _collisionShapePtr = new btCylinderShapeZ( btVector3( 1.0, 1.0, 0.5 ) );
+        }
+
+        if ( !_collisionShapePtr )
+            std::cout << "ERROR> could not create shape of type: " << type << std::endl;
+        else if ( type != "plane" )
+            _collisionShapePtr->setLocalScaling( utils::toBtVec3( _modSize ) );
+
+        return _collisionShapePtr;
+    }
+
+    btScalar computeVolumeFromShape( btCollisionShape* colShape )
+    {
+        if ( !colShape )
+        {
+            std::cout << "ERROR> no collision shape provided for mass calculation" << std::endl;
+            return btScalar( 0.0f );
+        }
+
+        int _type = colShape->getShapeType();
+
+        btScalar _volume;
+        btScalar _pi = 3.141592653589793;
+
+        if ( _type == BOX_SHAPE_PROXYTYPE )
+        {
+            auto _boxShape = reinterpret_cast< btBoxShape* >( colShape );
+            auto _boxDimensions = _boxShape->getHalfExtentsWithoutMargin();
+
+            _volume = ( _boxDimensions.x() * _boxDimensions.y() * _boxDimensions.z() );
+        }
+        else if ( _type == SPHERE_SHAPE_PROXYTYPE )
+        {
+            auto _sphereShape = reinterpret_cast< btSphereShape* >( colShape );
+            auto _sphereRadius = _sphereShape->getRadius();
+
+            _volume = _pi * ( _sphereRadius * _sphereRadius * _sphereRadius );
+        }
+        else if ( _type == CYLINDER_SHAPE_PROXYTYPE )
+        {
+            auto _cylinderShape = reinterpret_cast< btCylinderShape* >( colShape );
+            auto _cylinderUpAxis = _cylinderShape->getUpAxis();
+            auto _cylinderRadius = _cylinderShape->getRadius();
+            auto _cylinderHalfExtents = _cylinderShape->getHalfExtentsWithoutMargin();
+            auto _cylinderHeight = 2.0 * _cylinderHalfExtents[_cylinderUpAxis];
+
+            _volume = ( _pi * _cylinderRadius * _cylinderRadius ) * _cylinderHeight;
+        }
+        else if ( _type == CAPSULE_SHAPE_PROXYTYPE )
+        {
+            auto _capsuleShape = reinterpret_cast< btCapsuleShape* >( colShape );
+            auto _capsuleUpAxis = _capsuleShape->getUpAxis();
+            auto _capsuleRadius = _capsuleShape->getRadius();
+            auto _capsuleHeight = 2.0 * _capsuleShape->getHalfHeight();
+
+            _volume = ( _pi * _capsuleRadius * _capsuleRadius ) * _capsuleHeight +
+                      ( _pi * _capsuleRadius * _capsuleRadius * _capsuleRadius );
+        }
+        else
+        {
+            // compute from aabb
+            btVector3 _aabbMin, _aabbMax;
+
+            btTransform _identityTransform;
+            _identityTransform.setIdentity();
+
+            colShape->getAabb( _identityTransform, _aabbMin, _aabbMax );
+
+            _volume = btFabs( ( _aabbMax.x() - _aabbMin.x() ) * 
+                              ( _aabbMax.y() - _aabbMin.y() ) *
+                              ( _aabbMax.z() - _aabbMin.z() ) );
+        }
+
+        return _volume;
+    }
+
+    size_t calculateNumOfLinksForMultibody( agent::TAgentKinTree* kinTreePtr )
+    {
+        size_t _numLinks = 0;
+
+        std::stack< agent::TKinTreeBody* > _bodiesToConsider;
+        _bodiesToConsider.push( kinTreePtr->getRootBody() );
+
+        while ( !_bodiesToConsider.empty() )
+        {
+            auto _currentBodyPtr = _bodiesToConsider.top();
+            _bodiesToConsider.pop();
+
+            // check how many dofs does this body has. Ball and spherical are ...
+            // considered as 1, as the setup(TypeOfConstraint) considers ball ...
+            // as only one constraint
+            auto _numJoints = _currentBodyPtr->childJoints.size();
+            if ( _numJoints > 1 )
+            {
+                // MultiDof case, so we have to use dummies. We are using ...
+                // 1 dummy per joint, and then connect to the actual collider ...
+                // via a fixed constraint
+                _numLinks += _numJoints;
+            }
+            else
+            {
+                // For any other case, this single joint (or none at all, which ...
+                // makes it fixed) is taken into account by the links created ...
+                // by the colliders
+                _numLinks += 0;
+            }
+
+            // add as many links as colliders we have
+            _numLinks += _currentBodyPtr->childCollisions.size();
+
+            for ( size_t q = 0; q < _currentBodyPtr->childBodies.size(); q++ )
+                _bodiesToConsider.push( _currentBodyPtr->childBodies[q] );
+        }
+
+        return _numLinks;
+    }
+
     void loadMesh( const std::string& filePath, TMeshObject& mesh )
     {
         auto _assimpScenePtr = aiImportFile( filePath.c_str(),
@@ -100,22 +255,6 @@ namespace utils {
                 mesh.vertices.push_back( _p3 );
             }
         }
-    }
-
-    TMat4 fromBtTransform( const btTransform& tf )
-    {
-        auto _pos = fromBtVec3( tf.getOrigin() );
-        auto _rot = fromBtMat3( tf.getBasis() );
-
-        return TMat4::fromPositionAndRotation( _pos, _rot );
-    }
-
-    btTransform toBtTransform( const TMat4& mat )
-    {
-        auto _origin = toBtVec3( mat.getPosition() );
-        auto _basis = toBtMat3( mat.getRotation() );
-
-        return btTransform( _basis, _origin );
     }
 
     // Debug drawer

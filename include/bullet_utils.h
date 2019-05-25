@@ -1,6 +1,7 @@
 
 #pragma once
 
+// some functionality from bullet
 #include <bullet_common.h>
 
 // Assimp helper functionality
@@ -10,6 +11,12 @@
 
 // visualizer, for debug drawer
 #include <viz/viz.h>
+
+// kintree functionality
+#include <agent/types/agent_kintree.h>
+#include <agent/types/agent_kintree_mjcf.h>
+#include <agent/types/agent_kintree_urdf.h>
+#include <agent/types/agent_kintree_rlsim.h>
 
 namespace tysoc {
 namespace bullet {
@@ -61,9 +68,40 @@ namespace utils {
     /**
     *   Creates a btTransform from a bullet TMat4
     *
-    *   @param mat  TMat4 to convert
+    *   @param mat      TMat4 to convert
     */
     btTransform toBtTransform( const TMat4& mat );
+
+    /**
+    *   Creates a btCollisionShape from the given type and size
+    *
+    *   @param type     The type of shape to create
+    *   @param size     The size of the shape, which is defined as follows:
+    *                      > box            : {width,height,depth} <> {dx,dy,dz}
+    *                      > capsule        : {radius,height,N/A} -> axis along Z
+    *                      > capsule(XYZ)   : same as before, axis along given axis
+    *                      > cylinder       : {radius,height,N/A} -> axis along Z
+    *                      > cylinder(XYZ)  : same as before, axis along given axis
+    *                      > sphere         : {radius,N/A,N/A}
+    *
+    */
+    btCollisionShape* createCollisionShape( const std::string& type, const TVec3& size );
+
+    /**
+    *   Computes the volume of a given collision shape using their actual ...
+    *   dimensions (including margings as well)
+    *
+    *   @param colShape     Collision shape from whom we want to compute its volume
+    */
+    btScalar computeVolumeFromShape( btCollisionShape* colShape );
+
+    /**
+    *   Computes how many links should a btMultiBody allocate for a given ...
+    *   kinematic tree, based on dummies and actual links to be created
+    *
+    *   @param kintree  TAgentKintree object in question
+    */
+    size_t calculateNumOfLinksForMultibody( agent::TAgentKinTree* kinTreePtr );
 
     /**
     *   Loads a mesh from a given file

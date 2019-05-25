@@ -13,8 +13,8 @@ namespace bullet {
         m_btBroadphaseInterfacePtr      = new btDbvtBroadphase();
         m_btCollisionConfigurationPtr   = new btDefaultCollisionConfiguration();
         m_btCollisionDispatcherPtr      = new btCollisionDispatcher( m_btCollisionConfigurationPtr );
-        m_btConstraintSolverPtr         = new btSequentialImpulseConstraintSolver();
-        m_btWorldPtr                    = new btDiscreteDynamicsWorld(
+        m_btConstraintSolverPtr         = new btMultiBodyConstraintSolver();
+        m_btWorldPtr                    = new btMultiBodyDynamicsWorld(
                                                     m_btCollisionDispatcherPtr,
                                                     m_btBroadphaseInterfacePtr,
                                                     m_btConstraintSolverPtr,
@@ -26,7 +26,7 @@ namespace bullet {
         m_btFilterCallback = new utils::TBtOverlapFilterCallback();
         m_btWorldPtr->getPairCache()->setOverlapFilterCallback( m_btFilterCallback );
 
-        m_btWorldPtr->setGravity( btVector3( 0, 0, -2 ) );
+        m_btWorldPtr->setGravity( btVector3( 0, 0, -10 ) );
 
         m_runtimeType = "bullet";
 

@@ -3,6 +3,7 @@
 
 #include <simulation_base.h>
 
+#include <bullet_common.h>
 #include <bullet_sandbox_body_wrapper.h>
 #include <bullet_agent_wrapper.h>
 
@@ -15,8 +16,8 @@ namespace bullet {
 
         private:
 
-        btDiscreteDynamicsWorld*                m_btWorldPtr;
-        btSequentialImpulseConstraintSolver*    m_btConstraintSolverPtr;
+        btMultiBodyDynamicsWorld*               m_btWorldPtr;
+        btMultiBodyConstraintSolver*            m_btConstraintSolverPtr;
         btCollisionDispatcher*                  m_btCollisionDispatcherPtr;
         btDefaultCollisionConfiguration*        m_btCollisionConfigurationPtr;
         btBroadphaseInterface*                  m_btBroadphaseInterfacePtr;

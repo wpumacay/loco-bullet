@@ -11,9 +11,54 @@
 namespace tysoc {
 namespace bullet {
 
-    // @TODO|@MUST: Change the representation from single bodies to ...
-    // Bullet's multibody, which seems to support the features ...
-    // required for mjcf models as well (multi)
+    /**
+    *   A wrapper for the links in the multibody that represents a ...
+    *   kinematic tree.
+    */
+    class TBtMultiBodyLink
+    {
+
+        private :
+
+        // Index of this link in the btMultiBody
+        int m_btLinkIndx;
+
+        // Bullet link to be wrapped
+        btMultibodyLink* m_btLinkPtr;
+
+        // Reference to the btMultiBody it belongs to
+        btMultiBody* m_btMultiBodyPtr;
+
+        // Reference to the kintree-collision object it relates to (non-dummy)
+        agent::TKinTreeCollision* m_kinTreeCollisionPtr;
+
+        public :
+
+        TBtMultiBodyLink( int indx, 
+                          btMultibodyLink* btLinkPtr,
+                          btMultiBody* btMultiBodyPtr,
+                          agent::TKinTreeCollision* kinTreeCollisionPtr = NULL );
+
+        ~TBtMultiBodyLink();
+
+        /**
+        *   Returns the transform in worldspace of this link, using the ...
+        *   btMultiBody reference for this computation.
+        */
+        TMat4 getWorldTransform();
+
+        /**
+        *   Returns the index of the wrapped btMultiBodyLink in the ... 
+        *   btMultiBody it belongs to.
+        */
+        int getIndx();
+
+        /**
+        *   Returns the btMultiBodyLink reference being wrapped.
+        */
+        btMultibodyLink* ptrBtLink();
+
+    };
 
     /* 
     *   This object encloses all collisions and fixed-constraints used while ...
@@ -23,32 +68,52 @@ namespace bullet {
     *   dynamics body (if no inertia is given) and compensate the inertial frame ...
     *   of the actual (and only one) btbody with this correction terms )
     *
-    *   For this approach we just create a single btbulletbody for each kintree ...
-    *   collision object we have, chain them with fixed constraints sequentially, ...
-    *   and update the kintree body worldTransform
+    *   For this approach we just create a single btMultiBodyLink for each kintree ...
+    *   collision object we have and chain them with fixed constraints sequentially.
+    *
+    *   The DOFs in the body that represents the whole compound are used in the ...
+    *   root of this chain
     */
-    struct TBtBodyCompound
+    class TBodyCompound
     {
+        private :
+
         // A reference to the actual kintree body node (that contains all required info)
-        agent::TKinTreeBody* kinTreeBodyPtr;
+        agent::TKinTreeBody* m_kinTreeBodyPtr;
+
+        // A reference to the btMultiBody that represents the kintree
+        btMultiBody* m_btMultiBodyPtr;
 
         // bodies used for each collision (i) in { 1 ... nb }
-        std::vector< btRigidBody* > btBodiesInChain;
-         // fixed constraints used to link body (i) to body (i+1), for i in { 2 ... nb }
-        std::vector< btTypedConstraint* > btConstraintsInChain;
-        // transforms for each body in the chain, wrt the previous body in the same chain
-        std::vector< TMat4 > relTransformsInChain;
+        std::vector< TBtMultiBodyLink* > m_linksInChain;
 
-        // first body used in the chain
-        btRigidBody* btStartBody;
-        // the transform from the 'kintree body frame' to the 'start body', fixed wrt body frame
-        TMat4 startBodyToBaseTransform;
-        // and the inverse of that, used every simulation step for calculations
-        TMat4 baseToStartBodyTransform;
-        // last body used in the chain
-        btRigidBody* btEndBody;
-        // the transform from the 'kintree body frame' to the 'end body', fixed wrt body frame
-        TMat4 endBodyToBaseTransform;
+        // transforms for each body in the chain, wrt the previous body in the same chain
+        std::vector< TMat4 > m_relTransformsInChain;
+
+        // first link used in the chain
+        TBtMultiBodyLink* m_startLink;
+
+        // the transform from the 'kintree body frame' to the 'start link', fixed w.r.t body frame
+        TMat4 m_startLinkToBaseTransform;
+
+        // and the inverse of that, used every simulation step for some calculations
+        TMat4 m_baseToStartLinkTransform;
+
+        // last link used in the chain
+        TBtMultiBodyLink* m_endLink;
+
+        // the transform from the 'kintree body frame' to the 'end link', fixed w.r.t body frame
+        TMat4 m_endLinkToBaseTransform;
+
+        public :
+
+        TBodyCompound( agent::TKinTreeBody* kinTreeBodyPtr,
+                       btMultiBody* btMultiBodyPtr,
+                       int parentLinkIndx );
+
+        ~TBodyCompound();
+
+
     };
 
     class TBtKinTreeAgentWrapper : public TKinTreeAgentWrapper
@@ -56,20 +121,26 @@ namespace bullet {
 
         private :
 
-        btDiscreteDynamicsWorld* m_btWorldPtr;
+        // A reference to the world to add our resources to
+        btMultiBodyDynamicsWorld* m_btWorldPtr;
 
-        TBtBodyCompound* m_rootCompound;
-        std::map< std::string, TBtBodyCompound* > m_bodyCompounds;
+        // A bullet multibody object that represents this kintree
+        btMultiBody* m_btMultiBodyPtr;
 
-        void _createBtResourcesFromKinTree();
+        // The root compound for this kintree (recall body-node <> body-compound)
+        TBodyCompound* m_rootCompound;
+
+        // A storage for later access to each compound (by name)
+        std::map< std::string, TBodyCompound* > m_bodyCompoundsMap;
+
+        // A storage for later access to each compound (by index)
+        std::vector< TBodyCompound* > m_bodyCompoundsArray;
 
         /**
-        *   Creates a bullet btRidigBody from a given collision object. The ...
-        *   object created is expected to be used by a chain in a compound.
-        *
-        *   @param kinTreeCollisionPtr   collision object from a given kintree body node
+        *   Start the creation process for all resources required by the ...
+        *   kintree to be wrapped.
         */
-        btRigidBody* _createBtRigidBodyForChain( agent::TKinTreeCollision* kinTreeCollisionPtr );
+        void _createBtResourcesFromKinTree();
 
         /**
         *   Creates a body compound out of a given kintree body object
@@ -77,76 +148,9 @@ namespace bullet {
         *   @param kinTreeBodyPtr       body node from the core kintree
         *   @param parentBodyCompound   compound corresponding to the parent body
         */
-        TBtBodyCompound* _createBtCompoundFromBodyNode( agent::TKinTreeBody* kinTreeBodyPtr,
-                                                        TBtBodyCompound* parentBodyCompound );
+        TBodyCompound* _createBodyCompoundFromBodyNode( agent::TKinTreeBody* kinTreeBodyPtr,
+                                                        TBodyCompound* parentBodyCompound );
 
-        /**
-        *   Computes the volume of the given shape
-        *
-        *   @param collisionShapePtr    collision shape from which we want to compute its volume
-        *   @param frameTransform       frame of reference to use for AABB calculation, if needed
-        */
-        btScalar _computeVolumeFromShape( btCollisionShape* collisionShapePtr,
-                                          const btTransform& frameTransform );
-        /**
-        *   Creates a collision shape from a given kintree collision object.
-        *
-        *   @param kinTreeCollisionPtr      collision object with the data to construct the shape
-        */
-        btCollisionShape* _createBtCollisionShapeSingle( agent::TKinTreeCollision* kinTreeCollisionPtr );
-
-        /**
-        *   Creates a bullet constraint from the given dofs that a kintree body contains.
-        *   The requirements are extracted from the compounds passed as parameters (non-multibody mode)
-        *
-        *
-        *   | Njoints |             Type(s)            |       Constraint       
-        *   |---------|--------------------------------|------------------------ 
-        *   |    0    |               N/A              |    btFixedConstraint   
-        *   |    1    |              free              |    NULL (treated with care)
-        *   |    1    |              hinge             |    btHingeConstraint   
-        *   |    1    |              slide             |    btSliderConstraint  
-        *   |    1    |               ball             |    btPoint2PointConstraint
-        *   |    2+   |               any              |    btGeneric6DofSpring2Constraint                    
-        *   |         |                                |                        
-        *
-        *   @param kinTreeBodyPtr       body object with the data of the dofs that it contains
-        *   @param currentBtBodyPtr     current bullet body object being processed
-        *   @param parentBtBodyPtr      bullet body that is the parent of the current body
-        */
-        btTypedConstraint* _createNodeBtConstraintFromCompound( agent::TKinTreeBody* kinTreeBodyPtr,
-                                                                TBtBodyCompound* currentBodyCompound,
-                                                                TBtBodyCompound* parentBodyCompound );
-
-        /****** Helper constraint-creation methods ******/
-
-        btTypedConstraint* _createFixedConstraint( btRigidBody* currentBtBodyPtr,
-                                                   btRigidBody* parentBtBodyPtr,
-                                                   const TMat4& currentToParentTransform );
-
-        btHingeConstraint* _createHingeConstraint( btRigidBody* currentBtBodyPtr,
-                                                   btRigidBody* parentBtBodyPtr,
-                                                   const TVec3& pivotInCurrent,
-                                                   const TVec3& axisInCurrent,
-                                                   const TMat4& currentToParentTransform,
-                                                   const TVec2& limits );
-
-        btSliderConstraint* _createSliderConstraint( btRigidBody* currentBtBodyPtr,
-                                                     btRigidBody* parentBtBodyPtr,
-                                                     const TVec3& pivotInCurrent,
-                                                     const TVec3& axisInCurrent,
-                                                     const TMat4& currentToParentTransform,
-                                                     const TVec2& limits );
-
-        btPoint2PointConstraint* _createPoint2PointConstraint( btRigidBody* currentBtBodyPtr,
-                                                               btRigidBody* parentBtBodyPtr,
-                                                               const TVec3& pivotInCurrent,
-                                                               const TMat4& currentToParentTransform );
-
-        btTypedConstraint* _createGenericConstraintFromJoints( btRigidBody* currentBtBodyPtr,
-                                                               btRigidBody* parentBtBodyPtr,
-                                                               const std::vector< agent::TKinTreeJoint* >& joints,
-                                                               const TMat4& currentToParentTransform );
 
         protected :
 
@@ -161,7 +165,7 @@ namespace bullet {
                                 const std::string& workingDir );
         ~TBtKinTreeAgentWrapper();
 
-        void setBtWorld( btDiscreteDynamicsWorld* btWorldPtr );
+        void setBtWorld( btMultiBodyDynamicsWorld* btWorldPtr );
     };
 
     extern "C" TKinTreeAgentWrapper* agent_createFromAbstract( agent::TAgentKinTree* kinTreeAgentPtr,
