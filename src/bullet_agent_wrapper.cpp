@@ -70,7 +70,7 @@ namespace bullet {
 
         // grab localPos and localRot from localTransform. Recall this=local, ...
         // which is respect to the parent link. Also, get the inverse of these ...
-        // quantities, as the setupXYZ methods required them
+        // quantities, as the setupXYZ methods require these quantities
         auto _this2parent_quat  = _btLocalTransform.getRotation();
         auto _this2parent_pos   = _btLocalTransform.getOrigin();
         auto _parent2this_quat  = _this2parent_quat.inverse();
@@ -117,6 +117,8 @@ namespace bullet {
                                                         m_btLinkIndx, 
                                                         lowerLimit * SIMD_RADS_PER_DEG, 
                                                         upperLimit * SIMD_RADS_PER_DEG );
+
+                m_btWorldPtr->addMultiBodyConstraint( m_btJointLimitConstraint );
             }
         }
         else if ( jointType == "slider" || jointType == "slide" || jointType == "prismatic" )
@@ -309,6 +311,9 @@ namespace bullet {
                                               _trThisCompoundToParentCompound *
                                               _joints[q]->relTransform;
                     _trThisLinkToWorld = _trParentEndLinkToWorld * _trThisLinkToParentLink;
+
+                    // save the first-to-base transform (first-link w.r.t. this compound)
+                    m_firstLinkToBaseTransform = _joints[q]->relTransform;
                 }
                 else
                 {
@@ -398,6 +403,13 @@ namespace bullet {
 
             // book keeping for next iterations
             _parentLink = _link;
+
+            // save the first-to-base transform (first-link w.r.t. this compound)
+            m_firstLinkToBaseTransform = _collisions.front()->relTransform;
+
+            // just in case this is the last link as well, save the last-link transform
+            if ( _collisions.size() == 1 )
+                m_lastLinkToBaseTransform = _collisions.front()->relTransform;
         }
 
         // Create remaining links from collisions. The first one might already ...
@@ -448,6 +460,10 @@ namespace bullet {
 
             // book keeping for next iteration
             _parentLink = _link;
+
+            // just in case this is the last link, save the last-link transform
+            if ( q == ( _collisions.size() - 1 ) )
+                m_lastLinkToBaseTransform = _collisions[q]->relTransform;
         }
     }
 

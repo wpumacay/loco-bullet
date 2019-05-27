@@ -139,17 +139,11 @@ namespace bullet {
         // transforms for each body in the chain, wrt the previous body in the same chain
         std::vector< TMat4 > m_relTransformsInChain;
 
-        // first link used in the chain
-        TBtMultiBodyLink* m_firstLink;
-
         // the transform from the 'kintree body frame' to the 'start link', fixed w.r.t body frame
         TMat4 m_firstLinkToBaseTransform;
 
         // and the inverse of that, used every simulation step for some calculations
         TMat4 m_baseToFirstLinkTransform;
-
-        // last link used in the chain
-        TBtMultiBodyLink* m_lastLink;
 
         // the transform from the 'kintree body frame' to the 'end link', fixed w.r.t body frame
         TMat4 m_lastLinkToBaseTransform;
