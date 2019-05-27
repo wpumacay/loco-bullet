@@ -78,9 +78,17 @@ int main( int argc, const char** argv )
     _bplane->color = { 0.3, 0.3, 0.3 };
     _bplane->worldTransform.setPosition( { 0, 0, -0.5 } );
 
+    auto _bcapsule = new tysoc::sandbox::TFreeBody();
+    _bcapsule->name = "bcapsule";
+    _bcapsule->type = "capsule";
+    _bcapsule->mass = 0.1;
+    _bcapsule->size = { 0.1, 0.4, 0.0 };
+    _bcapsule->worldTransform.setPosition( { -1.0, 1.0, 1.0 } );
+
     auto _scenario = new tysoc::TScenario();
     _scenario->addAgent( _agent );
     _scenario->addBody( _bplane );
+    _scenario->addBody( _bcapsule );
 
     auto _runtime = new tysoc::TRuntime( tysoc::config::physics::BULLET, 
                                          tysoc::config::rendering::GLVIZ );
@@ -99,13 +107,6 @@ int main( int argc, const char** argv )
             _simulation->togglePause();
 
         _simulation->step();
-
-        // _visualizer->drawLine( { 0.0f, 0.0f, 0.0f }, { 5.0f, 0.0f, 0.0f }, { 1.0f, 0.0f, 0.0f } );
-        // _visualizer->drawLine( { 0.0f, 0.0f, 0.0f }, { 0.0f, 5.0f, 0.0f }, { 0.0f, 1.0f, 0.0f } );
-        // _visualizer->drawLine( { 0.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, 5.0f }, { 0.0f, 0.0f, 1.0f } );
-
-        // _visualizer->drawAABB( { -5, -2, -2 }, { 5, 2, 2 }, tysoc::TMat4(), { 0.8f, 0.1f, 0.1f } );
-
         _visualizer->update();
     }
 

@@ -275,7 +275,7 @@ bullet::SimMultibody* AppExample::_createNoBaseToy( const std::string& name,
 
     auto _link = _toy->setupLinkSingleJoint( 0,
                                              "capsule",
-                                             { 0.05, 0.05, 0.05 },
+                                             { 0.05, 0.25, 0.05 },
                                              _localTransformLink,
                                              _baseLink,
                                              "fixed",

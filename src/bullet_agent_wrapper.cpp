@@ -202,11 +202,11 @@ namespace bullet {
         m_btLinkColliderPtr->setCollisionShape( m_btCollisionShapePtr );
         m_btMultiBodyPtr->getLink( m_btLinkIndx ).m_collider = m_btLinkColliderPtr;
 
-        // add collider to the world
-        m_btWorldPtr->addCollisionObject( m_btLinkColliderPtr );
-
         // initialize worldTransform from parent
         m_btLinkColliderPtr->setWorldTransform( utils::toBtTransform( worldTransform ) );
+
+        // add collider to the world
+        m_btWorldPtr->addCollisionObject( m_btLinkColliderPtr, 1, -1 );
     }
 
     TMat4 TBtMultiBodyLink::getWorldTransform()
@@ -591,14 +591,13 @@ namespace bullet {
                                             _baseInertia,
                                             _isBaseFixed,
                                             _canSleep );
-        m_btWorldPtr->addMultiBody( m_btMultiBodyPtr );
 
         // create a SimMultibodyLink for the base
         auto _bCollider = new btMultiBodyLinkCollider( m_btMultiBodyPtr, -1 );
         _bCollider->setCollisionShape( utils::createCollisionShape( "none", { 0., 0., 0. } ) );
         _bCollider->getWorldTransform().setOrigin( utils::toBtVec3( m_kinTreeAgentPtr->getPosition() ) );
 
-        m_btWorldPtr->addCollisionObject( _bCollider );
+        m_btWorldPtr->addCollisionObject( _bCollider, 1, -1 );
 
         m_btMultiBodyPtr->setBaseCollider( _bCollider );
         m_btMultiBodyPtr->setBasePos( utils::toBtVec3( m_kinTreeAgentPtr->getPosition() ) );
@@ -619,6 +618,9 @@ namespace bullet {
                                                           m_baseCompound );
 
         m_btMultiBodyPtr->finalizeMultiDof();
+        m_btMultiBodyPtr->setHasSelfCollision( true );
+
+        m_btWorldPtr->addMultiBody( m_btMultiBodyPtr );
     }
 
     TBodyCompound* TBtKinTreeAgentWrapper::_createBodyCompoundFromBodyNode( agent::TKinTreeBody* kinTreeBodyPtr,

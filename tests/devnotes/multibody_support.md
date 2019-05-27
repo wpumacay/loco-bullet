@@ -145,3 +145,5 @@ seem to be the key updates I'll have to make today+tomorrow:
   to the mujoco implementation (they whould be very similar).
 * Add support for torques as default actuation (from mjcf, motor-actuators are
   torques). Should map also gears, and link it to the UI for tests.
+
+**Note**: current bullet version is fd161fa061539257036dd8f651bda3d3bf079556
