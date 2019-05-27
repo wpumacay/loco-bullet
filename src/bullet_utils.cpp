@@ -193,6 +193,27 @@ namespace utils {
         return _numLinks;
     }
 
+    bool shouldBaseBeFixed( agent::TAgentKinTree* kinTreePtr )
+    {
+        auto _joints = kinTreePtr->getRootBody()->childJoints;
+
+        if ( _joints.size() == 0 )
+        {
+            // the root body has no dofs, so just fix the base
+            return true;
+        }
+        else if ( _joints.size() == 1 &&
+                 _joints[0]->type == "free" )
+        {
+            // for free joints (full 6dofs) just leave the base free
+            return false;
+        }
+
+        // all other cases have limited dofs, so the next body to the base ...
+        // configures the required dofs
+        return true;
+    }
+
     void loadMesh( const std::string& filePath, TMeshObject& mesh )
     {
         auto _assimpScenePtr = aiImportFile( filePath.c_str(),

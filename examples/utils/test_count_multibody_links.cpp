@@ -73,5 +73,9 @@ int main( int argc, const char** argv )
 
     std::cout << "INFO> Num of links for model: " << MODEL_NAME << " is: " << _numLinks << std::endl;
 
+    bool _isBaseFixed = tysoc::bullet::utils::shouldBaseBeFixed( _agent );
+
+    std::cout << "INFO> base is " << ( _isBaseFixed ? "fixed" : "not fixed"  ) << std::endl;
+
     return 0;
 }

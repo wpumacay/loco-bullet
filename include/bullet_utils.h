@@ -104,6 +104,16 @@ namespace utils {
     size_t calculateNumOfLinksForMultibody( agent::TAgentKinTree* kinTreePtr );
 
     /**
+    *   Decides whether or not the base of a multibody should be fixed, ...
+    *   considering the kintree given. Some cases require a non-fixed base, ...
+    *   like in the humanoid (it has a free joint), whereas others require ...
+    *   a fixed base (like the planar walker).
+    *
+    *   @param kintree  TAgentKintree object in question
+    */
+    bool shouldBaseBeFixed( agent::TAgentKinTree* kinTreePtr );
+
+    /**
     *   Loads a mesh from a given file
     *
     *   @param filePath     Full path to the file to be loaded
