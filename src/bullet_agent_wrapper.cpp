@@ -99,8 +99,8 @@ namespace bullet {
                                              -_btJointPivot,
                                              true );
 
-            m_btMultiBodyPtr->getLink( m_btLinkIndx ).m_jointLowerLimit = lowerLimit;
-            m_btMultiBodyPtr->getLink( m_btLinkIndx ).m_jointUpperLimit = upperLimit;
+            m_btMultiBodyPtr->getLink( m_btLinkIndx ).m_jointLowerLimit = lowerLimit * SIMD_RADS_PER_DEG;
+            m_btMultiBodyPtr->getLink( m_btLinkIndx ).m_jointUpperLimit = upperLimit * SIMD_RADS_PER_DEG;
 
             if ( useMotor )
             {
@@ -115,8 +115,8 @@ namespace bullet {
                 m_btJointLimitConstraint = new btMultiBodyJointLimitConstraint( 
                                                         m_btMultiBodyPtr, 
                                                         m_btLinkIndx, 
-                                                        lowerLimit, 
-                                                        upperLimit );
+                                                        lowerLimit * SIMD_RADS_PER_DEG, 
+                                                        upperLimit * SIMD_RADS_PER_DEG );
             }
         }
         else if ( jointType == "slider" || jointType == "slide" || jointType == "prismatic" )
@@ -166,8 +166,8 @@ namespace bullet {
                                               -_btJointPivot,
                                               true );
 
-            m_btMultiBodyPtr->getLink( m_btLinkIndx ).m_jointLowerLimit = lowerLimit;
-            m_btMultiBodyPtr->getLink( m_btLinkIndx ).m_jointUpperLimit = upperLimit;
+            m_btMultiBodyPtr->getLink( m_btLinkIndx ).m_jointLowerLimit = lowerLimit * SIMD_RADS_PER_DEG;
+            m_btMultiBodyPtr->getLink( m_btLinkIndx ).m_jointUpperLimit = upperLimit * SIMD_RADS_PER_DEG;
 
             if ( useMotor )
             {
@@ -181,7 +181,7 @@ namespace bullet {
                 m_btWorldPtr->addMultiBodyConstraint( m_btSphericalJointMotor );
             }
         }
-        else if ( jointType == "fixed" )
+        else if ( jointType == "fixed" || jointType == "free" )
         {
             m_btMultiBodyPtr->setupFixed( m_btLinkIndx,
                                           _linkMass,
@@ -201,6 +201,9 @@ namespace bullet {
         m_btLinkColliderPtr = new btMultiBodyLinkCollider( m_btMultiBodyPtr, m_btLinkIndx );
         m_btLinkColliderPtr->setCollisionShape( m_btCollisionShapePtr );
         m_btMultiBodyPtr->getLink( m_btLinkIndx ).m_collider = m_btLinkColliderPtr;
+
+        // add collider to the world
+        m_btWorldPtr->addCollisionObject( m_btLinkColliderPtr );
 
         // initialize worldTransform from parent
         m_btLinkColliderPtr->setWorldTransform( utils::toBtTransform( worldTransform ) );
@@ -397,17 +400,34 @@ namespace bullet {
             _parentLink = _link;
         }
 
-        // Create remaining links, which are fixed one to another
-        for ( size_t q = 1; q < _collisions.size(); q++ )
+        // Create remaining links from collisions. The first one might already ...
+        // have been created. If not, create it w.r.t. previous dummy link. If ...
+        // already created, just skip its construction. All others are fixed ...
+        // one w.r.t another
+        for ( size_t q = 0; q < _collisions.size(); q++ )
         {
+            // Check if already created first link
+            if ( q == 0 && !m_hasMultidof )
+                continue;
+
             /* Compute the transforms required to setup this link *************/
             TMat4 _trThisLinkToParentLink;
             TMat4 _trThisLinkToWorld;
 
-            _trThisLinkToParentLink = _collisions[q-1]->relTransform.inverse() *
-                                      _collisions[q]->relTransform;
-            _trThisLinkToWorld = _parentLink->getWorldTransform() * 
-                                 _trThisLinkToParentLink;
+            if ( q == 0 && m_hasMultidof )
+            {
+                _trThisLinkToParentLink = _joints.back()->relTransform.inverse() *
+                                          _collisions[q]->relTransform;
+                _trThisLinkToWorld = _parentLink->getWorldTransform() * 
+                                     _trThisLinkToParentLink;
+            }
+            else
+            {
+                _trThisLinkToParentLink = _collisions[q-1]->relTransform.inverse() *
+                                        _collisions[q]->relTransform;
+                _trThisLinkToWorld = _parentLink->getWorldTransform() * 
+                                    _trThisLinkToParentLink;
+            }
             /******************************************************************/
 
             // Create the link
@@ -573,6 +593,16 @@ namespace bullet {
                                             _canSleep );
         m_btWorldPtr->addMultiBody( m_btMultiBodyPtr );
 
+        // create a SimMultibodyLink for the base
+        auto _bCollider = new btMultiBodyLinkCollider( m_btMultiBodyPtr, -1 );
+        _bCollider->setCollisionShape( utils::createCollisionShape( "none", { 0., 0., 0. } ) );
+        _bCollider->getWorldTransform().setOrigin( utils::toBtVec3( m_kinTreeAgentPtr->getPosition() ) );
+
+        m_btWorldPtr->addCollisionObject( _bCollider );
+
+        m_btMultiBodyPtr->setBaseCollider( _bCollider );
+        m_btMultiBodyPtr->setBasePos( utils::toBtVec3( m_kinTreeAgentPtr->getPosition() ) );
+
         // Create a dummy compound to represent the base (to propagate the starting position)
         m_baseCompound = new TBodyCompound( NULL,
                                             m_btMultiBodyPtr,
@@ -587,6 +617,8 @@ namespace bullet {
 
         m_rootCompound = _createBodyCompoundFromBodyNode( m_kinTreeAgentPtr->getRootBody(), 
                                                           m_baseCompound );
+
+        m_btMultiBodyPtr->finalizeMultiDof();
     }
 
     TBodyCompound* TBtKinTreeAgentWrapper::_createBodyCompoundFromBodyNode( agent::TKinTreeBody* kinTreeBodyPtr,

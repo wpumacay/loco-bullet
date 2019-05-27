@@ -78,6 +78,10 @@ namespace utils {
             _modSize = { size.x, size.x, size.y };
             _collisionShapePtr = new btCylinderShapeZ( btVector3( 1.0, 1.0, 0.5 ) );
         }
+        else if ( type == "none" )
+        {
+            _collisionShapePtr = new btCompoundShape();
+        }
 
         if ( !_collisionShapePtr )
             std::cout << "ERROR> could not create shape of type: " << type << std::endl;
