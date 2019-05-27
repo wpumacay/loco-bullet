@@ -251,7 +251,7 @@ namespace bullet {
         auto _rigidBodyPtr = new btRigidBody( _rbConstructionInfo );
 
         // grab some extra info from the wrapped body
-        _rigidBodyPtr->setRestitution( 0.1 );
+        _rigidBodyPtr->setRestitution( 0.0 );
         _rigidBodyPtr->setFriction( bodyPtr->friction.x );
 
         // make sure the object is going to be simulated by forcing activation

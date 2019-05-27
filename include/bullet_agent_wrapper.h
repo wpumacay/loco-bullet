@@ -148,6 +148,9 @@ namespace bullet {
         // the transform from the 'kintree body frame' to the 'end link', fixed w.r.t body frame
         TMat4 m_lastLinkToBaseTransform;
 
+        // and the inverse of that, used every simulation step for some calculations
+        TMat4 m_baseToLastLinkTransform;
+
         // the world transform of this compound
         TMat4 m_worldTransform;
 
@@ -227,6 +230,12 @@ namespace bullet {
         *   w.r.t. the reference frame of this compound (kintree-body's frame)
         */
         TMat4 lastToBaseTransform();
+
+        /**
+        *   Gets the relative transform of this compound's reference frame ...
+        *   (kintree-body's frame) w.r.t. the last link in the compound
+        */
+        TMat4 baseToLastTransform();
     };
 
     class TBtKinTreeAgentWrapper : public TKinTreeAgentWrapper

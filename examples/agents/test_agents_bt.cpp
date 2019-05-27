@@ -83,7 +83,7 @@ int main( int argc, const char** argv )
     _bcapsule->type = "capsule";
     _bcapsule->mass = 0.1;
     _bcapsule->size = { 0.1, 0.4, 0.0 };
-    _bcapsule->worldTransform.setPosition( { -1.0, 1.0, 1.0 } );
+    _bcapsule->worldTransform.setPosition( { -1.0, -1.0, 1.0 } );
 
     auto _scenario = new tysoc::TScenario();
     _scenario->addAgent( _agent );

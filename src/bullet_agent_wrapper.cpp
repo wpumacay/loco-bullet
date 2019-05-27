@@ -314,6 +314,7 @@ namespace bullet {
 
                     // save the first-to-base transform (first-link w.r.t. this compound)
                     m_firstLinkToBaseTransform = _joints[q]->relTransform;
+                    m_baseToFirstLinkTransform = m_firstLinkToBaseTransform.inverse();
                 }
                 else
                 {
@@ -406,10 +407,14 @@ namespace bullet {
 
             // save the first-to-base transform (first-link w.r.t. this compound)
             m_firstLinkToBaseTransform = _collisions.front()->relTransform;
+            m_baseToFirstLinkTransform = m_firstLinkToBaseTransform.inverse();
 
             // just in case this is the last link as well, save the last-link transform
             if ( _collisions.size() == 1 )
+            {
                 m_lastLinkToBaseTransform = _collisions.front()->relTransform;
+                m_baseToLastLinkTransform = m_lastLinkToBaseTransform.inverse();
+            }
         }
 
         // Create remaining links from collisions. The first one might already ...
@@ -463,7 +468,10 @@ namespace bullet {
 
             // just in case this is the last link, save the last-link transform
             if ( q == ( _collisions.size() - 1 ) )
+            {
                 m_lastLinkToBaseTransform = _collisions[q]->relTransform;
+                m_baseToLastLinkTransform = m_lastLinkToBaseTransform.inverse();
+            }
         }
     }
 
@@ -489,7 +497,8 @@ namespace bullet {
 
     void TBodyCompound::updateTransforms()
     {
-        // @WIP: Should update the kintree-body worldTransform appropriately
+        m_kinTreeBodyPtr->worldTransform = m_linksInChain.back()->getWorldTransform() *
+                                           m_baseToLastLinkTransform;
     }
 
     size_t TBodyCompound::getNumLinks()
@@ -526,6 +535,11 @@ namespace bullet {
     TMat4 TBodyCompound::lastToBaseTransform()
     {
         return m_lastLinkToBaseTransform;
+    }
+
+    TMat4 TBodyCompound::baseToLastTransform()
+    {
+        return m_baseToLastLinkTransform;
     }
 
     /***************************************************************************
@@ -635,6 +649,9 @@ namespace bullet {
 
         m_btMultiBodyPtr->finalizeMultiDof();
         m_btMultiBodyPtr->setHasSelfCollision( true );
+        
+        m_btMultiBodyPtr->setLinearDamping( 0.1f );
+        m_btMultiBodyPtr->setAngularDamping( 0.9f );
 
         m_btWorldPtr->addMultiBody( m_btMultiBodyPtr );
     }
