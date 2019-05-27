@@ -17,14 +17,14 @@ namespace bullet {
         m_btWorldPtr                    = new btMultiBodyDynamicsWorld(
                                                     m_btCollisionDispatcherPtr,
                                                     m_btBroadphaseInterfacePtr,
-                                                    m_btConstraintSolverPtr,
+                                                    (btMultiBodyConstraintSolver*) m_btConstraintSolverPtr,
                                                     m_btCollisionConfigurationPtr );
 
         m_btDebugDrawer = new utils::TBtDebugDrawer();
         m_btWorldPtr->setDebugDrawer( m_btDebugDrawer );
 
-        m_btFilterCallback = new utils::TBtOverlapFilterCallback();
-        m_btWorldPtr->getPairCache()->setOverlapFilterCallback( m_btFilterCallback );
+        // m_btFilterCallback = new utils::TBtOverlapFilterCallback();
+        // m_btWorldPtr->getPairCache()->setOverlapFilterCallback( m_btFilterCallback );
 
         m_btWorldPtr->setGravity( btVector3( 0, 0, -10 ) );
 
@@ -52,6 +52,8 @@ namespace bullet {
 
     TBtSimulation::~TBtSimulation()
     {
+        // std::cout << "LOG> Calling bullet-simulation destructor" << std::endl;
+
         // @WIP: see method "exitPhysics" in bullet example "CommonRigidBodyBase.h"
 
         if ( m_btDebugDrawer )
@@ -68,6 +70,27 @@ namespace bullet {
 
         if ( m_btWorldPtr )
         {
+            // Remove all constraints
+            for ( int q = m_btWorldPtr->getNumConstraints() - 1; q >= 0; q-- )
+            {
+                m_btWorldPtr->removeConstraint( m_btWorldPtr->getConstraint( q ) );
+            }
+
+            // Remove all
+            for ( int q = m_btWorldPtr->getNumCollisionObjects() - 1; q >= 0; q-- )
+            {
+                btCollisionObject* _obj = m_btWorldPtr->getCollisionObjectArray()[q];
+                btRigidBody* _body = btRigidBody::upcast( _obj );
+
+                // if it's a rigid body (see upcast), then proceed
+                if ( _body && _body->getMotionState() )
+                {
+                    delete _body->getMotionState();
+                }
+                m_btWorldPtr->removeCollisionObject( _obj );
+                delete _obj;
+            }
+            
             delete m_btWorldPtr;
             m_btWorldPtr = NULL;
         }
