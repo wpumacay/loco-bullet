@@ -147,3 +147,29 @@ seem to be the key updates I'll have to make today+tomorrow:
   torques). Should map also gears, and link it to the UI for tests.
 
 **Note**: current bullet version is fd161fa061539257036dd8f651bda3d3bf079556
+
+---
+
+Ok, I've already implemented the bullet agent wrapper using the multibody API. It
+works so far, I'll try to add some images later. Check commit 044363e793a899bfbd9dfda078953b53f5201cc2,
+which has the first working implementation of the walker using the multibody API.
+There are still some issues to fix, but the core implementation works correctly:
+
+- [x] Implemented the agent-wrappers for the bullet backend, doing a modified
+      implementation based on the implementation by bullet examples. I used
+      the idea of using dummies only, as the implementation wouldn't work out
+      for my requirements (it still had the punch me clown issue).
+
+### Implement remaming functionality for agent-wrapper with bullet as backend (5/28/19)
+
+The implementation from the previous step works correctly so far. I still have to 
+map the actuators correctly, and correct some remainig issues with the implementation,
+e.g. some models behaving a bit weirdly, like the humanoid, which kind of bumps
+in the first collision (it seems the ranges or the axis of the joints are a bit off).
+Today I should finish fixing all these issues, and finish mapping the actuators as well
+in order to have a working implementation that can be integrated into *loco*.
+
+* Implement support for basic actuators (using torques) for bullet agents. and 
+  updated the UI appropriately to handle user actuator settings.
+* Fix all remaining issues with the bullet agent implementation in order to
+  later integrate it into loco.
