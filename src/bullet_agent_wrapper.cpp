@@ -350,6 +350,9 @@ namespace bullet {
 
                 // book keeping for next iteration
                 _parentLink = _link;
+
+                // keep the name of the joint linked to its link-id
+                m_jointsNamesToLinksIdMap[_joints[q]->name] = m_linksInChain.back()->getIndx();
             }
         }
         else
@@ -429,6 +432,12 @@ namespace bullet {
 
             // book keeping for next iterations
             _parentLink = _link;
+
+            if ( !_noJoints )
+            {
+                // keep the name of the joint linked to its link-id
+                m_jointsNamesToLinksIdMap[_joints.front()->name] = m_linksInChain.back()->getIndx();
+            }
 
             // save the first-to-base transform (first-link w.r.t. this compound)
             m_firstLinkToBaseTransform = _collisions.front()->relTransform;
@@ -567,6 +576,11 @@ namespace bullet {
         return m_baseToLastLinkTransform;
     }
 
+    std::map< std::string, int > TBodyCompound::getJointsNamesToLinksIdMap()
+    {
+        return m_jointsNamesToLinksIdMap;
+    }
+
     /***************************************************************************
     *                   TBtKinTreeAgentWrapper Implementation                  *
     ****************************************************************************/
@@ -618,7 +632,33 @@ namespace bullet {
 
     void TBtKinTreeAgentWrapper::_preStepInternal()
     {
-        // TODO: map user actuation commands appropriately
+        auto _kinActuators = m_kinTreeAgentPtr->getKinTreeActuators();
+
+        for ( size_t q = 0; q < _kinActuators.size(); q++ )
+        {
+            if ( !_kinActuators[q]->jointPtr )
+            {
+                std::cout << "WARNING> actuator: " << _kinActuators[q]->name 
+                          << " has no joint attached" << std::endl;
+                continue;
+            }
+
+            auto _jointName = _kinActuators[q]->jointPtr->name;
+            
+            if ( m_jointToLinkIdMap.find( _jointName ) ==
+                 m_jointToLinkIdMap.end() )
+            {
+                std::cout << "WARNING> joint: " << _jointName 
+                          << " not mapped to any link";
+                continue;
+            }
+
+            auto _linkId = m_jointToLinkIdMap[_jointName];
+            auto _ctrlValue = _kinActuators[q]->gear.buff[0] * 
+                              _kinActuators[q]->ctrlValue;
+
+            m_btMultiBodyPtr->addJointTorque( _linkId, _ctrlValue );
+        }
     }
 
     void TBtKinTreeAgentWrapper::_postStepInternal()
@@ -673,12 +713,28 @@ namespace bullet {
                                                           m_baseCompound );
 
         m_btMultiBodyPtr->finalizeMultiDof();
-        m_btMultiBodyPtr->setHasSelfCollision( true );
+        m_btMultiBodyPtr->setHasSelfCollision( false );
         
         m_btMultiBodyPtr->setLinearDamping( 0.1f );
         m_btMultiBodyPtr->setAngularDamping( 0.9f );
 
         m_btWorldPtr->addMultiBody( m_btMultiBodyPtr );
+
+        // assemble all jointsNames-linksIds mappings into one dictionary
+        for ( size_t q = 0; q < m_bodyCompoundsArray.size(); q++ )
+        {
+            auto _jointsNamesToLinksIdsMap = m_bodyCompoundsArray[q]->getJointsNamesToLinksIdMap();
+
+            // copy each entry in the dictionary into our global dictionary
+            for ( auto _it = _jointsNamesToLinksIdsMap.begin();
+                       _it != _jointsNamesToLinksIdsMap.end();
+                       _it++ )
+            {
+                m_jointToLinkIdMap[_it->first] = _it->second;
+            }
+        }
+
+        std::cout << "LOG> finished" << std::endl;
     }
 
     TBodyCompound* TBtKinTreeAgentWrapper::_createBodyCompoundFromBodyNode( agent::TKinTreeBody* kinTreeBodyPtr,

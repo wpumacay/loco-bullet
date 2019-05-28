@@ -103,8 +103,11 @@ int main( int argc, const char** argv )
 
     while ( _visualizer->isActive() )
     {
-        if ( _visualizer->checkSingleKeyPress( 15 ) )
+        if ( _visualizer->checkSingleKeyPress( tysoc::keys::KEY_P ) )
             _simulation->togglePause();
+
+        if ( _visualizer->checkSingleKeyPress( tysoc::keys::KEY_ESCAPE ) )
+            break;
 
         _simulation->step();
         _visualizer->update();

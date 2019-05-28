@@ -154,6 +154,9 @@ namespace bullet {
         // the world transform of this compound
         TMat4 m_worldTransform;
 
+        // A dictionary to map joints (dofs) to its link ids in the multibody
+        std::map< std::string, int > m_jointsNamesToLinksIdMap;
+
         /**
         *   Initializes the compound by creating all links in the btMultiBody ...
         *   that will be required, according to the collisions and joints that ...
@@ -236,6 +239,11 @@ namespace bullet {
         *   (kintree-body's frame) w.r.t. the last link in the compound
         */
         TMat4 baseToLastTransform();
+
+        /**
+        *   Gets the mapping from joints names to link-ids
+        */
+        std::map< std::string, int > getJointsNamesToLinksIdMap();
     };
 
     class TBtKinTreeAgentWrapper : public TKinTreeAgentWrapper
@@ -260,6 +268,9 @@ namespace bullet {
 
         // A storage for later access to each compound (by index)
         std::vector< TBodyCompound* > m_bodyCompoundsArray;
+
+        // A dictionary to map joints (dofs) to its link ids in the multibody
+        std::map< std::string, int > m_jointToLinkIdMap;
 
         // A counter for the current link index
         int m_currentLinkIndx;
