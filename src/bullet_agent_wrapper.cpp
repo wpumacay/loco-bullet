@@ -359,9 +359,8 @@ namespace bullet {
             *   (if any) are created later with fixed constraints
             */
 
-            // @TODO: Check the case when there is no joints. This is a weird case ... 
-            // butsome models might have this requirement (If so, why not just prune ...
-            // the model to latest body with dofs and add these as geoms???).
+            // if no joints, then we'll assume a fixed joint instead
+            bool _noJoints = ( _joints.size() == 0 );
 
             /* Compute the transforms required to setup this link *************/
             TMat4 _trThisLinkToParentLink;
@@ -373,16 +372,42 @@ namespace bullet {
                                       _collisions.front()->relTransform;
 
             _trThisLinkToWorld = _trParentEndLinkToWorld * _trThisLinkToParentLink;
-            _trJointFrameToThisLink = _collisions.front()->relTransform.inverse() *
-                                      _joints.front()->relTransform;
+
+            if ( _noJoints )
+                _trJointFrameToThisLink.setIdentity();
+            else
+                _trJointFrameToThisLink = _collisions.front()->relTransform.inverse() *
+                                          _joints.front()->relTransform;
 
             /******************************************************************/
 
+            /* Define joint information ***************************************/
+            TVec3 _jointPivotInThisLink;
+            TVec3 _jointAxisInThisLink;
+            std::string _jointType;
+            TScalar _jointLowerLimit;
+            TScalar _jointUpperLimit;
+
             // The pivot coincides with th origin of the joint-frame
-            TVec3 _jointPivotInThisLink = _trJointFrameToThisLink.getPosition();
+            _jointPivotInThisLink = _trJointFrameToThisLink.getPosition();
             // Transform axis given in joint-frame to link-frame
-            TVec3 _jointAxisInThisLink = _trJointFrameToThisLink.getRotation() * 
-                                         _joints.front()->axis;
+            if ( _noJoints )
+            {
+                _jointAxisInThisLink = { 1.0, 0.0, 0.0 };
+                _jointType = "fixed";
+                _jointLowerLimit = 1.0f;
+                _jointUpperLimit = -1.0f;
+            }
+            else
+            {
+                _jointAxisInThisLink = _trJointFrameToThisLink.getRotation() * 
+                                       _joints.front()->axis;
+                _jointType = _joints.front()->type;
+                _jointLowerLimit = _joints.front()->lowerLimit;
+                _jointUpperLimit = _joints.front()->upperLimit;
+            }
+
+            /******************************************************************/
 
             // Create the link
             auto _link = new TBtMultiBodyLink( m_linkBaseIndx + m_linksInChain.size(),
@@ -393,11 +418,11 @@ namespace bullet {
                                          _collisions.front()->geometry.size,
                                          _trThisLinkToWorld,
                                          _trThisLinkToParentLink,
-                                         _joints.front()->type,
+                                         _jointType,
                                          _jointAxisInThisLink,
                                          _jointPivotInThisLink,
-                                         _joints.front()->lowerLimit,
-                                         _joints.front()->upperLimit );
+                                         _jointLowerLimit,
+                                         _jointUpperLimit );
 
             // cache this new link in the chain of this compound
             m_linksInChain.push_back( _link );
