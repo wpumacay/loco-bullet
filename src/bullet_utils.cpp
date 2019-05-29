@@ -135,14 +135,14 @@ namespace utils {
             auto _boxShape = reinterpret_cast< btBoxShape* >( colShape );
             auto _boxDimensions = _boxShape->getHalfExtentsWithoutMargin();
 
-            _volume = ( _boxDimensions.x() * _boxDimensions.y() * _boxDimensions.z() );
+            _volume = 8. * ( _boxDimensions.x() * _boxDimensions.y() * _boxDimensions.z() );
         }
         else if ( _type == SPHERE_SHAPE_PROXYTYPE )
         {
             auto _sphereShape = reinterpret_cast< btSphereShape* >( colShape );
             auto _sphereRadius = _sphereShape->getRadius();
 
-            _volume = _pi * ( _sphereRadius * _sphereRadius * _sphereRadius );
+            _volume = (4. / 3.) * _pi * ( _sphereRadius * _sphereRadius * _sphereRadius );
         }
         else if ( _type == CYLINDER_SHAPE_PROXYTYPE )
         {
