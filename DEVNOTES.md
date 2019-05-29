@@ -173,3 +173,52 @@ in order to have a working implementation that can be integrated into *loco*.
   updated the UI appropriately to handle user actuator settings.
 * Fix all remaining issues with the bullet agent implementation in order to
   later integrate it into loco.
+
+---
+
+I've implemented most the functionality from before, but there are still some
+issues that do not allow full compatibility yet. Currently, the models that work
+fine (similar to the ones using the mujoco-backend) are the **walker** and the
+**hopper**. Unfortunately, the other have some properties that I still haven't
+implemented nor found (among bullet examples) in order to reproduce in bullet, 
+like stiffness, damping, armature and friction. The models that make heavy use 
+of these include the cheetah, humanoid and ant. There are also some crashes due
+to some models using some nested defaults (quadruped), and some cases with no
+geoms at all in some bodies (baxter). I will try to fix some of these issues today,
+and integrate it as well into loco. So, this is what we got from yesterday:
+
+- [x] Added support for actuators (torques for now) for bullet based agents.
+- [x] Fix part of the issues required for integration into loco, allowing
+      compatibility with some of the models.
+- [x] Added more UI tools to debug models, like showing model info and a summary
+      of the agents (which currently shows mass and inertia information).
+
+
+### Fix most of the remaining issues and integrate into *loco* (5/29/19)
+
+So far the implementation works, but has various issues with some models that do
+not allow compatibility with the runtime that uses mujoco as backend, e.g. humanoid, 
+cheetah, etc.. There are still some models that crash due to some unsolved issues 
+with some features I didn't take into account. Furthermore, models from rlsim
+have still some features missing, like mapping torque limits appropriately, and
+mapping masses defined in the json files. I'll try to fix most of these issues
+for today (perhaps the ones that are going to be missing are the ones related
+to stiffness, damping, and others that required digging a bit deeper into bullet
+to find ways to support these features). So, this is what we've got in the coding
+store for today:
+
+tysoc-bullet:
+
+* Fix crashing models due to no geoms in bodies (like the baxter model).
+* Support nested defaults in mjcf (like the quadruped model).
+* Fix support for rlsim models (mapping masses, torquelimits, etc.).
+* Add plane restriction to some models in rlsim (dog, raptor, goat), as it seems
+  it was the intended behaviour in the original deepterrainrl implementation.
+* Add armature (seems reasonable) to some models. I mean adding some extra inertia
+  to some joints to stabilize the simulation. I'll also check if this was the
+  intended behaviour.
+
+loco:
+
+* Integrate tysoc-bullet into loco as another available backend.
+
