@@ -41,6 +41,10 @@ namespace bullet {
         btMultiBodySphericalJointMotor* m_btSphericalJointMotor;
         btMultiBodyJointLimitConstraint* m_btJointLimitConstraint;
 
+        // mass and inertia, for summary
+        TScalar m_mass;
+        TVec3 m_inertiaDiag;
+
         public :
 
         TBtMultiBodyLink( int indx,
@@ -87,8 +91,9 @@ namespace bullet {
         btMultiBodyJointMotor* getJointMotor() { return m_btJointMotor; }
         btMultiBodySphericalJointMotor* getSphericalJointMotor() { return m_btSphericalJointMotor; }
 
-
-
+        /* Some more getters for inertial properties */
+        TScalar mass() { return m_mass; }
+        TVec3 inertiDiag() { return m_inertiaDiag; }
     };
 
     /* 
@@ -156,6 +161,12 @@ namespace bullet {
 
         // A dictionary to map joints (dofs) to its link ids in the multibody
         std::map< std::string, int > m_jointsNamesToLinksIdMap;
+
+        // A dictionary to keep the masses for each link (if non-zero)
+        std::map< std::string, TScalar > m_masses;
+
+        // A dictionary to keep inertia vector (diagonal) for each link (if non-zero)
+        std::map< std::string, TVec3 > m_inertiasDiags;
 
         /**
         *   Initializes the compound by creating all links in the btMultiBody ...
@@ -244,6 +255,16 @@ namespace bullet {
         *   Gets the mapping from joints names to link-ids
         */
         std::map< std::string, int > getJointsNamesToLinksIdMap();
+
+        /**
+        *   Gets the masses dictionary (link-name to mass)
+        */
+       std::map< std::string, TScalar > getMasses();
+
+        /**
+        *   Gets the inertiasDiags dictionary (link-name to inertiaDiag)
+        */
+       std::map< std::string, TVec3 > getInertiasDiags();
     };
 
     class TBtKinTreeAgentWrapper : public TKinTreeAgentWrapper

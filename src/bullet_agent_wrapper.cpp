@@ -23,6 +23,9 @@ namespace bullet {
         m_btJointMotor              = NULL;
         m_btSphericalJointMotor     = NULL;
         m_btJointLimitConstraint    = NULL;
+
+        m_mass = 0.0f;
+        m_inertiaDiag = { 0.0f, 0.0f, 0.0f };
     }
 
     TBtMultiBodyLink::~TBtMultiBodyLink()
@@ -61,6 +64,9 @@ namespace bullet {
         btVector3 _linkInertia = btVector3( 0., 0., 0. );
         if ( _linkMass != 0.0f )
             m_btCollisionShapePtr->calculateLocalInertia( _linkMass, _linkInertia );
+
+        m_mass = _linkMass;
+        m_inertiaDiag = utils::fromBtVec3( _linkInertia );
 
         // transform everything to bullet data types
         btTransform _btWorldTransform = utils::toBtTransform( worldTransform );
@@ -203,6 +209,9 @@ namespace bullet {
         m_btLinkColliderPtr = new btMultiBodyLinkCollider( m_btMultiBodyPtr, m_btLinkIndx );
         m_btLinkColliderPtr->setCollisionShape( m_btCollisionShapePtr );
         m_btMultiBodyPtr->getLink( m_btLinkIndx ).m_collider = m_btLinkColliderPtr;
+
+        // if ( shapeType != "none" )
+        //     m_btLinkColliderPtr->setContactStiffnessAndDamping( 1e18, 1. );
 
         // initialize worldTransform from parent
         m_btLinkColliderPtr->setWorldTransform( utils::toBtTransform( worldTransform ) );
@@ -449,6 +458,10 @@ namespace bullet {
                 m_lastLinkToBaseTransform = _collisions.front()->relTransform;
                 m_baseToLastLinkTransform = m_lastLinkToBaseTransform.inverse();
             }
+
+            // save the mass for this collision
+            m_masses[_collisions.front()->name] = _link->mass();
+            m_inertiasDiags[_collisions.front()->name] = _link->inertiDiag();
         }
 
         // Create remaining links from collisions. The first one might already ...
@@ -506,6 +519,10 @@ namespace bullet {
                 m_lastLinkToBaseTransform = _collisions[q]->relTransform;
                 m_baseToLastLinkTransform = m_lastLinkToBaseTransform.inverse();
             }
+
+            // save the mass for this collision
+            m_masses[_collisions.front()->name] = _link->mass();
+            m_inertiasDiags[_collisions.front()->name] = _link->inertiDiag();
         }
     }
 
@@ -579,6 +596,16 @@ namespace bullet {
     std::map< std::string, int > TBodyCompound::getJointsNamesToLinksIdMap()
     {
         return m_jointsNamesToLinksIdMap;
+    }
+
+    std::map< std::string, TScalar > TBodyCompound::getMasses()
+    {
+        return m_masses;
+    }
+
+    std::map< std::string, TVec3 > TBodyCompound::getInertiasDiags()
+    {
+        return m_inertiasDiags;
     }
 
     /***************************************************************************
@@ -713,10 +740,10 @@ namespace bullet {
                                                           m_baseCompound );
 
         m_btMultiBodyPtr->finalizeMultiDof();
-        m_btMultiBodyPtr->setHasSelfCollision( false );
+        m_btMultiBodyPtr->setHasSelfCollision( true );
         
-        m_btMultiBodyPtr->setLinearDamping( 0.1f );
-        m_btMultiBodyPtr->setAngularDamping( 0.9f );
+        // m_btMultiBodyPtr->setLinearDamping( 0.1f );
+        // m_btMultiBodyPtr->setAngularDamping( 0.9f );
 
         m_btWorldPtr->addMultiBody( m_btMultiBodyPtr );
 
@@ -733,8 +760,29 @@ namespace bullet {
                 m_jointToLinkIdMap[_it->first] = _it->second;
             }
         }
+        
+        /* Generate summary information *******************************************/
+        TGenericParams& _summary = m_kinTreeAgentPtr->getSummary();
 
-        std::cout << "LOG> finished" << std::endl;
+        // collect inertia properties
+        TScalar _totalMass = 0.0f;
+        for ( size_t q = 0; q < m_bodyCompoundsArray.size(); q++ )
+        {
+            auto _masses = m_bodyCompoundsArray[q]->getMasses();
+            for ( auto _it = _masses.begin(); _it != _masses.end(); _it++ )
+            {
+                _summary.set( "mass-" + _it->first, _it->second );
+                _totalMass += _it->second;
+            }
+
+            auto _inertias = m_bodyCompoundsArray[q]->getInertiasDiags();
+            for ( auto _it = _inertias.begin(); _it != _inertias.end(); _it++ )
+                _summary.set( "inertia-" + _it->first, _it->second );
+        }
+
+        _summary.set( "total-mass", _totalMass );
+
+        /**************************************************************************/
     }
 
     TBodyCompound* TBtKinTreeAgentWrapper::_createBodyCompoundFromBodyNode( agent::TKinTreeBody* kinTreeBodyPtr,
