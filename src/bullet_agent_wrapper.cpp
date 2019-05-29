@@ -24,6 +24,8 @@ namespace bullet {
         m_btSphericalJointMotor     = NULL;
         m_btJointLimitConstraint    = NULL;
 
+        m_density = TYSOC_DEFAULT_DENSITY;
+
         m_mass = 0.0f;
         m_inertiaDiag = { 0.0f, 0.0f, 0.0f };
     }
@@ -60,7 +62,7 @@ namespace bullet {
         m_btCollisionShapePtr = utils::createCollisionShape( shapeType, shapeSize );
 
         // compute inertial properties from this shape
-        btScalar _linkMass = utils::computeVolumeFromShape( m_btCollisionShapePtr ) * TYSOC_DEFAULT_DENSITY;
+        btScalar _linkMass = utils::computeVolumeFromShape( m_btCollisionShapePtr ) * m_density;
         btVector3 _linkInertia = btVector3( 0., 0., 0. );
         if ( _linkMass != 0.0f )
             m_btCollisionShapePtr->calculateLocalInertia( _linkMass, _linkInertia );
@@ -108,23 +110,28 @@ namespace bullet {
             m_btMultiBodyPtr->getLink( m_btLinkIndx ).m_jointLowerLimit = lowerLimit * SIMD_RADS_PER_DEG;
             m_btMultiBodyPtr->getLink( m_btLinkIndx ).m_jointUpperLimit = upperLimit * SIMD_RADS_PER_DEG;
 
-            if ( useMotor )
+            if ( lowerLimit <= upperLimit )
             {
-                m_btJointMotor = new btMultiBodyJointMotor( m_btMultiBodyPtr, 
-                                                            m_btLinkIndx, 
-                                                            0, 0, 5. );
-                m_btJointMotor->setErp( 0.1 );
-                m_btJointMotor->setPositionTarget( 0.25 );
-            }
-            else if ( lowerLimit <= upperLimit )
-            {
-                m_btJointLimitConstraint = new btMultiBodyJointLimitConstraint( 
-                                                        m_btMultiBodyPtr, 
-                                                        m_btLinkIndx, 
-                                                        lowerLimit * SIMD_RADS_PER_DEG, 
-                                                        upperLimit * SIMD_RADS_PER_DEG );
+                if ( useMotor )
+                {
+                    m_btJointMotor = new btMultiBodyJointMotor( m_btMultiBodyPtr, 
+                                                                m_btLinkIndx, 
+                                                                0, 0, 5. );
+                    m_btJointMotor->setErp( 0.1 );
+                    m_btJointMotor->setPositionTarget( 0.0 );
 
-                m_btWorldPtr->addMultiBodyConstraint( m_btJointLimitConstraint );
+                    m_btWorldPtr->addMultiBodyConstraint( m_btJointMotor );
+                }
+                else
+                {
+                    m_btJointLimitConstraint = new btMultiBodyJointLimitConstraint( 
+                                                            m_btMultiBodyPtr, 
+                                                            m_btLinkIndx, 
+                                                            lowerLimit * SIMD_RADS_PER_DEG, 
+                                                            upperLimit * SIMD_RADS_PER_DEG );
+
+                    m_btWorldPtr->addMultiBodyConstraint( m_btJointLimitConstraint );
+                }
             }
         }
         else if ( jointType == "slider" || jointType == "slide" || jointType == "prismatic" )
@@ -142,26 +149,30 @@ namespace bullet {
             m_btMultiBodyPtr->getLink( m_btLinkIndx ).m_jointLowerLimit = lowerLimit;
             m_btMultiBodyPtr->getLink( m_btLinkIndx ).m_jointUpperLimit = upperLimit;
 
-            if ( useMotor )
+            if ( lowerLimit <= upperLimit )
             {
-                m_btJointMotor = new btMultiBodyJointMotor( m_btMultiBodyPtr, 
+                if ( useMotor )
+                {
+                    m_btJointMotor = new btMultiBodyJointMotor( m_btMultiBodyPtr, 
+                                                                m_btLinkIndx, 
+                                                                0, 0, 5. );
+                    m_btJointMotor->setErp( 0.1 );
+                    m_btJointMotor->setPositionTarget( 0. );
+
+                    m_btWorldPtr->addMultiBodyConstraint( m_btJointMotor );
+                }
+                else
+                {
+                    m_btJointLimitConstraint = new btMultiBodyJointLimitConstraint( 
+                                                            m_btMultiBodyPtr, 
                                                             m_btLinkIndx, 
-                                                            0, 0, 5. );
-                m_btJointMotor->setErp( 0.1 );
-                m_btJointMotor->setPositionTarget( 0. );
+                                                            lowerLimit, 
+                                                            upperLimit );
 
-                m_btWorldPtr->addMultiBodyConstraint( m_btJointMotor );
+                    m_btWorldPtr->addMultiBodyConstraint( m_btJointLimitConstraint );
+                }
             }
-            else if ( lowerLimit <= upperLimit )
-            {
-                m_btJointLimitConstraint = new btMultiBodyJointLimitConstraint( 
-                                                        m_btMultiBodyPtr, 
-                                                        m_btLinkIndx, 
-                                                        lowerLimit, 
-                                                        upperLimit );
 
-                m_btWorldPtr->addMultiBodyConstraint( m_btJointLimitConstraint );
-            }
         }
         else if ( jointType == "ball" || jointType == "spheric" || jointType == "spherical" )
         {
@@ -177,16 +188,19 @@ namespace bullet {
             m_btMultiBodyPtr->getLink( m_btLinkIndx ).m_jointLowerLimit = lowerLimit * SIMD_RADS_PER_DEG;
             m_btMultiBodyPtr->getLink( m_btLinkIndx ).m_jointUpperLimit = upperLimit * SIMD_RADS_PER_DEG;
 
-            if ( useMotor )
+            if ( lowerLimit <= upperLimit )
             {
-                m_btSphericalJointMotor = new btMultiBodySphericalJointMotor( 
-                                                        m_btMultiBodyPtr, 
-                                                        m_btLinkIndx, 
-                                                        5. );
-                m_btSphericalJointMotor->setErp( 0.1 );
-                m_btSphericalJointMotor->setPositionTarget( { 0., 0., 0., 1. } );
+                if ( useMotor )
+                {
+                    m_btSphericalJointMotor = new btMultiBodySphericalJointMotor( 
+                                                            m_btMultiBodyPtr, 
+                                                            m_btLinkIndx, 
+                                                            5. );
+                    m_btSphericalJointMotor->setErp( 0.1 );
+                    m_btSphericalJointMotor->setPositionTarget( { 0., 0., 0., 1. } );
 
-                m_btWorldPtr->addMultiBodyConstraint( m_btSphericalJointMotor );
+                    m_btWorldPtr->addMultiBodyConstraint( m_btSphericalJointMotor );
+                }
             }
         }
         else if ( jointType == "fixed" || jointType == "free" )
@@ -213,6 +227,10 @@ namespace bullet {
         // if ( shapeType != "none" )
         //     m_btLinkColliderPtr->setContactStiffnessAndDamping( 1e18, 1. );
 
+        // // set the friction of this collider
+        // m_btLinkColliderPtr->setFriction( m_friction.buff[0] );
+        // m_btLinkColliderPtr->setRollingFriction( m_friction.buff[2] );
+
         // initialize worldTransform from parent
         m_btLinkColliderPtr->setWorldTransform( utils::toBtTransform( worldTransform ) );
 
@@ -232,6 +250,16 @@ namespace bullet {
     int TBtMultiBodyLink::getIndx()
     {
         return m_btLinkIndx;
+    }
+
+    void TBtMultiBodyLink::setDensity( const TScalar& density )
+    {
+        m_density = density;
+    }
+
+    void TBtMultiBodyLink::setFriction( const TSizef& friction )
+    {
+        m_friction = friction;
     }
 
     /***************************************************************************
@@ -426,6 +454,8 @@ namespace bullet {
                                                _parentLink,
                                                m_btMultiBodyPtr,
                                                m_btWorldPtr );
+            _link->setDensity( _collisions.front()->density );
+            _link->setFriction( _collisions.front()->friction );
             _link->setupLinkInMultiBody( _collisions.front()->geometry.type,
                                          _collisions.front()->geometry.size,
                                          _trThisLinkToWorld,
@@ -499,6 +529,8 @@ namespace bullet {
                                                _parentLink,
                                                m_btMultiBodyPtr,
                                                m_btWorldPtr );
+            _link->setDensity( _collisions[q]->density );
+            _link->setFriction( _collisions[q]->friction );
             _link->setupLinkInMultiBody( _collisions[q]->geometry.type,
                                          _collisions[q]->geometry.size,
                                          _trThisLinkToWorld,
@@ -521,8 +553,8 @@ namespace bullet {
             }
 
             // save the mass for this collision
-            m_masses[_collisions.front()->name] = _link->mass();
-            m_inertiasDiags[_collisions.front()->name] = _link->inertiDiag();
+            m_masses[_collisions[q]->name] = _link->mass();
+            m_inertiasDiags[_collisions[q]->name] = _link->inertiDiag();
         }
     }
 

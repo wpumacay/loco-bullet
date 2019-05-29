@@ -41,6 +41,11 @@ namespace bullet {
         btMultiBodySphericalJointMotor* m_btSphericalJointMotor;
         btMultiBodyJointLimitConstraint* m_btJointLimitConstraint;
 
+        // density
+        TScalar m_density;
+        // friction
+        TSizef m_friction;
+
         // mass and inertia, for summary
         TScalar m_mass;
         TVec3 m_inertiaDiag;
@@ -79,6 +84,16 @@ namespace bullet {
         *   btMultiBody it belongs to.
         */
         int getIndx();
+
+        /**
+        *   Sets the density of this link (for mass computation)
+        */
+       void setDensity( const TScalar& density );
+
+        /**
+        *   Sets the friction of this link
+        */
+       void setFriction( const TSizef& friction );
 
         /* Checks to see if this link either has or hasn't some resources */
         bool hasLimitConstraint() { return m_btJointLimitConstraint != NULL; }

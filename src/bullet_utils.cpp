@@ -56,39 +56,65 @@ namespace utils {
 
     btCollisionShape* createCollisionShape( const std::string& type, const TVec3& size )
     {
-        btCollisionShape* _collisionShapePtr = NULL;
+//         btCollisionShape* _collisionShapePtr = NULL;
+// 
+//         auto _modSize = size;
+// 
+//         if ( type == "box" )
+//         {
+//             _collisionShapePtr = new btBoxShape( btVector3( 0.5, 0.5, 0.5 ) );
+//         }
+//         else if ( type == "sphere" )
+//         {
+//             _collisionShapePtr = new btSphereShape( 1.0 );
+//         }
+//         else if ( type == "capsule" )
+//         {
+//             _modSize = { size.x, size.x, size.y };
+//             _collisionShapePtr = new btCapsuleShapeZ( 1.0, 1.0 );
+//         }
+//         else if ( type == "cylinder" )
+//         {
+//             _modSize = { size.x, size.x, size.y };
+//             _collisionShapePtr = new btCylinderShapeZ( btVector3( 1.0, 1.0, 0.5 ) );
+//         }
+//         else if ( type == "none" )
+//         {
+//             _collisionShapePtr = new btCompoundShape();
+//         }
+// 
+//         if ( !_collisionShapePtr )
+//             std::cout << "ERROR> could not create shape of type: " << type << std::endl;
+//         else if ( type != "plane" )
+//             _collisionShapePtr->setLocalScaling( utils::toBtVec3( _modSize ) );
+// 
+//         return _collisionShapePtr;
 
-        auto _modSize = size;
+        btCollisionShape* _colShape = NULL;
 
         if ( type == "box" )
-        {
-            _collisionShapePtr = new btBoxShape( btVector3( 0.5, 0.5, 0.5 ) );
-        }
+            _colShape = new btBoxShape( btVector3( 0.5 * size.x, 0.5 * size.y, 0.5 * size.z ) );
         else if ( type == "sphere" )
-        {
-            _collisionShapePtr = new btSphereShape( 1.0 );
-        }
-        else if ( type == "capsule" )
-        {
-            _modSize = { size.x, size.x, size.y };
-            _collisionShapePtr = new btCapsuleShapeZ( 1.0, 1.0 );
-        }
+            _colShape = new btSphereShape( size.x );
+        else if ( type == "capsule" || type == "capsulez" )
+            _colShape = new btCapsuleShapeZ( size.x, size.y );
+        else if ( type == "capsulex" )
+            _colShape = new btCapsuleShapeX( size.x, size.y );
+        else if ( type == "capsuley" )
+            _colShape = new btCapsuleShape( size.x, size.y );
         else if ( type == "cylinder" )
-        {
-            _modSize = { size.x, size.x, size.y };
-            _collisionShapePtr = new btCylinderShapeZ( btVector3( 1.0, 1.0, 0.5 ) );
-        }
+            _colShape = new btCylinderShapeZ( btVector3( size.x, size.x, size.y ) );
         else if ( type == "none" )
-        {
-            _collisionShapePtr = new btCompoundShape();
-        }
+            _colShape = new btCompoundShape();
+        else
+            std::cout << "ERROR> shape: " << type << " not supported" << std::endl;
 
-        if ( !_collisionShapePtr )
-            std::cout << "ERROR> could not create shape of type: " << type << std::endl;
-        else if ( type != "plane" )
-            _collisionShapePtr->setLocalScaling( utils::toBtVec3( _modSize ) );
+        if ( !_colShape )
+            return NULL;
 
-        return _collisionShapePtr;
+        _colShape->setMargin( 0.0f );
+
+        return _colShape;
     }
 
     btScalar computeVolumeFromShape( btCollisionShape* colShape )
