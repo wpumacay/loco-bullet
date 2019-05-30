@@ -277,6 +277,9 @@ namespace bullet {
         // construct the rigid body with the previous struct
         auto _rbBodyPtr = new btRigidBody( _rbConstructionInfo );
 
+        // set friction
+        _rbBodyPtr->setFriction( 1.0f );
+
         // make sure the object is going to be simulated by forcing activation
         _rbBodyPtr->forceActivationState( DISABLE_DEACTIVATION );
 

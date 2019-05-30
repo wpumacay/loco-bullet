@@ -11,3 +11,6 @@ build/
 .vscode/
 _legacy/
 *.ini
+dist/
+pytysoc.egg-info/
+tysoc_bullet.egg-info/
