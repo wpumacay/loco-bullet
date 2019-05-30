@@ -179,7 +179,7 @@ namespace bullet {
             m_bodyWrappers[q]->postStep();
 
         // @DEBUG: calls own debug drawing functionality
-        if ( m_btWorldPtr )
+        if ( m_btWorldPtr && m_isDebugDrawingActive )
         {
             m_btDebugDrawer->setVisualizer( m_visualizerPtr );
             m_btWorldPtr->debugDrawWorld();
