@@ -1,6 +1,6 @@
-[submodule "ext/bullet"]
-	path = ext/bullet
-	url = https://github.com/bulletphysics/bullet3.git
 [submodule "tysoc"]
 	path = tysoc
 	url = https://github.com/wpumacay/tysoc.git
+[submodule "ext/bullet"]
+	path = ext/bullet
+	url = https://github.com/wpumacay/bullet3.git
