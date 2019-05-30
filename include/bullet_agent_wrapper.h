@@ -45,6 +45,8 @@ namespace bullet {
         TScalar m_density;
         // friction
         TSizef m_friction;
+        // armature
+        TScalar m_armature;
 
         // mass and inertia, for summary
         TScalar m_mass;
@@ -94,6 +96,12 @@ namespace bullet {
         *   Sets the friction of this link
         */
        void setFriction( const TSizef& friction );
+
+        /**
+        *   Sets the armature (extra value added to diagonal of inertia matrix).
+        *   This value is used to stabilize the simulation.
+        */
+       void setArmature( const TScalar& armature );
 
         /* Checks to see if this link either has or hasn't some resources */
         bool hasLimitConstraint() { return m_btJointLimitConstraint != NULL; }

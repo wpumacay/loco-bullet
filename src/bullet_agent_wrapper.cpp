@@ -25,6 +25,8 @@ namespace bullet {
         m_btJointLimitConstraint    = NULL;
 
         m_density = TYSOC_DEFAULT_DENSITY;
+        m_armature = 0.0f;
+        m_friction = { 3, { 1., 0.005, 0.0001 } };
 
         m_mass = 0.0f;
         m_inertiaDiag = { 0.0f, 0.0f, 0.0f };
@@ -87,15 +89,15 @@ namespace bullet {
         // compute pivot w.r.t. parent COM
         auto _pivot2parent_pos = _this2parent_pos - quatRotate( _this2parent_quat, -_btJointPivot );
 
+        // add armature (if given by the model) to stabilize simulation
+        _linkInertia += btVector3( m_armature, m_armature, m_armature );
+
         // setup the constraint for this link
         if ( jointType == "hinge" || jointType == "continuous" || jointType == "revolute" )
         {
+            // @HACK: Add a small amount of inertia to avoid erratic behaviour
             if ( shapeType == "none" && !useMotor )
-            {
-                // @HACK: Add a small amount of inertia to avoid erratic behaviour
-                _linkMass = 0.1;
                 _linkInertia = { 0.001, 0.001, 0.001 };
-            }
 
             m_btMultiBodyPtr->setupRevolute( m_btLinkIndx, 
                                              _linkMass, 
@@ -262,6 +264,11 @@ namespace bullet {
         m_friction = friction;
     }
 
+    void TBtMultiBodyLink::setArmature( const TScalar& armature )
+    {
+        m_armature = armature;
+    }
+
     /***************************************************************************
     *                        TBodyCompound Implementation                      *
     ****************************************************************************/
@@ -372,6 +379,7 @@ namespace bullet {
                                                    _parentLink,
                                                    m_btMultiBodyPtr,
                                                    m_btWorldPtr );
+                _link->setArmature( _joints[q]->armature );
                 _link->setupLinkInMultiBody( "none",
                                              { 0., 0., 0. },
                                              _trThisLinkToWorld,
@@ -449,6 +457,9 @@ namespace bullet {
 
             /******************************************************************/
 
+            // armature to be added (depends on the joint)
+            TScalar _armature = ( _noJoints ) ? 0.0 : _joints.front()->armature;
+
             // Create the link
             auto _link = new TBtMultiBodyLink( m_linkBaseIndx + m_linksInChain.size(),
                                                _parentLink,
@@ -456,6 +467,7 @@ namespace bullet {
                                                m_btWorldPtr );
             _link->setDensity( _collisions.front()->density );
             _link->setFriction( _collisions.front()->friction );
+            _link->setArmature( _armature );
             _link->setupLinkInMultiBody( _collisions.front()->geometry.type,
                                          _collisions.front()->geometry.size,
                                          _trThisLinkToWorld,
@@ -717,6 +729,10 @@ namespace bullet {
                               _kinActuators[q]->ctrlValue;
 
             m_btMultiBodyPtr->addJointTorque( _linkId, _ctrlValue );
+
+            // add to summary
+            TGenericParams& _summary = m_kinTreeAgentPtr->getSummary();
+            _summary.set( "act_" + _jointName, _ctrlValue );
         }
     }
 
@@ -775,7 +791,7 @@ namespace bullet {
         m_btMultiBodyPtr->setHasSelfCollision( true );
         
         // m_btMultiBodyPtr->setLinearDamping( 0.1f );
-        // m_btMultiBodyPtr->setAngularDamping( 0.9f );
+        // m_btMultiBodyPtr->setAngularDamping( 0.1f );
 
         m_btWorldPtr->addMultiBody( m_btMultiBodyPtr );
 

@@ -74,7 +74,7 @@ int main( int argc, const char** argv )
     _bplane->name = "bplane";
     _bplane->type = "box";
     _bplane->friction = { 1.0, 1.0, 1.0 };
-    _bplane->size = { 10.0, 10.0, 1.0 };
+    _bplane->size = { 100.0, 100.0, 1.0 };
     _bplane->color = { 0.3, 0.3, 0.3 };
     _bplane->worldTransform.setPosition( { 0, 0, -0.5 } );
 
