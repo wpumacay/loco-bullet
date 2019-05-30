@@ -48,6 +48,15 @@ namespace bullet {
 
             m_agentWrappers.push_back( _agentWrapper );
         }
+
+        auto _terraingens = m_scenarioPtr->getTerrainGenerators();
+        for ( size_t q = 0; q < _terraingens.size(); q++ )
+        {
+            auto _terrainGenWrapper = new TBtTerrainGenWrapper( _terraingens[q],
+                                                                 m_workingDir );
+
+            m_terrainGenWrappers.push_back( _terrainGenWrapper );
+        }
     }
 
     TBtSimulation::~TBtSimulation()
@@ -140,6 +149,14 @@ namespace bullet {
             _btAgentWrapper->setBtWorld( m_btWorldPtr );
             _btAgentWrapper->setParentSimulation( this );
             _btAgentWrapper->initialize();
+        }
+
+        for ( size_t q = 0; q < m_terrainGenWrappers.size(); q++ )
+        {
+            auto _btTerrainGenWrapper = reinterpret_cast< TBtTerrainGenWrapper* >( m_terrainGenWrappers[q] );
+
+            _btTerrainGenWrapper->setBtWorld( m_btWorldPtr );
+            _btTerrainGenWrapper->initialize();
         }
 
         /**********************************************************************/

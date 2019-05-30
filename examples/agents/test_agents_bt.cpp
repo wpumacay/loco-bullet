@@ -70,25 +70,34 @@ int main( int argc, const char** argv )
         return 1;
     }
 
-    auto _bplane = new tysoc::sandbox::TBody();
-    _bplane->name = "bplane";
-    _bplane->type = "box";
-    _bplane->friction = { 1.0, 1.0, 1.0 };
-    _bplane->size = { 100.0, 100.0, 1.0 };
-    _bplane->color = { 0.3, 0.3, 0.3 };
-    _bplane->worldTransform.setPosition( { 0, 0, -0.5 } );
+    // auto _bplane = new tysoc::sandbox::TBody();
+    // _bplane->name = "bplane";
+    // _bplane->type = "box";
+    // _bplane->friction = { 1.0, 1.0, 1.0 };
+    // _bplane->size = { 100.0, 100.0, 1.0 };
+    // _bplane->color = { 0.3, 0.3, 0.3 };
+    // _bplane->worldTransform.setPosition( { 0, 0, -0.5 } );
 
-    auto _bcapsule = new tysoc::sandbox::TFreeBody();
-    _bcapsule->name = "bcapsule";
-    _bcapsule->type = "capsule";
-    _bcapsule->mass = 0.1;
-    _bcapsule->size = { 0.1, 0.4, 0.0 };
-    _bcapsule->worldTransform.setPosition( { -1.0, -1.0, 1.0 } );
+    auto _terrainGenStatic = new tysoc::terrain::TStaticTerrainGenerator( "terrainGen0" );
+    _terrainGenStatic->createPrimitive( "box", 
+                                        { 10.0f, 10.0f, 0.1f }, 
+                                        { 0.0f, 0.0f, -0.05f },
+                                        tysoc::TMat3(),
+                                        { 0.2f, 0.3f, 0.4f },
+                                        "chessboard" );
+
+    // auto _bcapsule = new tysoc::sandbox::TFreeBody();
+    // _bcapsule->name = "bcapsule";
+    // _bcapsule->type = "capsule";
+    // _bcapsule->mass = 0.1;
+    // _bcapsule->size = { 0.1, 0.4, 0.0 };
+    // _bcapsule->worldTransform.setPosition( { -1.0, -1.0, 1.0 } );
 
     auto _scenario = new tysoc::TScenario();
     _scenario->addAgent( _agent );
-    _scenario->addBody( _bplane );
-    _scenario->addBody( _bcapsule );
+    _scenario->addTerrainGenerator( _terrainGenStatic );
+    // _scenario->addBody( _bplane );
+    // _scenario->addBody( _bcapsule );
 
     auto _runtime = new tysoc::TRuntime( tysoc::config::physics::BULLET, 
                                          tysoc::config::rendering::GLVIZ );
