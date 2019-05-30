@@ -222,3 +222,57 @@ loco:
 
 * Integrate tysoc-bullet into loco as another available backend.
 
+---
+
+What we've got so far is shown below (it wasn't that good of a day I guess :/):
+
+- [x] Added support for masses and torque limits from rlsim models.
+- [x] Added support go grab armature in the bullet backend.
+- [x] Various weird details that required fixing :(.
+- [x] Started working with the integration with loco. I've been cleaning the bullet
+      repo in my fork to download it easily.
+
+The models that work fine right now are the **walker**, **hopper** and **ant**.
+The **humanoid** also works quite okish, but there are some issues when applying
+too high of a torque. As there is no stiffness, even though we have the armature
+parameter mapped (which helped a lot to stabilize the simulation) it still has
+some weird cases for the hip_y joint in which it just goes flying crazily. I'll
+check stiffness once I'm back from icml, but it definetely is a pending issue I
+need to fix for better compatibility.
+
+### Integrate into *loco* (5/30/19)
+
+For a first implementation I will start working with the models I mentioned earlier,
+and then start fixing and improving support for more. I haven't worked much with
+the support for urdf models, like laikago or nao, but I definetely have to fix support
+for these (I just started with the Mujoco models as they seem to be the more widely
+used as current benchmarks), but it would be nice to have a gang of models from all
+possible models in one place, supported in multiple backends :D (this I definetely
+will fix before I move onto implementing more complex stuff in *loco* and *tysoc*).
+
+Today I should finish integrating the current support in bullet into loco. Yesterday
+I was integrating the python bindings for tysoc-bullet, and they worked, but still
+need to fix something related to collision groups (specially for the current terrain
+generators). Also, I'll try to finish porting most of the benchmarks from controlsuite
+(their code related to their tasks in the suite) for the models currently supported
+in both, namely *walker*, *hopper* and *ant*. Their code is really neat, so I'd look
+into their paper for more details in the reward functions they use, and look at their
+code in order to port their functionality into *loco*. So, for today we have:
+
+* Fix issues with terrain generators in tysoc-bullet.
+* Finish integration of tysoc-bullet as another backend for *loco*.
+* Port the tasks related to the models mentioned before (walker, hopper, ant),
+  which are supported fine in both backends, from controlsuite's tasks definitions
+  and their paper.
+
+<!--*Sidenote*: I'm sorry for my bad naming habits. I often call my repos and projects
+after my pets (the ones living and the ones that don't). Tysoc was my dog a few years
+ago, and I hope I can make a model out of some photos I have of him, and make him
+walk again in the simulator (it's silly, I know, but that's me xD). I don't call
+the projects after my family because their names are reserved for I think more
+important stuff in the future (hopefully when I solve more complicated problems :D).
+Btw, cat1 isthe name of my current cat (yeah, literally xD). There were cat1-5, and
+cat0 was the mother, who just came out of nowhere one day and gave birth to 5 lovely kittens
+in my mother's wardrobe xD. (I know, I'm terrible at naming things, so if in the future
+I make a project with you and you need to name it, do the right thing and don't 
+ask my opinion in the matter xD).-->
