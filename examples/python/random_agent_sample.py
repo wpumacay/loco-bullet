@@ -5,7 +5,7 @@ import pytysoc
 
 import numpy as np
 
-_agent = tysoc_bindings.PyCoreAgent( 'agent0', [0,0,2], 'mjcf', 'ant' )
+_agent = tysoc_bindings.PyCoreAgent( 'agent0', [0,0,2], 'mjcf', 'walker' )
 _terrainGen = tysoc_bindings.PyStaticTerrainGen( 'terrainGen0' )
 _terrainGen.createPrimitive( 'box',
                              [10,10,0.1],
