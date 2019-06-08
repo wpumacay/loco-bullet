@@ -313,9 +313,9 @@ namespace utils {
     TBtDebugDrawer::TBtDebugDrawer()
     {
         m_visualizerPtr = NULL;
-        m_debugMode = btIDebugDraw::DBG_DrawWireframe | 
-                      btIDebugDraw::DBG_DrawAabb |
-                      btIDebugDraw::DBG_DrawFrames |
+        m_debugMode = //btIDebugDraw::DBG_DrawWireframe | 
+                      //btIDebugDraw::DBG_DrawAabb |
+                      //btIDebugDraw::DBG_DrawFrames |
                       btIDebugDraw::DBG_DrawConstraints;
     }
 

@@ -181,6 +181,20 @@ namespace bullet {
         if ( !m_btWorldPtr )
             return;
 
+        for (int i = 0; i < m_btWorldPtr->getNumMultibodies(); i++)
+        {
+            btMultiBody* mb = m_btWorldPtr->getMultiBody(i);
+            for (int l = 0; l < mb->getNumLinks(); l++)
+            {
+                for (int d = 0; d < mb->getLink(l).m_dofCount; d++)
+                {
+                    double damping_coefficient = 0.1;
+                    double damping = -damping_coefficient * mb->getJointVelMultiDof(l)[d];
+                    mb->addJointTorqueMultiDof(l, d, damping);
+                }
+            }
+        }
+
         m_btWorldPtr->stepSimulation( 1.0f / 60.0f );
     }
 

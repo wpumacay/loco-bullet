@@ -133,6 +133,7 @@ namespace bullet {
                                                             upperLimit * SIMD_RADS_PER_DEG );
 
                     m_btWorldPtr->addMultiBodyConstraint( m_btJointLimitConstraint );
+                    // m_btJointLimitConstraint->finalizeMultiDof();
                 }
             }
         }
@@ -172,6 +173,7 @@ namespace bullet {
                                                             upperLimit );
 
                     m_btWorldPtr->addMultiBodyConstraint( m_btJointLimitConstraint );
+                    // m_btJointLimitConstraint->finalizeMultiDof();
                 }
             }
 
@@ -230,8 +232,8 @@ namespace bullet {
         //     m_btLinkColliderPtr->setContactStiffnessAndDamping( 1e18, 1. );
 
         // // set the friction of this collider
-        // m_btLinkColliderPtr->setFriction( m_friction.buff[0] );
-        // m_btLinkColliderPtr->setRollingFriction( m_friction.buff[2] );
+        m_btLinkColliderPtr->setFriction( 0.8 );
+        m_btLinkColliderPtr->setSpinningFriction( 0.1 );
 
         // initialize worldTransform from parent
         m_btLinkColliderPtr->setWorldTransform( utils::toBtTransform( worldTransform ) );
@@ -703,6 +705,13 @@ namespace bullet {
 
     void TBtKinTreeAgentWrapper::_preStepInternal()
     {
+        if ( !m_btMultiBodyPtr )
+            return;
+
+        // Clear all previous forces and torques
+        m_btMultiBodyPtr->clearForcesAndTorques();
+        m_btMultiBodyPtr->clearConstraintForces();
+
         auto _kinActuators = m_kinTreeAgentPtr->getKinTreeActuators();
 
         for ( size_t q = 0; q < _kinActuators.size(); q++ )
@@ -728,7 +737,17 @@ namespace bullet {
             auto _ctrlValue = _kinActuators[q]->gear.buff[0] * 
                               _kinActuators[q]->ctrlValue;
 
-            m_btMultiBodyPtr->addJointTorque( _linkId, _ctrlValue );
+            // if ( _kinActuators[q]->ctrlValue > 0.25 || _kinActuators[q]->ctrlValue < -0.25 )
+            //     std::cout << "foooooooo" << std::endl;
+
+            for ( int dof = 0; dof < m_btMultiBodyPtr->getLink( _linkId ).m_dofCount; dof++ )
+            {
+                // _ctrlValue -= 1. * m_btMultiBodyPtr->getJointVelMultiDof( _linkId )[dof];
+                m_btMultiBodyPtr->addJointTorqueMultiDof( _linkId, dof, _ctrlValue );
+            }
+
+            // m_btMultiBodyPtr->addJointTorque( _linkId, _ctrlValue );
+            // m_btMultiBodyPtr->setJointPos( _linkId, _kinActuators[q]->ctrlValue );
 
             // add to summary
             TGenericParams& _summary = m_kinTreeAgentPtr->getSummary();
@@ -794,6 +813,11 @@ namespace bullet {
         // m_btMultiBodyPtr->setAngularDamping( 0.1f );
 
         m_btWorldPtr->addMultiBody( m_btMultiBodyPtr );
+
+		for (int i = 0; i < m_btWorldPtr->getNumMultiBodyConstraints(); i++)
+		{
+			m_btWorldPtr->getMultiBodyConstraint(i)->finalizeMultiDof();
+		}
 
         // assemble all jointsNames-linksIds mappings into one dictionary
         for ( size_t q = 0; q < m_bodyCompoundsArray.size(); q++ )
