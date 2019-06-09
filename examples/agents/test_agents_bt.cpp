@@ -10,7 +10,7 @@ static std::string TYSOC_MJCF_TEMPLATES     = std::string( TYSOC_PATH_MJCF_TEMPL
 static std::string TYSOC_URDF_TEMPLATES     = std::string( TYSOC_PATH_URDF_TEMPLATES );
 static std::string TYSOC_RLSIM_TEMPLATES    = std::string( TYSOC_PATH_RLSIM_TEMPLATES );
 
-tysoc::agent::TAgentKinTree* createAgent( const std::string& format,
+tysoc::agent::TAgent* createAgent( const std::string& format,
                                           const std::string& modelName,
                                           const std::string& agentName,
                                           const tysoc::TVec3& position,
@@ -22,19 +22,19 @@ tysoc::agent::TAgentKinTree* createAgent( const std::string& format,
     {
         auto _modelData = _modelLoader->getUrdfModel( modelName );
 
-        return tysoc::agent::createKinTreeAgent( agentName, _modelData, position, rotation );
+        return tysoc::agent::createAgentFromModel( _modelData, agentName, position, rotation );
     }
     else if ( format == "rlsim" )
     {
         auto _modelData = _modelLoader->getRlsimModel( modelName );
         
-        return tysoc::agent::createKinTreeAgent( agentName, _modelData, position, rotation );
+        return tysoc::agent::createAgentFromModel( _modelData, agentName, position, rotation );
     }
     else if ( format == "mjcf" )
     {
         auto _modelData = _modelLoader->getMjcfModel( modelName );
         
-        return tysoc::agent::createKinTreeAgent( agentName, _modelData, position, rotation );
+        return tysoc::agent::createAgentFromModel( _modelData, agentName, position, rotation );
     }
 
     std::cout << "ERROR> format: " << format << " not supported" << std::endl;

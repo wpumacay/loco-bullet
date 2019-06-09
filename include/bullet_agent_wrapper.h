@@ -290,7 +290,7 @@ namespace bullet {
        std::map< std::string, TVec3 > getInertiasDiags();
     };
 
-    class TBtKinTreeAgentWrapper : public TKinTreeAgentWrapper
+    class TBtKinTreeAgentWrapper : public TAgentWrapper
     {
 
         private :
@@ -343,21 +343,21 @@ namespace bullet {
 
         public :
 
-        TBtKinTreeAgentWrapper( agent::TAgentKinTree* kinTreeAgentPtr,
+        TBtKinTreeAgentWrapper( agent::TAgent* kinTreeAgentPtr,
                                 const std::string& workingDir );
         ~TBtKinTreeAgentWrapper();
 
         void setBtWorld( btMultiBodyDynamicsWorld* btWorldPtr );
     };
 
-    extern "C" TKinTreeAgentWrapper* agent_createFromAbstract( agent::TAgentKinTree* kinTreeAgentPtr,
+    extern "C" TAgentWrapper* agent_createFromAbstract( agent::TAgent* kinTreeAgentPtr,
                                                                const std::string& workingDir );
 
-    extern "C" TKinTreeAgentWrapper* agent_createFromFile( const std::string& name,
+    extern "C" TAgentWrapper* agent_createFromFile( const std::string& name,
                                                            const std::string& filename,
                                                            const std::string& workingDir );
 
-    extern "C" TKinTreeAgentWrapper* agent_createFromId( const std::string& name,
+    extern "C" TAgentWrapper* agent_createFromId( const std::string& name,
                                                          const std::string& format,
                                                          const std::string& id,
                                                          const std::string& workingDir );

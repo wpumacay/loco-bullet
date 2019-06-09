@@ -373,8 +373,8 @@ namespace bullet {
             reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 4, 0, 0 );
             reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 5, 0, 0 );
 
-            tysoc::log( std::string( "Created fixed constraint for single body: " ) +
-                        bodyPtr->name );
+            TYSOC_LOG( std::string( "Created fixed constraint for single body: " ) +
+                       bodyPtr->name );
         }
         else
         {
@@ -412,7 +412,7 @@ namespace bullet {
 //             reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 4, 0, 0 );
 //             reinterpret_cast< btGeneric6DofConstraint* >( _btConstraint )->setLimit( 5, 0, 0 );
 
-            tysoc::log( "Created fixed constraint between two bodies" );
+            TYSOC_LOG( "Created fixed constraint between two bodies" );
         }
 
         return _btConstraint;
@@ -431,7 +431,7 @@ namespace bullet {
                                                    utils::toBtVec3( jointPtr->relTransform.getPosition() ),
                                                    utils::toBtVec3( jointPtr->axis ) );
 
-            tysoc::log( "Created hinge constraint for single body" );
+            TYSOC_LOG( "Created hinge constraint for single body" );
         }
         else
         {
@@ -460,7 +460,7 @@ namespace bullet {
                                                    utils::toBtVec3( _axisInA ), 
                                                    utils::toBtVec3( _axisInB ) );
 
-            tysoc::log( "Created hinge constraint between two bodies" );
+            TYSOC_LOG( "Created hinge constraint between two bodies" );
         }
 
         _btConstraint->setLimit( jointPtr->limits.x, jointPtr->limits.y );
@@ -488,7 +488,7 @@ namespace bullet {
                                                     utils::toBtTransform( _transform ),
                                                     true );
 
-            tysoc::log( "Created slider constraint for a single body" );
+            TYSOC_LOG( "Created slider constraint for a single body" );
         }
         else
         {
@@ -522,7 +522,7 @@ namespace bullet {
                                                     utils::toBtTransform( _frameInB ), 
                                                     true );
 
-            tysoc::log( "Created slider constraint between two bodies" );
+            TYSOC_LOG( "Created slider constraint between two bodies" );
         }
 
         _btConstraint->setLowerLinLimit( jointPtr->limits.x );
@@ -548,7 +548,7 @@ namespace bullet {
             _btConstraint = new btPoint2PointConstraint( *currentBtBodyPtr, 
                                                          utils::toBtVec3( jointPtr->relTransform.getPosition() ) );
 
-            tysoc::log( "Created ball constraint for a single body" );
+            TYSOC_LOG( "Created ball constraint for a single body" );
         }
         else
         {
@@ -572,7 +572,7 @@ namespace bullet {
                                                          utils::toBtVec3( _pivotInA ), 
                                                          utils::toBtVec3( _pivotInB ) );
 
-            tysoc::log( "Created ball constraint between two bodies" );
+            TYSOC_LOG( "Created ball constraint between two bodies" );
         }
 
         return _btConstraint;
@@ -672,7 +672,7 @@ namespace bullet {
                 _btConstraint->setLimit( _dofIndices[q], _dofLimits[q].x, _dofLimits[q].y );
             }
 
-            tysoc::log( "Created generic 6dof constraint for a single body" );
+            TYSOC_LOG( "Created generic 6dof constraint for a single body" );
         }
         else
         {
@@ -703,7 +703,7 @@ namespace bullet {
                 _btConstraint->setLimit( _dofIndices[q], _dofLimits[q].x, _dofLimits[q].y );
             }
 
-            tysoc::log( "Created generic 6dof constraint between two bodies" );
+            TYSOC_LOG( "Created generic 6dof constraint between two bodies" );
         }
 
         return _btConstraint;

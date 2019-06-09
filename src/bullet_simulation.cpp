@@ -40,10 +40,10 @@ namespace bullet {
             m_bodyWrappers.push_back( _bodyWrapper );
         }
 
-        auto _agents = m_scenarioPtr->getAgentsByType( agent::AGENT_TYPE_KINTREE );
+        auto _agents = m_scenarioPtr->getAgents();
         for ( size_t q = 0; q < _agents.size(); q++ )
         {
-            auto _agentWrapper = new TBtKinTreeAgentWrapper( (agent::TAgentKinTree*) _agents[q],
+            auto _agentWrapper = new TBtKinTreeAgentWrapper( (agent::TAgent*) _agents[q],
                                                               m_workingDir );
 
             m_agentWrappers.push_back( _agentWrapper );

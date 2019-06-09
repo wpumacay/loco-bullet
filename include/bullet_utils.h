@@ -13,10 +13,7 @@
 #include <viz/viz.h>
 
 // kintree functionality
-#include <agent/types/agent_kintree.h>
-#include <agent/types/agent_kintree_mjcf.h>
-#include <agent/types/agent_kintree_urdf.h>
-#include <agent/types/agent_kintree_rlsim.h>
+#include <agent/agent_base.h>
 
 namespace tysoc {
 namespace bullet {
@@ -99,9 +96,9 @@ namespace utils {
     *   Computes how many links should a btMultiBody allocate for a given ...
     *   kinematic tree, based on dummies and actual links to be created
     *
-    *   @param kintree  TAgentKintree object in question
+    *   @param kintree  TAgent object in question
     */
-    size_t calculateNumOfLinksForMultibody( agent::TAgentKinTree* kinTreePtr );
+    size_t calculateNumOfLinksForMultibody( agent::TAgent* kinTreePtr );
 
     /**
     *   Decides whether or not the base of a multibody should be fixed, ...
@@ -109,9 +106,9 @@ namespace utils {
     *   like in the humanoid (it has a free joint), whereas others require ...
     *   a fixed base (like the planar walker).
     *
-    *   @param kintree  TAgentKintree object in question
+    *   @param kintree  TAgent object in question
     */
-    bool shouldBaseBeFixed( agent::TAgentKinTree* kinTreePtr );
+    bool shouldBaseBeFixed( agent::TAgent* kinTreePtr );
 
     /**
     *   Loads a mesh from a given file

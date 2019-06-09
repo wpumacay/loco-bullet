@@ -182,7 +182,7 @@ namespace utils {
         return _volume;
     }
 
-    size_t calculateNumOfLinksForMultibody( agent::TAgentKinTree* kinTreePtr )
+    size_t calculateNumOfLinksForMultibody( agent::TAgent* kinTreePtr )
     {
         size_t _numLinks = 0;
 
@@ -223,7 +223,7 @@ namespace utils {
         return _numLinks;
     }
 
-    bool shouldBaseBeFixed( agent::TAgentKinTree* kinTreePtr )
+    bool shouldBaseBeFixed( agent::TAgent* kinTreePtr )
     {
         auto _joints = kinTreePtr->getRootBody()->childJoints;
 
@@ -373,7 +373,7 @@ namespace utils {
 
     bool TBtOverlapFilterCallback::needBroadphaseCollision( btBroadphaseProxy* proxy0, btBroadphaseProxy* proxy1 ) const 
     {
-        // tysoc::log( "Testing broadphase collision checking" );
+        // TYSOC_LOG( "Testing broadphase collision checking" );
 
         bool _proxy0Affinity1 = ( proxy0->m_collisionFilterGroup & proxy1->m_collisionFilterMask ) != 0;
         bool _proxy1Affinity0 = ( proxy1->m_collisionFilterGroup & proxy0->m_collisionFilterMask ) != 0;

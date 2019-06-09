@@ -658,9 +658,9 @@ namespace bullet {
     *                   TBtKinTreeAgentWrapper Implementation                  *
     ****************************************************************************/
 
-    TBtKinTreeAgentWrapper::TBtKinTreeAgentWrapper( agent::TAgentKinTree* kinTreeAgentPtr,
+    TBtKinTreeAgentWrapper::TBtKinTreeAgentWrapper( agent::TAgent* kinTreeAgentPtr,
                                                     const std::string& workingDir )
-        : TKinTreeAgentWrapper( kinTreeAgentPtr, workingDir )
+        : TAgentWrapper( kinTreeAgentPtr, workingDir )
     {
         m_btWorldPtr        = NULL;
         m_btMultiBodyPtr    = NULL;
@@ -699,8 +699,8 @@ namespace bullet {
 
     void TBtKinTreeAgentWrapper::_resetInternal()
     {
-        if ( m_kinTreeAgentPtr )
-            m_kinTreeAgentPtr->reset();
+        if ( m_agentPtr )
+            m_agentPtr->reset();
     }
 
     void TBtKinTreeAgentWrapper::_preStepInternal()
@@ -712,7 +712,7 @@ namespace bullet {
         m_btMultiBodyPtr->clearForcesAndTorques();
         m_btMultiBodyPtr->clearConstraintForces();
 
-        auto _kinActuators = m_kinTreeAgentPtr->getKinTreeActuators();
+        auto _kinActuators = m_agentPtr->actuators;
 
         for ( size_t q = 0; q < _kinActuators.size(); q++ )
         {
@@ -750,7 +750,7 @@ namespace bullet {
             // m_btMultiBodyPtr->setJointPos( _linkId, _kinActuators[q]->ctrlValue );
 
             // add to summary
-            TGenericParams& _summary = m_kinTreeAgentPtr->getSummary();
+            TGenericParams& _summary = m_agentPtr->summary();
             _summary.set( "act_" + _jointName, _ctrlValue );
         }
     }
@@ -764,12 +764,12 @@ namespace bullet {
 
     void TBtKinTreeAgentWrapper::_createBtResourcesFromKinTree()
     {
-        if ( !m_kinTreeAgentPtr )
+        if ( !m_agentPtr )
             return;
 
         // define some required data for the multibody creation
-        auto _numLinks      = utils::calculateNumOfLinksForMultibody( m_kinTreeAgentPtr );
-        auto _isBaseFixed   = utils::shouldBaseBeFixed( m_kinTreeAgentPtr );
+        auto _numLinks      = utils::calculateNumOfLinksForMultibody( m_agentPtr );
+        auto _isBaseFixed   = utils::shouldBaseBeFixed( m_agentPtr );
         auto _canSleep      = false;
         auto _baseMass      = 0.f;
         auto _baseInertia   = btVector3( 0., 0., 0. );
@@ -784,12 +784,12 @@ namespace bullet {
         // create a SimMultibodyLink for the base
         auto _bCollider = new btMultiBodyLinkCollider( m_btMultiBodyPtr, -1 );
         _bCollider->setCollisionShape( utils::createCollisionShape( "none", { 0., 0., 0. } ) );
-        _bCollider->getWorldTransform().setOrigin( utils::toBtVec3( m_kinTreeAgentPtr->getPosition() ) );
+        _bCollider->getWorldTransform().setOrigin( utils::toBtVec3( m_agentPtr->getPosition() ) );
 
         m_btWorldPtr->addCollisionObject( _bCollider, 1, -1 );
 
         m_btMultiBodyPtr->setBaseCollider( _bCollider );
-        m_btMultiBodyPtr->setBasePos( utils::toBtVec3( m_kinTreeAgentPtr->getPosition() ) );
+        m_btMultiBodyPtr->setBasePos( utils::toBtVec3( m_agentPtr->getPosition() ) );
 
         // Create a dummy compound to represent the base (to propagate the starting position)
         m_baseCompound = new TBodyCompound( NULL,
@@ -800,10 +800,10 @@ namespace bullet {
 
         // Recall we are using this dummy compound to propagate the starting ...
         // position and orientation, so grab and set this info from the kintree
-        m_baseCompound->setWorldTransform( TMat4( m_kinTreeAgentPtr->getPosition(),
-                                                  m_kinTreeAgentPtr->getRotation() ) );
+        m_baseCompound->setWorldTransform( TMat4( m_agentPtr->getPosition(),
+                                                  m_agentPtr->getRotation() ) );
 
-        m_rootCompound = _createBodyCompoundFromBodyNode( m_kinTreeAgentPtr->getRootBody(), 
+        m_rootCompound = _createBodyCompoundFromBodyNode( m_agentPtr->getRootBody(), 
                                                           m_baseCompound );
 
         m_btMultiBodyPtr->finalizeMultiDof();
@@ -834,7 +834,7 @@ namespace bullet {
         }
         
         /* Generate summary information *******************************************/
-        TGenericParams& _summary = m_kinTreeAgentPtr->getSummary();
+        TGenericParams& _summary = m_agentPtr->summary();
 
         // collect inertia properties
         TScalar _totalMass = 0.0f;
@@ -885,13 +885,13 @@ namespace bullet {
         return _bodyCompound;
     }
 
-    extern "C" TKinTreeAgentWrapper* agent_createFromAbstract( agent::TAgentKinTree* kinTreeAgentPtr,
+    extern "C" TAgentWrapper* agent_createFromAbstract( agent::TAgent* kinTreeAgentPtr,
                                                                const std::string& workingDir )
     {
         return new TBtKinTreeAgentWrapper( kinTreeAgentPtr, workingDir );
     }
 
-    extern "C" TKinTreeAgentWrapper* agent_createFromFile( const std::string& name,
+    extern "C" TAgentWrapper* agent_createFromFile( const std::string& name,
                                                            const std::string& filename,
                                                            const std::string& workingDir )
     {
@@ -899,7 +899,7 @@ namespace bullet {
         return NULL;
     }
 
-    extern "C" TKinTreeAgentWrapper* agent_createFromId( const std::string& name,
+    extern "C" TAgentWrapper* agent_createFromId( const std::string& name,
                                                          const std::string& format,
                                                          const std::string& id,
                                                          const std::string& workingDir )
