@@ -4,6 +4,7 @@
 [submodule "ext/bullet"]
 	path = ext/bullet
 	url = https://github.com/wpumacay/bullet3.git
+	shallow = true
 [submodule "ext/cat1"]
 	path = ext/cat1
 	url = https://github.com/wpumacay/cat1.git
