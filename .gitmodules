@@ -1,7 +1,7 @@
 [submodule "tysoc"]
 	path = tysoc
 	url = https://github.com/wpumacay/tysoc.git
-	fetchRecurseSubmodules = false
+	update = none
 [submodule "ext/bullet"]
 	path = ext/bullet
 	url = https://github.com/wpumacay/bullet3.git
