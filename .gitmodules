@@ -1,7 +1,6 @@
 [submodule "tysoc"]
 	path = tysoc
 	url = https://github.com/wpumacay/tysoc.git
-	update = none
 [submodule "ext/bullet"]
 	path = ext/bullet
 	url = https://github.com/wpumacay/bullet3.git
