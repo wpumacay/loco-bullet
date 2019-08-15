@@ -1,4 +1,4 @@
-build/
+# file-exclusions
 *.so
 *.a
 *.out
@@ -8,9 +8,19 @@ build/
 *.swo
 *.pyc
 *.pyo
+*.ini
+
+# folder-exclusions
+build/
 .vscode/
 _legacy/
-*.ini
 dist/
 pytysoc.egg-info/
 tysoc_bullet.egg-info/
+
+# dependencies-exclusions
+ext/cat1
+ext/imgui
+ext/pybind11
+ext/bullet3
+core/

@@ -25,11 +25,9 @@ endif()
 # Add core targets only if master project. If not, parent project must configure it
 if ( TYSOCBULLET_IS_MASTER_PROJECT )
     # Configure dependencies for tysoc
-    add_subdirectory( ext/pybind11 )
-    add_subdirectory( ext/imgui )
-    add_subdirectory( ext/cat1 )
+    add_subdirectory( ext )
     # Configure core functionality
-    add_subdirectory( tysoc )
+    add_subdirectory( core )
 endif()
 
 # Configure tysocBullet project ************************************************
@@ -66,47 +64,19 @@ message( "PROP_TYSOC_BACKEND_PHYSICS_BULLET:    ${VAR_TYSOC_BACKEND_PHYSICS_BULL
 
 # grab all the sources for compilation
 file( GLOB_RECURSE TYSOCBULLET_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp" )
-#set( TYSOCBULLET_SOURCES src/bullet_common.cpp
-#                         src/bullet_utils.cpp
-#                         src/bullet_simulation.cpp
-#                         src/bullet_sandbox_body_wrapper.cpp )
 message( "TYSOCBULLET_SOURCES: ${TYSOCBULLET_SOURCES}" )
 
 # add this project headers to includepath
 include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/include/" )
 
-# add the core dependency headers to includepath
-if ( TYSOCBULLET_IS_MASTER_PROJECT )
-    # core dependency to use is own submodule
-    include_directories( "${CMAKE_SOURCE_DIR}/tysoc/include" )
-    include_directories( "${CMAKE_SOURCE_DIR}/tysoc/ext/json" )
-    include_directories( "${CMAKE_SOURCE_DIR}/tysoc/ext/tinyxml2" )
-else()
-    # core dependency to use if parent core submodule, names as "core"
-    include_directories( "${CMAKE_SOURCE_DIR}/core/include" )
-    include_directories( "${CMAKE_SOURCE_DIR}/core/ext/json" )
-    include_directories( "${CMAKE_SOURCE_DIR}/core/ext/tinyxml2" )
-endif()
+# tysoc-core dependency: either case (master or non-master project) we should find it at root level
+include_directories( "${CMAKE_SOURCE_DIR}/core/include" )
+include_directories( "${CMAKE_SOURCE_DIR}/core/ext/json" )
+include_directories( "${CMAKE_SOURCE_DIR}/core/ext/tinyxml2" )
 
-if ( TYSOCBULLET_IS_MASTER_PROJECT )
-    # remove bullet examples from build
-    set( BUILD_BULLET2_DEMOS OFF CACHE BOOL "Do not build bullet-2 demos" )
-    set( BUILD_CPU_DEMOS OFF CACHE BOOL "Do not build bullet cpu demos" )
-    set( BUILD_EGL OFF CACHE BOOL "Do not build bullet-EGL" )
-    set( USE_DOUBLE_PRECISION OFF CACHE BOOL "Do not build with double precision support (@TODO: fixing TScalar->double)" )
-    set( BUILD_EXTRAS OFF CACHE BOOL "Do not build bullet-extras" )
-    set( BUILD_CLSOCKET OFF CACHE BOOL "Do not build bullet-clsocket" )
-    set( BUILD_OPENGL3_DEMOS OFF CACHE BOOL "Do not build bullet-opengl3-demos" )
-    set( BUILD_UNIT_TESTS OFF CACHE BOOL "Do not build bullet-unittests" )
-    set( BUILD_SHARED_LIBS ON CACHE BOOL "Force shared libs" )
-    
-    # add bullet project (@TODO: check if can use apt version, as it crashed last time)
-    add_subdirectory( ext/bullet )
-endif()
-
-# include bullet src, which can be in this repo's ext ...
-# folder, or in the master's ext folder
-include_directories( "${CMAKE_SOURCE_DIR}/ext/bullet/src" )
+# include bullet src, which can be found in either this repo's ext ...
+# folder, or in the master's repo ext folder
+include_directories( "${CMAKE_SOURCE_DIR}/ext/bullet3/src" )
 
 find_package( assimp REQUIRED )
 

@@ -1,10 +1,10 @@
 
 message( "Configuring tysocBullet::base_test_interface" )
 
-include_directories( "../../ext/bullet/src" )
-include_directories( "../../tysoc/ext/cat1/include" )
-include_directories( "../../tysoc/ext/imgui" )
-include_directories( "../../tysoc/ext/imgui/examples" )
+include_directories( "${CMAKE_SOURCE_DIR}/ext/bullet3/src" )
+include_directories( "${CMAKE_SOURCE_DIR}/ext/cat1/include" )
+include_directories( "${CMAKE_SOURCE_DIR}/ext/imgui" )
+include_directories( "${CMAKE_SOURCE_DIR}/ext/imgui/examples" )
 
 add_library( test_interface SHARED
              test_interface.cpp )
