@@ -69,7 +69,8 @@ message( "TYSOCBULLET_SOURCES: ${TYSOCBULLET_SOURCES}" )
 # add this project headers to includepath
 include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/include/" )
 
-# tysoc-core dependency: either case (master or non-master project) we should find it at root level
+# include_dirs for tysoc-core dependency: either case (master or non-master project) ... 
+# we should find it at root level
 include_directories( "${CMAKE_SOURCE_DIR}/core/include" )
 include_directories( "${CMAKE_SOURCE_DIR}/core/ext/json" )
 include_directories( "${CMAKE_SOURCE_DIR}/core/ext/tinyxml2" )
