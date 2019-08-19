@@ -30,16 +30,6 @@ namespace bullet {
 
         m_runtimeType = "bullet";
 
-        auto _sbodies = m_scenarioPtr->getBodies();
-
-        for ( size_t q = 0; q < _sbodies.size(); q++ )
-        {
-            auto _bodyWrapper = new TBtBodyWrapper( _sbodies[q],
-                                                    m_workingDir );
-
-            m_bodyWrappers.push_back( _bodyWrapper );
-        }
-
         auto _agents = m_scenarioPtr->getAgents();
         for ( size_t q = 0; q < _agents.size(); q++ )
         {
@@ -133,15 +123,6 @@ namespace bullet {
     {
         /* Initialize wrappers (to create their internal resources) ***********/
 
-        for ( size_t q = 0; q < m_bodyWrappers.size(); q++ )
-        {
-            auto _btBodyWrapper = reinterpret_cast< TBtBodyWrapper* >( m_bodyWrappers[q] );
-
-            _btBodyWrapper->setBtWorld( m_btWorldPtr );
-            _btBodyWrapper->setParentSimulation( this );
-            _btBodyWrapper->initialize();
-        }
-
         for ( size_t q = 0; q < m_agentWrappers.size(); q++ )
         {
             auto _btAgentWrapper = reinterpret_cast< TBtKinTreeAgentWrapper* >( m_agentWrappers[q] );
@@ -166,14 +147,7 @@ namespace bullet {
 
     void TBtSimulation::_preStepInternal()
     {
-        for ( size_t q = 0; q < m_terrainGenWrappers.size(); q++ )
-            m_terrainGenWrappers[q]->preStep();
-
-        for ( size_t q = 0; q < m_agentWrappers.size(); q++ )
-            m_agentWrappers[q]->preStep();
-
-        for ( size_t q = 0; q < m_bodyWrappers.size(); q++ )
-            m_bodyWrappers[q]->preStep();
+        // do nothing here, as call to wrappers is enough (made in base)
     }
 
     void TBtSimulation::_simStepInternal()
@@ -196,18 +170,6 @@ namespace bullet {
         }
 
         m_btWorldPtr->stepSimulation( 1.0f / 60.0f );
-    }
-
-    void TBtSimulation::_postStepInternal()
-    {
-        for ( size_t q = 0; q < m_terrainGenWrappers.size(); q++ )
-            m_terrainGenWrappers[q]->postStep();
-
-        for ( size_t q = 0; q < m_agentWrappers.size(); q++ )
-            m_agentWrappers[q]->postStep();
-
-        for ( size_t q = 0; q < m_bodyWrappers.size(); q++ )
-            m_bodyWrappers[q]->postStep();
 
         // @DEBUG: calls own debug drawing functionality
         if ( m_btWorldPtr && m_isDebugDrawingActive )
@@ -217,26 +179,14 @@ namespace bullet {
         }
     }
 
-    void TBtSimulation::_resetInternal()
+    void TBtSimulation::_postStepInternal()
     {
-        for ( size_t q = 0; q < m_terrainGenWrappers.size(); q++ )
-            m_terrainGenWrappers[q]->reset();
-
-        for ( size_t q = 0; q < m_agentWrappers.size(); q++ )
-            m_agentWrappers[q]->reset();
-
-        for ( size_t q = 0; q < m_bodyWrappers.size(); q++ )
-            m_bodyWrappers[q]->reset();
+        // do nothing here, as call to wrappers is enough (made in base)
     }
 
-    std::map< std::string, std::vector<TScalar> > TBtSimulation::_getVectorizedInfoInternal()
+    void TBtSimulation::_resetInternal()
     {
-        std::map< std::string, std::vector<TScalar> > _data;
-
-
-
-
-        return _data;
+        // do nothing here, as call to wrappers is enough (made in base)
     }
 
     extern "C" TISimulation* simulation_create( TScenario* scenarioPtr,

@@ -22,19 +22,19 @@ tysoc::agent::TAgent* createAgent( const std::string& format,
     {
         auto _modelData = _modelLoader->getUrdfModel( modelName );
 
-        return tysoc::agent::createAgentFromModel( _modelData, agentName, position, rotation );
+        return new tysoc::agent::TAgent( _modelData, agentName, position, rotation );
     }
     else if ( format == "rlsim" )
     {
         auto _modelData = _modelLoader->getRlsimModel( modelName );
         
-        return tysoc::agent::createAgentFromModel( _modelData, agentName, position, rotation );
+        return new tysoc::agent::TAgent( _modelData, agentName, position, rotation );
     }
     else if ( format == "mjcf" )
     {
         auto _modelData = _modelLoader->getMjcfModel( modelName );
         
-        return tysoc::agent::createAgentFromModel( _modelData, agentName, position, rotation );
+        return new tysoc::agent::TAgent( _modelData, agentName, position, rotation );
     }
 
     std::cout << "ERROR> format: " << format << " not supported" << std::endl;
@@ -70,27 +70,12 @@ int main( int argc, const char** argv )
         return 1;
     }
 
-    // auto _bplane = new tysoc::sandbox::TBody();
-    // _bplane->name = "bplane";
-    // _bplane->type = "box";
-    // _bplane->friction = { 1.0, 1.0, 1.0 };
-    // _bplane->size = { 100.0, 100.0, 1.0 };
-    // _bplane->color = { 0.3, 0.3, 0.3 };
-    // _bplane->worldTransform.setPosition( { 0, 0, -0.5 } );
-
     auto _terrainGenStatic = new tysoc::terrain::TStaticTerrainGenerator( "terrainGen0" );
     _terrainGenStatic->createPrimitive( "box", 
                                         { 10.0f, 10.0f, 1.0f }, 
                                         { 0.0f, 0.0f, -0.5f },
                                         tysoc::TMat3(),
                                         { 0.2f, 0.3f, 0.4f } );
-
-    // auto _bcapsule = new tysoc::sandbox::TFreeBody();
-    // _bcapsule->name = "bcapsule";
-    // _bcapsule->type = "capsule";
-    // _bcapsule->mass = 0.1;
-    // _bcapsule->size = { 0.1, 0.4, 0.0 };
-    // _bcapsule->worldTransform.setPosition( { -1.0, -1.0, 1.0 } );
 
     auto _scenario = new tysoc::TScenario();
     _scenario->addAgent( _agent );

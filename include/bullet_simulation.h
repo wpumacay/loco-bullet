@@ -4,7 +4,6 @@
 #include <simulation_base.h>
 
 #include <bullet_common.h>
-#include <bullet_sandbox_body_wrapper.h>
 #include <bullet_agent_wrapper.h>
 #include <bullet_terrain_wrapper.h>
 
@@ -33,7 +32,6 @@ namespace bullet {
         void _simStepInternal() override;
         void _postStepInternal() override;
         void _resetInternal() override;
-        std::map< std::string, std::vector<TScalar> > _getVectorizedInfoInternal() override;
 
         public :
 

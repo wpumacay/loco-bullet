@@ -237,12 +237,6 @@ namespace bullet {
 
     void TBtTerrainGenWrapper::_createBtBody( TBtTerrainPrimitive* btTerrainPrimitivePtr )
     {
-        /* This creation process is mainly copied from the 
-           buller_sandbox_body_wrapper.cpp file, as it
-           requires to create similar primitives using
-           simple rigid bodies using maximal coordinates,
-           not the multibody API from bullet */
-
         // create the collision shape
         auto _collisionShapePtr = utils::createCollisionShape( btTerrainPrimitivePtr->btPrimitiveType,
                                                                btTerrainPrimitivePtr->btPrimitiveSize );

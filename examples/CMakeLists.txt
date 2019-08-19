@@ -16,7 +16,5 @@ function( FcnBuildTest pSourcesList pExecutableName )
 
 endfunction()
 
-add_subdirectory( primitives )
-add_subdirectory( constraints )
 add_subdirectory( agents )
 add_subdirectory( utils )
