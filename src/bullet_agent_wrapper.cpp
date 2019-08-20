@@ -5,6 +5,58 @@ namespace tysoc {
 namespace bullet {
 
     /***************************************************************************
+    *                        TBtJointWrapper Implementation                    *
+    ****************************************************************************/
+
+    TBtJointWrapper::TBtJointWrapper( btMultiBody* btMultiBodyPtr,
+                                      agent::TKinTreeJoint* jointPtr,
+                                      int linkIndx )
+    {
+        m_btMultiBodyPtr = btMultiBodyPtr;
+        m_kinTreeJointPtr = jointPtr;
+        m_linkIndx = linkIndx;
+
+        m_nqpos = jointPtr->nqpos;
+        m_nqvel = jointPtr->nqvel;
+    }
+
+    TBtJointWrapper::~TBtJointWrapper()
+    {
+        m_btMultiBodyPtr = NULL;
+        m_kinTreeJointPtr = NULL;
+    }
+
+    void TBtJointWrapper::setQpos( const std::vector< TScalar >& qpos )
+    {
+        assert( qpos.size() == m_nqpos );
+
+        for ( int i = 0; i < qpos.size(); i++ )
+            m_btMultiBodyPtr->setJointPosMultiDof( m_linkIndx, qpos.data() );
+    }
+
+    void TBtJointWrapper::setQvel( const std::vector< TScalar >& qvel )
+    {
+        assert( qvel.size() == m_nqvel );
+
+        for ( int i = 0; i < qvel.size(); i++ )
+            m_btMultiBodyPtr->setJointVelMultiDof( m_linkIndx, qvel.data() );
+    }
+
+    bool TBtJointWrapper::isRootJoint()
+    {
+        if ( !m_kinTreeJointPtr->parentBodyPtr )
+        {
+            std::cout << "ERROR> this joint should have a parent body" << std::endl;
+            return false;
+        }
+
+        if ( m_kinTreeJointPtr->parentBodyPtr->parentBodyPtr )
+            return false;
+
+        return true;
+    }
+
+    /***************************************************************************
     *                        TBtMultiBodyLink Implementation                   *
     ****************************************************************************/
 
@@ -62,6 +114,8 @@ namespace bullet {
 
         // first just create the shape required for the link
         m_btCollisionShapePtr = utils::createCollisionShape( shapeType, shapeSize );
+        if ( m_btCollisionShapePtr )
+            m_btCollisionShapePtr->setMargin( 0.1 * TVec3::length( shapeSize ) );// @TODO: set amrgin according to size of the shape
 
         // compute inertial properties from this shape
         btScalar _linkMass = utils::computeVolumeFromShape( m_btCollisionShapePtr ) * m_density;
@@ -699,8 +753,98 @@ namespace bullet {
 
     void TBtKinTreeAgentWrapper::_resetInternal()
     {
-        if ( m_agentPtr )
-            m_agentPtr->reset();
+        if ( !m_agentPtr )
+            return;
+
+        // set the qpos values set by the user (left in the abstract agent)
+        for ( size_t i = 0; i < m_jointWrappers.size(); i++ )
+        {
+            // joint being wrapped
+            auto _jointPtr = m_jointWrappers[i].jointPtr();
+
+            // buffer for the q-values
+            std::vector< TScalar > _qposs;
+            std::vector< TScalar > _qvels;
+
+            if ( m_jointWrappers[i].isRootJoint() )
+            {
+                if ( _jointPtr->type == "free" )
+                {
+                    auto _position = m_agentPtr->getStartPosition();
+                    auto _rotation = TMat3::toQuaternion( TMat3::fromEuler( m_agentPtr->getStartRotation() ) );
+
+                    // use the start position ( x - y - z - qw - qx - qy - qz )
+                    _qposs = { _position.x, _position.y, _position.z,
+                               _rotation.w, _rotation.x, _rotation.y, _rotation.z };
+
+                    // and no initial velocities
+                    _qvels = { 0., 0., 0., 0., 0., 0. };
+                }
+                else if ( _jointPtr->type == "slider" || _jointPtr->type == "slide" || _jointPtr->type == "prismatic" )
+                {
+                    auto _position = m_agentPtr->getStartPosition();
+
+                    if ( _jointPtr->axis == TVec3( 1., 0., 0. ) )
+                    {
+                        _qposs = { _position.x };
+                        _qvels = { 0. };
+                    }
+                    else if ( _jointPtr->axis == TVec3( 0., 1., 0. ) )
+                    {
+                        _qposs = { _position.y };
+                        _qvels = { 0. };
+                    }
+                    else if ( _jointPtr->axis == TVec3( 0., 0., 1. ) )
+                    {
+                        _qposs = { _position.z };
+                        _qvels = { 0. };
+                    }
+                }
+                else if ( _jointPtr->type == "hinge" || _jointPtr->type == "revolute" || _jointPtr->type == "continuous" )
+                {
+                    auto _rotation = m_agentPtr->getStartRotation();
+
+                    if ( _jointPtr->axis == TVec3( 1., 0., 0. ) )
+                    {
+                        _qposs = { _rotation.x };
+                        _qvels = { 0. };
+                    }
+                    else if ( _jointPtr->axis == TVec3( 0., 1., 0. ) )
+                    {
+                        _qposs = { _rotation.y };
+                        _qvels = { 0. };
+                    }
+                    else if ( _jointPtr->axis == TVec3( 0., 0., 1. ) )
+                    {
+                        _qposs = { _rotation.z };
+                        _qvels = { 0. };
+                    }
+                }
+                else
+                {
+                    std::cout << "WARNING> reset functionality not implemented for joint of type: "
+                              << _jointPtr->type << ", found in joint: " << _jointPtr->name << std::endl;
+                }
+            }
+            else
+            {
+                // collect qpos from kintree-joint
+                for ( int j = 0; j < _jointPtr->nqpos; j++ )
+                    _qposs.push_back( _jointPtr->qpos0[j] );
+
+                // set qvels to zeros
+                for ( int j = 0; j < _jointPtr->nqvel; j++ )
+                    _qvels.push_back( _jointPtr->qvel0[j] );
+            }
+
+            // and set the qposs and qvels into the backend through the wrapper
+            m_jointWrappers[i].setQpos( _qposs );
+            m_jointWrappers[i].setQvel( _qvels );
+
+        }
+
+        // reset the internal high-level resources of the kintree
+        m_agentPtr->reset();
     }
 
     void TBtKinTreeAgentWrapper::_preStepInternal()
@@ -760,6 +904,22 @@ namespace bullet {
         // Update each body world transform from its compound wrapper
         for ( size_t q = 0; q < m_bodyCompoundsArray.size(); q++ )
             m_bodyCompoundsArray[q]->updateTransforms();
+
+        // Update the qpos values of the joints
+        auto _kinJoints = m_agentPtr->joints;
+        for ( size_t q = 0; q < _kinJoints.size(); q++ )
+        {
+            auto _jointName = _kinJoints[q]->name;
+            if ( m_jointToLinkIdMap.find( _jointName ) == m_jointToLinkIdMap.end() )
+                continue;
+
+            if ( _kinJoints[q]->type != "revolute" && 
+                 _kinJoints[q]->type != "hinge" )
+                 continue;
+
+            auto _linkId = m_jointToLinkIdMap[_jointName];
+            _kinJoints[q]->qpos[0] =  m_btMultiBodyPtr->getJointPosMultiDof( _linkId )[0];
+        }
     }
 
     void TBtKinTreeAgentWrapper::_createBtResourcesFromKinTree()
@@ -883,6 +1043,51 @@ namespace bullet {
         }
 
         return _bodyCompound;
+    }
+
+    void TBtKinTreeAgentWrapper::finishedCreatingResources()
+    {
+        for ( size_t i = 0; i < m_agentPtr->bodies.size(); i++ )
+            _cacheBodyProperties( m_agentPtr->bodies[i] );
+
+        for ( size_t i = 0; i < m_agentPtr->joints.size(); i++ )
+            _cacheJointProperties( m_agentPtr->joints[i] );
+    }
+
+    void TBtKinTreeAgentWrapper::_cacheBodyProperties( agent::TKinTreeBody* kinTreeBodyPtr )
+    {
+        // @TODO: Implement body wrappers as well, to lease the code-burden on the agent wrapper
+    }
+
+    void TBtKinTreeAgentWrapper::_cacheJointProperties( agent::TKinTreeJoint* kinTreeJointPtr )
+    {
+        // define the number of generalized coordinates and "generalized velocities" for this joint
+        if ( kinTreeJointPtr->type == "free" )
+        {
+            kinTreeJointPtr->nqpos = 7;
+            kinTreeJointPtr->nqvel = 6;
+        }
+        else if ( kinTreeJointPtr->type == "spherical" || kinTreeJointPtr->type == "ball" )
+        {
+            kinTreeJointPtr->nqpos = 4;
+            kinTreeJointPtr->nqvel = 3;
+        }
+        else if ( kinTreeJointPtr->type == "revolute" || kinTreeJointPtr->type == "hinge" )
+        {
+            kinTreeJointPtr->nqpos = 1;
+            kinTreeJointPtr->nqvel = 1;
+        }
+        else if ( kinTreeJointPtr->type == "prismatic" || kinTreeJointPtr->type == "slide" )
+        {
+            kinTreeJointPtr->nqpos = 1;
+            kinTreeJointPtr->nqvel = 1;
+        }
+
+        if ( m_jointToLinkIdMap.find( kinTreeJointPtr->name ) == m_jointToLinkIdMap.end() )
+            return;
+
+        int _linkIndx = m_jointToLinkIdMap[ kinTreeJointPtr->name ];
+        m_jointWrappers.push_back( TBtJointWrapper( m_btMultiBodyPtr, kinTreeJointPtr, _linkIndx ) );
     }
 
     extern "C" TAgentWrapper* agent_createFromAbstract( agent::TAgent* kinTreeAgentPtr,

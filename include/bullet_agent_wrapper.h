@@ -10,6 +10,52 @@ namespace tysoc {
 namespace bullet {
 
     /**
+    *   A wrapper to handle low-level control over the bullet 
+    *   internal generalized coordinates and dofs.
+    */
+    class TBtJointWrapper
+    {
+        private :
+
+        /* number of generalized coordnates available in this joint */
+        int m_nqpos;
+
+        /* number of "degrees of freedom" available in this joint */
+        int m_nqvel;
+
+        /* index to be used for referencing in the multibody */
+        int m_linkIndx;
+
+        /* A reference to the multibody ptr to handle sets-gets */
+        btMultiBody* m_btMultiBodyPtr;
+
+        /* kintree joint wrapped by this object */
+        agent::TKinTreeJoint* m_kinTreeJointPtr;
+
+        public :
+
+        /* Constructs a wrapper for this joint, to handle low-level qpos-qvel sets */
+        TBtJointWrapper( btMultiBody* btMultiBodyPtr,
+                         agent::TKinTreeJoint* jointPtr,
+                         int linkIndx );
+
+        /* Releases the references used by this wrapper */
+        ~TBtJointWrapper();
+
+        /* sets the generalized coordinates to some given values */
+        void setQpos( const std::vector< TScalar >& qpos );
+
+        /* sets the qvels (degrees of freedom) to some given values */
+        void setQvel( const std::vector< TScalar >& qvel );
+
+        /* returns a reference to the joint ptr being wrapped */
+        agent::TKinTreeJoint* jointPtr() { return m_kinTreeJointPtr; }
+
+        /* returns whether or no this joint belongs to the root of the kintree */
+        bool isRootJoint();
+    };
+
+    /**
     *   A wrapper for the links in the multibody that represents a ...
     *   kinematic tree.
     */
@@ -319,6 +365,9 @@ namespace bullet {
         // A counter for the current link index
         int m_currentLinkIndx;
 
+        /* Joint wrappers used for low-level access to joint internals in bullet */
+        std::vector< TBtJointWrapper > m_jointWrappers;
+
         /**
         *   Start the creation process for all resources required by the ...
         *   kintree to be wrapped.
@@ -334,6 +383,12 @@ namespace bullet {
         TBodyCompound* _createBodyCompoundFromBodyNode( agent::TKinTreeBody* kinTreeBodyPtr,
                                                         TBodyCompound* parentBodyCompound );
 
+        /* Creates a wrapper for a body, used later for low-level access */
+        void _cacheBodyProperties( agent::TKinTreeBody* kinTreeBodyPtr );
+
+        /* Creates a wrapper for a joint, used later for low-leve access */
+        void _cacheJointProperties( agent::TKinTreeJoint* kinTreeJointPtr );
+
         protected :
 
         void _initializeInternal() override;
@@ -348,6 +403,8 @@ namespace bullet {
         ~TBtKinTreeAgentWrapper();
 
         void setBtWorld( btMultiBodyDynamicsWorld* btWorldPtr );
+
+        void finishedCreatingResources();
     };
 
     extern "C" TAgentWrapper* agent_createFromAbstract( agent::TAgent* kinTreeAgentPtr,

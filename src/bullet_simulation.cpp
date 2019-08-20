@@ -130,6 +130,7 @@ namespace bullet {
             _btAgentWrapper->setBtWorld( m_btWorldPtr );
             _btAgentWrapper->setParentSimulation( this );
             _btAgentWrapper->initialize();
+            _btAgentWrapper->finishedCreatingResources();
         }
 
         for ( size_t q = 0; q < m_terrainGenWrappers.size(); q++ )

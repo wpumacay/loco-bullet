@@ -72,7 +72,7 @@ int main( int argc, const char** argv )
 
     auto _terrainGenStatic = new tysoc::terrain::TStaticTerrainGenerator( "terrainGen0" );
     _terrainGenStatic->createPrimitive( "box", 
-                                        { 10.0f, 10.0f, 1.0f }, 
+                                        { 100.0f, 100.0f, 1.0f }, 
                                         { 0.0f, 0.0f, -0.5f },
                                         tysoc::TMat3(),
                                         { 0.2f, 0.3f, 0.4f } );
@@ -101,6 +101,9 @@ int main( int argc, const char** argv )
 
         if ( _visualizer->checkSingleKeyPress( tysoc::keys::KEY_ESCAPE ) )
             break;
+
+        if ( _visualizer->checkSingleKeyPress( tysoc::keys::KEY_R ) )
+            _simulation->reset();
 
         _simulation->step();
         _visualizer->update();

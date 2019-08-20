@@ -31,7 +31,7 @@ namespace bullet {
         void _preStepInternal() override;
         void _simStepInternal() override;
         void _postStepInternal() override;
-        void _resetInternal() override;
+        void _resetInternal() override; 
 
         public :
 
