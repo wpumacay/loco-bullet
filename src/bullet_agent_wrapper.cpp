@@ -771,14 +771,18 @@ namespace bullet {
                 if ( _jointPtr->type == "free" )
                 {
                     auto _position = m_agentPtr->getStartPosition();
-                    auto _rotation = TMat3::toQuaternion( TMat3::fromEuler( m_agentPtr->getStartRotation() ) );
+                    auto _rotEuler = m_agentPtr->getStartRotation();
+                    auto _transform = tysoc::TMat4( _position, _rotEuler );
 
-                    // use the start position ( x - y - z - qw - qx - qy - qz )
-                    _qposs = { _position.x, _position.y, _position.z,
-                               _rotation.w, _rotation.x, _rotation.y, _rotation.z };
+                    // for this case, we must use the base directly :(
+                    m_btMultiBodyPtr->setBasePos( utils::toBtVec3( _position ) );
+                    m_btMultiBodyPtr->setBaseWorldTransform( utils::toBtTransform( _transform ) );
 
-                    // and no initial velocities
-                    _qvels = { 0., 0., 0., 0., 0., 0. };
+                    m_btMultiBodyPtr->setBaseVel( utils::toBtVec3( { 0., 0., 0. } ) );
+                    m_btMultiBodyPtr->setBaseOmega( utils::toBtVec3( { 0., 0., 0. } ) );
+
+                    // skip setting the q-values for this joint
+                    continue;
                 }
                 else if ( _jointPtr->type == "slider" || _jointPtr->type == "slide" || _jointPtr->type == "prismatic" )
                 {
