@@ -22,5 +22,8 @@ tysoc_bullet.egg-info/
 ext/cat1
 ext/imgui
 ext/pybind11
-ext/bullet3
+ext/bullet*
 core/
+
+# specific file-exclusions
+model_info.txt

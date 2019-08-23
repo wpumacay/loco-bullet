@@ -118,7 +118,7 @@ namespace bullet {
             m_btCollisionShapePtr->setMargin( 0.1 * TVec3::length( shapeSize ) );// @TODO: set amrgin according to size of the shape
 
         // compute inertial properties from this shape
-        btScalar _linkMass = utils::computeVolumeFromShape( m_btCollisionShapePtr ) * m_density;
+        btScalar _linkMass = ( shapeType != "none" ) ? utils::computeVolumeFromShape( m_btCollisionShapePtr ) * m_density : 0.0f;
         btVector3 _linkInertia = btVector3( 0., 0., 0. );
         if ( _linkMass != 0.0f )
             m_btCollisionShapePtr->calculateLocalInertia( _linkMass, _linkInertia );
@@ -163,8 +163,23 @@ namespace bullet {
                                              -_btJointPivot,
                                              true );
 
-            m_btMultiBodyPtr->getLink( m_btLinkIndx ).m_jointLowerLimit = lowerLimit * SIMD_RADS_PER_DEG;
-            m_btMultiBodyPtr->getLink( m_btLinkIndx ).m_jointUpperLimit = upperLimit * SIMD_RADS_PER_DEG;
+            utils::TBtLogger::log( std::string( "-------- revolute ----------" ) );
+            utils::TBtLogger::log( std::string( "linkIndex: " ) + std::to_string( m_btLinkIndx ) );
+            utils::TBtLogger::log( std::string( "mass: " ) + std::to_string( _linkMass ) );
+            utils::TBtLogger::log( std::string( "localinertia: " ) + utils::to_string( _linkInertia ) );
+            utils::TBtLogger::log( std::string( "parentIndex: " ) + std::to_string( _linkParentIndx ) );
+            utils::TBtLogger::log( std::string( "rotParentToThis: " ) + utils::to_string( _parent2this_quat ) );
+            utils::TBtLogger::log( std::string( "jointAxis: " ) + utils::to_string( _btJointAxis ) );
+            utils::TBtLogger::log( std::string( "parentComToThisPivotOffset: " ) + utils::to_string( _pivot2parent_pos ) );
+            utils::TBtLogger::log( std::string( "thisPivotToThisComOffset: " ) + utils::to_string( -_btJointPivot ) );
+            utils::TBtLogger::log( std::string( "disableParentCollision: " ) + std::to_string( true ) );
+            utils::TBtLogger::log( std::string( "lowerLimit: " ) + std::to_string( lowerLimit ) );
+            utils::TBtLogger::log( std::string( "upperLimit: " ) + std::to_string( upperLimit ) );
+            utils::TBtLogger::log( std::string( "shape-type: " ) + shapeType );
+            utils::TBtLogger::log( std::string( "shape-size: " ) + TVec3::toString( shapeSize ) );
+
+            m_btMultiBodyPtr->getLink( m_btLinkIndx ).m_jointLowerLimit = lowerLimit;
+            m_btMultiBodyPtr->getLink( m_btLinkIndx ).m_jointUpperLimit = upperLimit;
 
             if ( lowerLimit <= upperLimit )
             {
@@ -177,17 +192,18 @@ namespace bullet {
                     m_btJointMotor->setPositionTarget( 0.0 );
 
                     m_btWorldPtr->addMultiBodyConstraint( m_btJointMotor );
+                    m_btJointMotor->finalizeMultiDof();
                 }
                 else
                 {
                     m_btJointLimitConstraint = new btMultiBodyJointLimitConstraint( 
                                                             m_btMultiBodyPtr, 
                                                             m_btLinkIndx, 
-                                                            lowerLimit * SIMD_RADS_PER_DEG, 
-                                                            upperLimit * SIMD_RADS_PER_DEG );
+                                                            lowerLimit, 
+                                                            upperLimit );
 
                     m_btWorldPtr->addMultiBodyConstraint( m_btJointLimitConstraint );
-                    // m_btJointLimitConstraint->finalizeMultiDof();
+                    m_btJointLimitConstraint->finalizeMultiDof();
                 }
             }
         }
@@ -202,6 +218,21 @@ namespace bullet {
                                               _pivot2parent_pos,
                                               -_btJointPivot,
                                               true );
+
+            utils::TBtLogger::log( std::string( "-------- prismatic ----------" ) );
+            utils::TBtLogger::log( std::string( "linkIndex: " ) + std::to_string( m_btLinkIndx ) );
+            utils::TBtLogger::log( std::string( "mass: " ) + std::to_string( _linkMass ) );
+            utils::TBtLogger::log( std::string( "localinertia: " ) + utils::to_string( _linkInertia ) );
+            utils::TBtLogger::log( std::string( "parentIndex: " ) + std::to_string( _linkParentIndx ) );
+            utils::TBtLogger::log( std::string( "rotParentToThis: " ) + utils::to_string( _parent2this_quat ) );
+            utils::TBtLogger::log( std::string( "jointAxis: " ) + utils::to_string( _btJointAxis ) );
+            utils::TBtLogger::log( std::string( "parentComToThisPivotOffset: " ) + utils::to_string( _pivot2parent_pos ) );
+            utils::TBtLogger::log( std::string( "thisPivotToThisComOffset: " ) + utils::to_string( -_btJointPivot ) );
+            utils::TBtLogger::log( std::string( "disableParentCollision: " ) + std::to_string( true ) );
+            utils::TBtLogger::log( std::string( "lowerLimit: " ) + std::to_string( lowerLimit ) );
+            utils::TBtLogger::log( std::string( "upperLimit: " ) + std::to_string( upperLimit ) );
+            utils::TBtLogger::log( std::string( "shape-type: " ) + shapeType );
+            utils::TBtLogger::log( std::string( "shape-size: " ) + TVec3::toString( shapeSize ) );
 
             m_btMultiBodyPtr->getLink( m_btLinkIndx ).m_jointLowerLimit = lowerLimit;
             m_btMultiBodyPtr->getLink( m_btLinkIndx ).m_jointUpperLimit = upperLimit;
@@ -227,7 +258,7 @@ namespace bullet {
                                                             upperLimit );
 
                     m_btWorldPtr->addMultiBodyConstraint( m_btJointLimitConstraint );
-                    // m_btJointLimitConstraint->finalizeMultiDof();
+                    m_btJointLimitConstraint->finalizeMultiDof();
                 }
             }
 
@@ -243,8 +274,22 @@ namespace bullet {
                                               -_btJointPivot,
                                               true );
 
-            m_btMultiBodyPtr->getLink( m_btLinkIndx ).m_jointLowerLimit = lowerLimit * SIMD_RADS_PER_DEG;
-            m_btMultiBodyPtr->getLink( m_btLinkIndx ).m_jointUpperLimit = upperLimit * SIMD_RADS_PER_DEG;
+            utils::TBtLogger::log( std::string( "-------- spherical ----------" ) );
+            utils::TBtLogger::log( std::string( "linkIndex: " ) + std::to_string( m_btLinkIndx ) );
+            utils::TBtLogger::log( std::string( "mass: " ) + std::to_string( _linkMass ) );
+            utils::TBtLogger::log( std::string( "localinertia: " ) + utils::to_string( _linkInertia ) );
+            utils::TBtLogger::log( std::string( "parentIndex: " ) + std::to_string( _linkParentIndx ) );
+            utils::TBtLogger::log( std::string( "rotParentToThis: " ) + utils::to_string( _parent2this_quat ) );
+            utils::TBtLogger::log( std::string( "parentComToThisPivotOffset: " ) + utils::to_string( _pivot2parent_pos ) );
+            utils::TBtLogger::log( std::string( "thisPivotToThisComOffset: " ) + utils::to_string( -_btJointPivot ) );
+            utils::TBtLogger::log( std::string( "disableParentCollision: " ) + std::to_string( true ) );
+            utils::TBtLogger::log( std::string( "lowerLimit: " ) + std::to_string( lowerLimit ) );
+            utils::TBtLogger::log( std::string( "upperLimit: " ) + std::to_string( upperLimit ) );
+            utils::TBtLogger::log( std::string( "shape-type: " ) + shapeType );
+            utils::TBtLogger::log( std::string( "shape-size: " ) + TVec3::toString( shapeSize ) );
+
+            m_btMultiBodyPtr->getLink( m_btLinkIndx ).m_jointLowerLimit = lowerLimit;
+            m_btMultiBodyPtr->getLink( m_btLinkIndx ).m_jointUpperLimit = upperLimit;
 
             if ( lowerLimit <= upperLimit )
             {
@@ -258,6 +303,7 @@ namespace bullet {
                     m_btSphericalJointMotor->setPositionTarget( { 0., 0., 0., 1. } );
 
                     m_btWorldPtr->addMultiBodyConstraint( m_btSphericalJointMotor );
+                    m_btSphericalJointMotor->finalizeMultiDof();
                 }
             }
         }
@@ -271,6 +317,18 @@ namespace bullet {
                                           _pivot2parent_pos,
                                           -_btJointPivot,
                                           true );
+
+            utils::TBtLogger::log( std::string( "-------- fixed ----------" ) );
+            utils::TBtLogger::log( std::string( "linkIndex: " ) + std::to_string( m_btLinkIndx ) );
+            utils::TBtLogger::log( std::string( "mass: " ) + std::to_string( _linkMass ) );
+            utils::TBtLogger::log( std::string( "localinertia: " ) + utils::to_string( _linkInertia ) );
+            utils::TBtLogger::log( std::string( "parentIndex: " ) + std::to_string( _linkParentIndx ) );
+            utils::TBtLogger::log( std::string( "rotParentToThis: " ) + utils::to_string( _parent2this_quat ) );
+            utils::TBtLogger::log( std::string( "parentComToThisPivotOffset: " ) + utils::to_string( _pivot2parent_pos ) );
+            utils::TBtLogger::log( std::string( "thisPivotToThisComOffset: " ) + utils::to_string( -_btJointPivot ) );
+            utils::TBtLogger::log( std::string( "disableParentCollision: " ) + std::to_string( true ) );
+            utils::TBtLogger::log( std::string( "shape-type: " ) + shapeType );
+            utils::TBtLogger::log( std::string( "shape-size: " ) + TVec3::toString( shapeSize ) );
         }
         else
         {
@@ -996,6 +1054,12 @@ namespace bullet {
                 m_jointToLinkIdMap[_it->first] = _it->second;
             }
         }
+        utils::TBtLogger::log( "----------------------" );
+        utils::TBtLogger::log( std::string( "num-dofs: " ) + std::to_string( m_btMultiBodyPtr->getNumDofs() ) );
+        utils::TBtLogger::log( std::string( "num-qpos: " ) + std::to_string( m_btMultiBodyPtr->getNumPosVars() ) );
+        utils::TBtLogger::log( std::string( "num-links: " ) + std::to_string( m_btMultiBodyPtr->getNumLinks() ) );
+
+        utils::TBtLogger::save(  "/home/gregor/Documents/repos/tysoc_bullet_workspace/tysoc_bullet/model_info.txt"  );
         
         /* Generate summary information *******************************************/
         TGenericParams& _summary = m_agentPtr->summary();

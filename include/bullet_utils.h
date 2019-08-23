@@ -138,6 +138,44 @@ namespace utils {
     void _processAssimpMesh( aiMesh* assimpMeshPtr, TMeshObject& mesh );
 
     /**
+    *   Simple singleton file-logger used for debugging 
+    *   some internal configurations
+    */
+    class TBtLogger
+    {
+        private :
+
+        // logs buffer of lines to be logged to a file
+        std::vector< std::string > m_logs;
+
+        /* saves the logs list into a .txt file given a file name (abspath) */
+        void _saveInternal( const std::string& filename );
+
+        /* stores a single log message into the logs buffer */
+        void _logInternal( const std::string& message );
+
+        /* constructor, hiden as we are using a singleton */
+        TBtLogger() {}
+
+        /* private global instance of the logger */
+        static TBtLogger* _instance;
+
+        public :
+        
+        /* Saves all logs given by the user into the given file (abspath)  */
+        static void save( const std::string& filename );
+
+        /* Stores a log given by the user into the logs buffer */
+        static void log( const std::string& message );
+
+    };
+
+    std::string to_string( const btVector3& vec3 );
+    std::string to_string( const btQuaternion& quat );
+    std::string to_string( const btMatrix3x3& mat3 );
+    std::string to_string( const btTransform& transform );
+
+    /**
     *   Debug drawer, implemeting interface btIDebugDraw, to handle drawing of ...
     *   all debugdraw functionality provided (and tested) by bullet itself
     */

@@ -162,7 +162,7 @@ namespace utils {
             auto _capsuleHeight = 2.0 * _capsuleShape->getHalfHeight();
 
             _volume = ( _pi * _capsuleRadius * _capsuleRadius ) * _capsuleHeight +
-                      ( _pi * _capsuleRadius * _capsuleRadius * _capsuleRadius );
+                      (4. / 3.) * ( _pi * _capsuleRadius * _capsuleRadius * _capsuleRadius );
         }
         else
         {
@@ -308,7 +308,125 @@ namespace utils {
         }
     }
 
-    // Debug drawer
+    /**********************************************************
+    *          Singleton File-Logger functionality            *
+    ***********************************************************/
+
+    TBtLogger* TBtLogger::_instance = NULL;
+
+    void TBtLogger::log( const std::string& message )
+    {
+        if ( !TBtLogger::_instance )
+            TBtLogger::_instance = new TBtLogger();
+
+        TBtLogger::_instance->_logInternal( message );
+    }
+
+    void TBtLogger::save( const std::string& filename )
+    {
+        if ( !TBtLogger::_instance )
+        {
+            std::cout << "WARNING> hey, there was no logger to save" << std::endl;
+            return;
+        }
+
+        TBtLogger::_instance->_saveInternal( filename );
+    }
+
+    void TBtLogger::_logInternal( const std::string& message )
+    {
+        m_logs.push_back( message );
+    }
+
+    void TBtLogger::_saveInternal( const std::string& filename )
+    {
+        std::ofstream _fileHandle;
+        _fileHandle.open( filename.c_str(), std::ofstream::out );
+
+        for ( size_t i = 0; i < m_logs.size(); i++ )
+            _fileHandle << m_logs[i] << std::endl;
+
+        _fileHandle.close();
+    }
+
+    /**********************************************************
+    *               Some to-strings for logging               *
+    ***********************************************************/
+
+    std::string to_string( const btVector3& vec3 )
+    {
+        std::string _res;
+
+        _res += "(";
+        _res += std::to_string( vec3.x() ); _res += std::string( ", " );
+        _res += std::to_string( vec3.y() ); _res += std::string( ", " );
+        _res += std::to_string( vec3.z() );
+        _res += ")";
+
+        return _res;
+    }
+
+    std::string to_string( const btQuaternion& quat )
+    {
+        std::string _res;
+        
+        _res += "(";
+        _res += std::to_string( quat.x() ); _res += std::string( ", " );
+        _res += std::to_string( quat.y() ); _res += std::string( ", " );
+        _res += std::to_string( quat.z() ); _res += std::string( ", " );
+        _res += std::to_string( quat.w() );
+        _res += ")";
+
+        return _res;
+    }
+
+    std::string to_string( const btMatrix3x3& mat3 )
+    {
+        std::string _res;
+        
+        _res += "(";
+        _res += std::to_string( mat3[0].x() ); _res += std::string( ", " );
+        _res += std::to_string( mat3[0].y() ); _res += std::string( ", " );
+        _res += std::to_string( mat3[0].z() ); _res += std::string( ", " );
+
+        _res += std::to_string( mat3[1].x() ); _res += std::string( ", " );
+        _res += std::to_string( mat3[1].y() ); _res += std::string( ", " );
+        _res += std::to_string( mat3[1].z() ); _res += std::string( ", " );
+
+        _res += std::to_string( mat3[2].x() ); _res += std::string( ", " );
+        _res += std::to_string( mat3[2].y() ); _res += std::string( ", " );
+        _res += std::to_string( mat3[2].z() );
+
+        _res += ")";
+
+        return _res;
+    }
+
+    std::string to_string( const btTransform& transform )
+    {
+        std::string _res;
+        
+        auto _pos = transform.getOrigin();
+        auto _quat = transform.getRotation();
+
+        _res += "(";
+        _res += std::to_string( _pos.x() ); _res += std::string( ", " );
+        _res += std::to_string( _pos.y() ); _res += std::string( ", " );
+        _res += std::to_string( _pos.z() ); _res += std::string( ", " );
+
+        _res += std::to_string( _pos.x() ); _res += std::string( ", " );
+        _res += std::to_string( _pos.y() ); _res += std::string( ", " );
+        _res += std::to_string( _pos.z() ); _res += std::string( ", " );
+        _res += std::to_string( _pos.w() );
+
+        _res += ")";
+
+        return _res;
+    }   
+
+    /**********************************************************
+    *                       Debug drawer                      *
+    ***********************************************************/
 
     TBtDebugDrawer::TBtDebugDrawer()
     {
@@ -319,7 +437,10 @@ namespace utils {
         //               btIDebugDraw::DBG_DrawFrames |
         //               btIDebugDraw::DBG_DrawConstraints;
 
-        m_debugMode = btIDebugDraw::DBG_DrawWireframe;
+        m_debugMode = btIDebugDraw::DBG_DrawWireframe | 
+                      btIDebugDraw::DBG_DrawConstraints;
+
+        // m_debugMode = btIDebugDraw::DBG_DrawWireframe;
     }
 
     TBtDebugDrawer::~TBtDebugDrawer()
@@ -373,6 +494,10 @@ namespace utils {
     {
         return m_debugMode;
     }
+
+    /**********************************************************
+    *                Custom filter callback                   *
+    ***********************************************************/
 
     bool TBtOverlapFilterCallback::needBroadphaseCollision( btBroadphaseProxy* proxy0, btBroadphaseProxy* proxy1 ) const 
     {
