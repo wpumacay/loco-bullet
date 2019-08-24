@@ -133,7 +133,7 @@ namespace utils {
         if ( _type == BOX_SHAPE_PROXYTYPE )
         {
             auto _boxShape = reinterpret_cast< btBoxShape* >( colShape );
-            auto _boxDimensions = _boxShape->getHalfExtentsWithoutMargin();
+            auto _boxDimensions = _boxShape->getHalfExtentsWithMargin();
 
             _volume = 8. * ( _boxDimensions.x() * _boxDimensions.y() * _boxDimensions.z() );
         }
