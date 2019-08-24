@@ -138,6 +138,14 @@ namespace utils {
     void _processAssimpMesh( aiMesh* assimpMeshPtr, TMeshObject& mesh );
 
     /**
+    *   Logs the information of a collision shape
+    *
+    *   @param colShape     Collision shape resources (bullet) to be logged
+    *   @param isChild      Whether or not the shape is a child of a compound shape
+    */
+    void logShapeInfo( btCollisionShape* colShape, bool isChild = false );
+
+    /**
     *   Simple singleton file-logger used for debugging 
     *   some internal configurations
     */

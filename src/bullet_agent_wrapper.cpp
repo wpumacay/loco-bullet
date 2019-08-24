@@ -183,6 +183,15 @@ namespace bullet {
 
             if ( lowerLimit <= upperLimit )
             {
+                m_btJointLimitConstraint = new btMultiBodyJointLimitConstraint( 
+                                                        m_btMultiBodyPtr, 
+                                                        m_btLinkIndx, 
+                                                        lowerLimit, 
+                                                        upperLimit );
+
+                m_btWorldPtr->addMultiBodyConstraint( m_btJointLimitConstraint );
+                m_btJointLimitConstraint->finalizeMultiDof();
+                
                 if ( useMotor )
                 {
                     m_btJointMotor = new btMultiBodyJointMotor( m_btMultiBodyPtr, 
@@ -193,17 +202,6 @@ namespace bullet {
 
                     m_btWorldPtr->addMultiBodyConstraint( m_btJointMotor );
                     m_btJointMotor->finalizeMultiDof();
-                }
-                else
-                {
-                    m_btJointLimitConstraint = new btMultiBodyJointLimitConstraint( 
-                                                            m_btMultiBodyPtr, 
-                                                            m_btLinkIndx, 
-                                                            lowerLimit, 
-                                                            upperLimit );
-
-                    m_btWorldPtr->addMultiBodyConstraint( m_btJointLimitConstraint );
-                    m_btJointLimitConstraint->finalizeMultiDof();
                 }
             }
         }
@@ -1058,6 +1056,33 @@ namespace bullet {
         utils::TBtLogger::log( std::string( "num-dofs: " ) + std::to_string( m_btMultiBodyPtr->getNumDofs() ) );
         utils::TBtLogger::log( std::string( "num-qpos: " ) + std::to_string( m_btMultiBodyPtr->getNumPosVars() ) );
         utils::TBtLogger::log( std::string( "num-links: " ) + std::to_string( m_btMultiBodyPtr->getNumLinks() ) );
+
+        utils::TBtLogger::log( "------------- MULTIBODY-INTERNALS ---------------" );
+        utils::TBtLogger::log( "------------- Links ---------------" );
+
+        _numLinks = m_btMultiBodyPtr->getNumLinks();
+        for ( int linkId = 0; linkId < _numLinks; linkId++ )
+        {
+            auto _linkCollider = m_btMultiBodyPtr->getLinkCollider( linkId );
+            auto _linkColliderType = _linkCollider->getInternalType();
+            auto _linkColliderShape = _linkCollider->getCollisionShape();
+            
+            utils::TBtLogger::log( std::string( "collider-indx: " ) + std::to_string( linkId ) );
+            utils::TBtLogger::log( std::string( "collider-AnisotropicFriction: " ) + utils::to_string( _linkCollider->getAnisotropicFriction() ) );
+            utils::TBtLogger::log( std::string( "collider-CollisionFlags: " ) + std::to_string( _linkCollider->getCollisionFlags() ) );
+            utils::TBtLogger::log( std::string( "collider-ContactDamping: " ) + std::to_string( _linkCollider->getContactDamping() ) );
+            utils::TBtLogger::log( std::string( "collider-ContactStiffness: " ) + std::to_string( _linkCollider->getContactStiffness() ) );
+            utils::TBtLogger::log( std::string( "collider-Friction: " ) + std::to_string( _linkCollider->getFriction() ) );
+            utils::TBtLogger::log( std::string( "collider-Restitution: " ) + std::to_string( _linkCollider->getRestitution() ) );
+            utils::TBtLogger::log( std::string( "collider-RollingFriction: " ) + std::to_string( _linkCollider->getRollingFriction() ) );
+            utils::TBtLogger::log( std::string( "collider-SpinningFriction: " ) + std::to_string( _linkCollider->getSpinningFriction() ) );
+
+            if ( _linkColliderShape )
+                utils::logShapeInfo( _linkColliderShape );
+        }
+
+        utils::TBtLogger::log( "\n\r\n\r" );
+
 
         utils::TBtLogger::save(  "/home/gregor/Documents/repos/tysoc_bullet_workspace/tysoc_bullet/model_info.txt"  );
         

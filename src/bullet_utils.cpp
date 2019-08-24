@@ -308,6 +308,62 @@ namespace utils {
         }
     }
 
+    void logShapeInfo( btCollisionShape* colShape, bool isChild )
+    {
+        if( !isChild )
+            TBtLogger::log( "---------------------------------------------------" );
+        else
+            TBtLogger::log( "********** child **********" );
+    
+        auto _colliderMargin = colShape->getMargin();
+        TBtLogger::log( std::string( "collision-margin: " ) + std::to_string( _colliderMargin ) );
+    
+        if ( colShape->getShapeType() == COMPOUND_SHAPE_PROXYTYPE )
+        {
+            TBtLogger::log( "colshape-type: compound" );
+    
+            // recurse over its children
+            auto _colShapeCompound = reinterpret_cast< btCompoundShape* >( colShape );
+            auto _numChildren = _colShapeCompound->getNumChildShapes();
+    
+            for ( int i = 0; i < _numChildren; i++ )
+            {
+                TBtLogger::log( std::string( "child-transform: " ) + utils::to_string( _colShapeCompound->getChildTransform( i ) ) );
+                logShapeInfo( _colShapeCompound->getChildShape( i ), true );
+            }
+        }
+        else if ( colShape->getShapeType() == BOX_SHAPE_PROXYTYPE )
+        {
+            TBtLogger::log( "colshape-type: box" );
+    
+            auto _colShapeBox = reinterpret_cast< btBoxShape* >( colShape );
+            auto _boxExtents = _colShapeBox->getHalfExtentsWithoutMargin() * 2.0f;
+    
+            TBtLogger::log( std::string( "box-extents: " ) + utils::to_string( _boxExtents ) );
+    
+        }
+        else if ( colShape->getShapeType() == SPHERE_SHAPE_PROXYTYPE )
+        {
+            TBtLogger::log( "colshape-type: sphere" );
+    
+            auto _colShapeSphere = reinterpret_cast< btSphereShape* >( colShape );
+            auto _sphereRadius = _colShapeSphere->getRadius();
+    
+            TBtLogger::log( std::string( "sphere-radius: " ) + std::to_string( _sphereRadius ) );
+        }
+        else if ( colShape->getShapeType() == CAPSULE_SHAPE_PROXYTYPE )
+        {
+            TBtLogger::log( "colshape-type: capsule" );
+    
+            auto _colShapeCapsule = reinterpret_cast< btCapsuleShape* >( colShape );
+            auto _capsuleRadius = _colShapeCapsule->getRadius();
+            auto _capsuleHeight = _colShapeCapsule->getHalfHeight() * 2.0f;
+    
+            TBtLogger::log( std::string( "capsule-radius: " ) + std::to_string( _capsuleRadius ) );
+            TBtLogger::log( std::string( "capsule-height: " ) + std::to_string( _capsuleHeight ) );
+        }
+    }
+
     /**********************************************************
     *          Singleton File-Logger functionality            *
     ***********************************************************/
