@@ -812,6 +812,11 @@ namespace bullet {
         if ( !m_agentPtr )
             return;
 
+        // clear all external-forces, constraints-forces and velocities prior to the reset
+        m_btMultiBodyPtr->clearForcesAndTorques();
+        m_btMultiBodyPtr->clearConstraintForces();
+        m_btMultiBodyPtr->clearVelocities();
+
         // set the qpos values set by the user (left in the abstract agent)
         for ( size_t i = 0; i < m_jointWrappers.size(); i++ )
         {
@@ -824,7 +829,8 @@ namespace bullet {
 
             if ( m_jointWrappers[i].isRootJoint() )
             {
-                if ( _jointPtr->type == "free" )
+                if ( _jointPtr->type == "free" || _jointPtr->type == "ball" || 
+                     _jointPtr->type == "spheric" || _jointPtr->type == "spherical" )
                 {
                     auto _position = m_agentPtr->getStartPosition();
                     auto _rotEuler = m_agentPtr->getStartRotation();
@@ -888,19 +894,28 @@ namespace bullet {
             }
             else
             {
-                // collect qpos from kintree-joint
-                for ( int j = 0; j < _jointPtr->nqpos; j++ )
-                    _qposs.push_back( _jointPtr->qpos0[j] );
+                if ( _jointPtr->type == "ball" || _jointPtr->type == "spherical" || _jointPtr->type == "spheric" )
+                {
+                    _qposs = { 0., 0., 0., 1. };
+                    _qvels = { 0., 0., 0. };
+                }
+                else
+                {
+                    // collect qpos from kintree-joint
+                    for ( int j = 0; j < _jointPtr->nqpos; j++ )
+                        _qposs.push_back( _jointPtr->qpos0[j] );
 
-                // set qvels to zeros
-                for ( int j = 0; j < _jointPtr->nqvel; j++ )
-                    _qvels.push_back( _jointPtr->qvel0[j] );
+                    // set qvels to zeros
+                    for ( int j = 0; j < _jointPtr->nqvel; j++ )
+                        _qvels.push_back( _jointPtr->qvel0[j] );
+                }
             }
 
             // and set the qposs and qvels into the backend through the wrapper
             m_jointWrappers[i].setQpos( _qposs );
             m_jointWrappers[i].setQvel( _qvels );
 
+            // @TODO: In case there're some motors, we should set their initial target position as well
         }
 
         // reset the internal high-level resources of the kintree
