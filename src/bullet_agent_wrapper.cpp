@@ -894,21 +894,13 @@ namespace bullet {
             }
             else
             {
-                if ( _jointPtr->type == "ball" || _jointPtr->type == "spherical" || _jointPtr->type == "spheric" )
-                {
-                    _qposs = { 0., 0., 0., 1. };
-                    _qvels = { 0., 0., 0. };
-                }
-                else
-                {
-                    // collect qpos from kintree-joint
-                    for ( int j = 0; j < _jointPtr->nqpos; j++ )
-                        _qposs.push_back( _jointPtr->qpos0[j] );
+                // collect qpos from kintree-joint
+                for ( int j = 0; j < _jointPtr->nqpos; j++ )
+                    _qposs.push_back( _jointPtr->qpos0[j] );
 
-                    // set qvels to zeros
-                    for ( int j = 0; j < _jointPtr->nqvel; j++ )
-                        _qvels.push_back( _jointPtr->qvel0[j] );
-                }
+                // set qvels to zeros
+                for ( int j = 0; j < _jointPtr->nqvel; j++ )
+                    _qvels.push_back( _jointPtr->qvel0[j] );
             }
 
             // and set the qposs and qvels into the backend through the wrapper
@@ -1169,28 +1161,6 @@ namespace bullet {
 
     void TBtKinTreeAgentWrapper::_cacheJointProperties( agent::TKinTreeJoint* kinTreeJointPtr )
     {
-        // define the number of generalized coordinates and "generalized velocities" for this joint
-        if ( kinTreeJointPtr->type == "free" )
-        {
-            kinTreeJointPtr->nqpos = 7;
-            kinTreeJointPtr->nqvel = 6;
-        }
-        else if ( kinTreeJointPtr->type == "spherical" || kinTreeJointPtr->type == "ball" )
-        {
-            kinTreeJointPtr->nqpos = 4;
-            kinTreeJointPtr->nqvel = 3;
-        }
-        else if ( kinTreeJointPtr->type == "revolute" || kinTreeJointPtr->type == "hinge" )
-        {
-            kinTreeJointPtr->nqpos = 1;
-            kinTreeJointPtr->nqvel = 1;
-        }
-        else if ( kinTreeJointPtr->type == "prismatic" || kinTreeJointPtr->type == "slide" )
-        {
-            kinTreeJointPtr->nqpos = 1;
-            kinTreeJointPtr->nqvel = 1;
-        }
-
         if ( m_jointToLinkIdMap.find( kinTreeJointPtr->name ) == m_jointToLinkIdMap.end() )
             return;
 
