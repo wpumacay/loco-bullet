@@ -1,4 +1,3 @@
-
 #pragma once
 
 #include <bullet_common.h>
@@ -16,67 +15,69 @@
 namespace tysoc {
 namespace bullet {
 
-    /**
-    * This is a wrapper on top of the primitives...
-    * used by the terrain generators
-    */
-    struct TBtTerrainPrimitive
-    {
-        std::string                     btPrimitiveName;    // name of this primitive
-        std::string                     btPrimitiveType;    // type of shape of this primitive
-        TVec3                           btPrimitiveSize;    // size of this primitive
-        std::string                     btPrimitiveFilename;// mesh filename (if applicable)
-        btRigidBody*                    btPrimitiveBodyPtr; // bullet rigid body for this primitive
-        terrain::TTerrainPrimitive*     tysocPrimitiveObj;  // terrain primitive being wrapped
-    };
+//     /**
+//     * This is a wrapper on top of the primitives...
+//     * used by the terrain generators
+//     */
+//     struct TBtTerrainPrimitive
+//     {
+//         std::string                     btPrimitiveName;    // name of this primitive
+//         std::string                     btPrimitiveType;    // type of shape of this primitive
+//         TVec3                           btPrimitiveSize;    // size of this primitive
+//         std::string                     btPrimitiveFilename;// mesh filename (if applicable)
+//         btRigidBody*                    btPrimitiveBodyPtr; // bullet rigid body for this primitive
+//         TTerrainPrimitive*     tysocPrimitiveObj;  // terrain primitive being wrapped
+//     };
 
 
-    class TBtTerrainGenWrapper : public TTerrainGenWrapper
-    {
-        private :
+//     class TBtTerrainGenWrapper : public TTerrainGenWrapper
+//     {
+//         private :
 
-        // Main storage for the primitives
-        std::vector< TBtTerrainPrimitive* > m_btTerrainPrimitives;
-        // working queues for the logic
-        std::queue< TBtTerrainPrimitive* > m_btAvailablePrimitives;
-        std::queue< TBtTerrainPrimitive* > m_btWorkingPrimitives;
+//         // Main storage for the primitives
+//         std::vector< TBtTerrainPrimitive* > m_btTerrainPrimitives;
+//         // working queues for the logic
+//         std::queue< TBtTerrainPrimitive* > m_btAvailablePrimitives;
+//         std::queue< TBtTerrainPrimitive* > m_btWorkingPrimitives;
 
-        // A reference to the world to add our resources to
-        btMultiBodyDynamicsWorld* m_btWorldPtr;
+//         // A reference to the world to add our resources to
+//         btMultiBodyDynamicsWorld* m_btWorldPtr;
 
-        void _collectReusableFromGenerator();// collects primitives that can be reused and rewrapped in the lifetime of the generator
-        void _collectStaticFromGenerator();// collects primitives that are single in the lifetime of the generator
-        void _wrapReusablePrimitive( terrain::TTerrainPrimitive* primitivePtr );
-        void _wrapStaticPrimitive( terrain::TTerrainPrimitive* primitivePtr );
-        void _createBtBody( TBtTerrainPrimitive* btTerrainPrimitivePtr );
-        void _updateProperties( TBtTerrainPrimitive* btTerrainPritimivePtr );
-
-
-        protected :
-
-        void _initializeInternal() override;
-        void _resetInternal() override;
-        void _preStepInternal() override;
-        void _postStepInternal() override;
-
-        public :
-
-        TBtTerrainGenWrapper( terrain::TITerrainGenerator* terrainGenPtr,
-                               const std::string& workingDir );
-        ~TBtTerrainGenWrapper();
-
-        void setBtWorld( btMultiBodyDynamicsWorld* btWorldPtr );
-    };
+//         void _collectReusableFromGenerator();// collects primitives that can be reused and rewrapped in the lifetime of the generator
+//         void _collectStaticFromGenerator();// collects primitives that are single in the lifetime of the generator
+//         void _wrapReusablePrimitive( TTerrainPrimitive* primitivePtr );
+//         void _wrapStaticPrimitive( TTerrainPrimitive* primitivePtr );
+//         void _createBtBody( TBtTerrainPrimitive* btTerrainPrimitivePtr );
+//         void _updateProperties( TBtTerrainPrimitive* btTerrainPritimivePtr );
 
 
+//         protected :
+
+//         void _initializeInternal() override;
+//         void _resetInternal() override;
+//         void _preStepInternal() override;
+//         void _postStepInternal() override;
+
+//         public :
+
+//         TBtTerrainGenWrapper( TITerrainGenerator* terrainGenPtr,
+//                                const std::string& workingDir );
+//         ~TBtTerrainGenWrapper();
+
+//         void setBtWorld( btMultiBodyDynamicsWorld* btWorldPtr );
+//     };
 
 
-    extern "C" TTerrainGenWrapper* terrain_createFromAbstract( terrain::TITerrainGenerator* terrainGenPtr,
-                                                               const std::string& workingDir );
 
-    extern "C" TTerrainGenWrapper* terrain_createFromParams( const std::string& name,
-                                                             const TGenericParams& params,
-                                                             const std::string& workingDir );
 
+//     extern "C" TTerrainGenWrapper* terrain_createFromAbstract( TITerrainGenerator* terrainGenPtr,
+//                                                                const std::string& workingDir );
+
+//     extern "C" TTerrainGenWrapper* terrain_createFromParams( const std::string& name,
+//                                                              const TGenericParams& params,
+//                                                              const std::string& workingDir );
+
+
+    extern "C" TTerrainGenWrapper* terrain_createFromAbstract( TITerrainGenerator* terrainGenPtr );
 
 }}

@@ -85,6 +85,29 @@ namespace utils {
     btCollisionShape* createCollisionShape( const std::string& type, const TVec3& size );
 
     /**
+    *   Creates a btCollisionShape from the given shapeData
+    *
+    *   @param data     Shape data information of the collider
+    */
+    btCollisionShape* createCollisionShape( const TShapeData& data );
+
+    /**
+    *   Creates vertices of a given ellipsoid, used for a convex-hull shape
+    *
+    *   @param data         Shape data information of the ellipsoid
+    *   @param vertices     Buffer to place the ellipsoid's data
+    */
+    void _createEllipsoidVertices( const TShapeData& data, std::vector< TVec3 >& vertices );
+
+    /**
+    *   Creates vertices of a given mesh, used for a convex-hull shape
+    *
+    *   @param data         Shape data information of the mesh
+    *   @param vertices     Buffer to place the mesh's data
+    */
+    void _createMeshVertices( const TShapeData& data, std::vector< TVec3 >& vertices );
+
+    /**
     *   Computes the volume of a given collision shape using their actual ...
     *   dimensions (including margings as well)
     *
@@ -98,7 +121,7 @@ namespace utils {
     *
     *   @param kintree  TAgent object in question
     */
-    size_t calculateNumOfLinksForMultibody( agent::TAgent* kinTreePtr );
+    size_t calculateNumOfLinksForMultibody( TAgent* kinTreePtr );
 
     /**
     *   Decides whether or not the base of a multibody should be fixed, ...
@@ -108,7 +131,7 @@ namespace utils {
     *
     *   @param kintree  TAgent object in question
     */
-    bool shouldBaseBeFixed( agent::TAgent* kinTreePtr );
+    bool shouldBaseBeFixed( TAgent* kinTreePtr );
 
     /**
     *   Loads a mesh from a given file
@@ -192,7 +215,7 @@ namespace utils {
         private :
 
         // visualizer reference
-        viz::TIVisualizer* m_visualizerPtr;
+        TIVisualizer* m_visualizerPtr;
 
         // bit fields used for the mode
         int m_debugMode;
@@ -202,7 +225,7 @@ namespace utils {
         TBtDebugDrawer();
         virtual ~TBtDebugDrawer();
 
-        void setVisualizer( viz::TIVisualizer* visualizerPtr );
+        void setVisualizer( TIVisualizer* visualizerPtr );
 
         void drawLine( const btVector3& from, const btVector3& to, const btVector3& color ) override;
         void drawContactPoint( const btVector3& PointOnB, const btVector3& normalOnB, btScalar distance, int lifeTime, const btVector3& color ) override;

@@ -117,6 +117,93 @@ namespace utils {
         return _colShape;
     }
 
+    btCollisionShape* createCollisionShape( const TShapeData& data )
+    {
+        btCollisionShape* _colShape = nullptr;
+
+        if ( data.type == eShapeType::BOX )
+        {
+            _colShape = new btBoxShape( btVector3( 0.5 * data.size.x,       // half-width
+                                                   0.5 * data.size.y,       // half-depth
+                                                   0.5 * data.size.z ) );   // half-height
+        }
+        else if ( data.type == eShapeType::SPHERE )
+        {
+            _colShape = new btSphereShape( data.size.x ); // sphere-radius
+        }
+        else if ( data.type == eShapeType::CAPSULE )
+        {
+            _colShape = new btCapsuleShapeZ( data.size.x,   // capsule-radius
+                                             data.size.y ); // capsule-height (cylindrical part)
+        }
+        else if ( data.type == eShapeType::CYLINDER )
+        {
+            _colShape = new btCylinderShapeZ( btVector3( data.size.x,           // cylinder half-x extent (radius)
+                                                         data.size.x,           // cylinder half-y extent (radius)
+                                                         0.5 * data.size.y ) ); // cylinder half-z extent (half-height)
+        }
+        else if ( data.type == eShapeType::ELLIPSOID )
+        {
+            std::vector< TVec3 > _vertices; 
+            _createEllipsoidVertices( data, _vertices );
+
+            /* create a convex-hull shape, with vertices from the ellipsoid data created above */
+            auto _convexHullShape = new btConvexHullShape();
+            for ( auto _vertex : _vertices )
+                _convexHullShape->addPoint( btVector3( _vertex.x, _vertex.y, _vertex.z ), false );
+
+            _convexHullShape->recalcLocalAabb();
+            _convexHullShape->optimizeConvexHull();
+
+            _colShape = _convexHullShape;
+        }
+        else if ( data.type == eShapeType::MESH )
+        {
+            std::vector< TVec3 > _vertices;
+            _createMeshVertices( data, _vertices );
+
+            /* create a convex-hull shape, with vertices scaled by data.size (scale factors) */
+            auto _convexHullShape = new btConvexHullShape();
+            for ( auto _vertex : _vertices )
+                _convexHullShape->addPoint( btVector3( data.size.x * _vertex.x,
+                                                       data.size.y * _vertex.y,
+                                                       data.size.z * _vertex.z ), false );
+
+            _convexHullShape->recalcLocalAabb();
+            _convexHullShape->optimizeConvexHull();
+
+            _colShape = _convexHullShape;
+        }
+        else if ( data.type == eShapeType::HFIELD )
+        {
+            // @todo: implement using btHeightfieldTerrainShape
+            _colShape = nullptr;
+        }
+        else if ( data.type == eShapeType::NONE )
+        {
+            _colShape = new btCompoundShape();
+        }
+        else
+        {
+            std::cout << "ERROR> shape: " << tysoc::toString( data.type ) << " not supported" << std::endl;
+        }
+
+        if ( _colShape )
+            _colShape->setMargin( 0.0f );
+
+        return _colShape;
+    }
+
+    void _createEllipsoidVertices( const TShapeData& data, std::vector< TVec3 >& vertices )
+    {
+
+    }
+
+    void _createMeshVertices( const TShapeData& data, std::vector< TVec3 >& vertices )
+    {
+
+    }
+
     btScalar computeVolumeFromShape( btCollisionShape* colShape )
     {
         if ( !colShape )
@@ -182,11 +269,11 @@ namespace utils {
         return _volume;
     }
 
-    size_t calculateNumOfLinksForMultibody( agent::TAgent* kinTreePtr )
+    size_t calculateNumOfLinksForMultibody( TAgent* kinTreePtr )
     {
         size_t _numLinks = 0;
 
-        std::stack< agent::TKinTreeBody* > _bodiesToConsider;
+        std::stack< TKinTreeBody* > _bodiesToConsider;
         _bodiesToConsider.push( kinTreePtr->getRootBody() );
 
         while ( !_bodiesToConsider.empty() )
@@ -197,7 +284,7 @@ namespace utils {
             // check how many dofs does this body has. Ball and spherical are ...
             // considered as 1, as the setup(TypeOfConstraint) considers ball ...
             // as only one constraint
-            auto _numJoints = _currentBodyPtr->childJoints.size();
+            auto _numJoints = _currentBodyPtr->joints.size();
             if ( _numJoints > 1 )
             {
                 // MultiDof case, so we have to use dummies. We are using ...
@@ -214,18 +301,18 @@ namespace utils {
             }
 
             // add as many links as colliders we have
-            _numLinks += _currentBodyPtr->childCollisions.size();
+            _numLinks += _currentBodyPtr->collisions.size();
 
-            for ( size_t q = 0; q < _currentBodyPtr->childBodies.size(); q++ )
-                _bodiesToConsider.push( _currentBodyPtr->childBodies[q] );
+            for ( size_t q = 0; q < _currentBodyPtr->children.size(); q++ )
+                _bodiesToConsider.push( _currentBodyPtr->children[q] );
         }
 
         return _numLinks;
     }
 
-    bool shouldBaseBeFixed( agent::TAgent* kinTreePtr )
+    bool shouldBaseBeFixed( TAgent* kinTreePtr )
     {
-        auto _joints = kinTreePtr->getRootBody()->childJoints;
+        auto _joints = kinTreePtr->getRootBody()->joints;
 
         if ( _joints.size() == 0 )
         {
@@ -233,7 +320,7 @@ namespace utils {
             return true;
         }
         else if ( _joints.size() == 1 &&
-                 _joints[0]->type == "free" )
+                 _joints[0]->data.type == eJointType::FREE )
         {
             // for free joints (full 6dofs) just leave the base free
             return false;
@@ -504,7 +591,7 @@ namespace utils {
         m_visualizerPtr = NULL;
     }
 
-    void TBtDebugDrawer::setVisualizer( viz::TIVisualizer* visualizerPtr )
+    void TBtDebugDrawer::setVisualizer( TIVisualizer* visualizerPtr )
     {
         m_visualizerPtr = visualizerPtr;
     }

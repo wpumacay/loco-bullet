@@ -21,6 +21,7 @@ tysoc_bullet.egg-info/
 # dependencies-exclusions
 ext/cat1
 ext/imgui
+ext/spdlog
 ext/pybind11
 ext/bullet*
 core/

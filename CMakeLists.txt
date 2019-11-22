@@ -97,6 +97,6 @@ target_link_libraries( tysocPhysicsBullet
 if ( TYSOCBULLET_IS_MASTER_PROJECT )
     # Configure examples
     add_subdirectory( examples )
-    # Configure tests
-    add_subdirectory( tests )
+    ## # Configure tests
+    ## add_subdirectory( tests )
 endif()

@@ -16,5 +16,6 @@ function( FcnBuildTest pSourcesList pExecutableName )
 
 endfunction()
 
+add_subdirectory( cpp )
 add_subdirectory( agents )
 add_subdirectory( utils )

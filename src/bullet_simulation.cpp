@@ -5,9 +5,8 @@
 namespace tysoc {
 namespace bullet {
 
-    TBtSimulation::TBtSimulation( TScenario* scenarioPtr,
-                                  const std::string& workingDir )
-        : TISimulation( scenarioPtr, workingDir )
+    TBtSimulation::TBtSimulation( TScenario* scenarioPtr )
+        : TISimulation( scenarioPtr )
     {
 
         m_btBroadphaseInterfacePtr      = new btDbvtBroadphase();
@@ -22,31 +21,50 @@ namespace bullet {
 
         m_btDebugDrawer = new utils::TBtDebugDrawer();
         m_btWorldPtr->setDebugDrawer( m_btDebugDrawer );
+        m_isDebugDrawingActive = true;
 
         // m_btFilterCallback = new utils::TBtOverlapFilterCallback();
         // m_btWorldPtr->getPairCache()->setOverlapFilterCallback( m_btFilterCallback );
 
-        m_btWorldPtr->setGravity( btVector3( 0, 0, -10 ) );
+        m_btWorldPtr->setGravity( btVector3( 0, 0, -9.81 ) );
 
         m_runtimeType = "bullet";
 
-        auto _agents = m_scenarioPtr->getAgents();
-        for ( size_t q = 0; q < _agents.size(); q++ )
+        auto _bodies = m_scenarioPtr->getBodies();
+        for ( auto _body : _bodies )
         {
-            auto _agentWrapper = new TBtKinTreeAgentWrapper( (agent::TAgent*) _agents[q],
-                                                              m_workingDir );
+            auto _bodyAdapter = new TBtBodyAdapter( _body );
+            _body->setAdapter( _bodyAdapter );
 
-            m_agentWrappers.push_back( _agentWrapper );
+            m_bodyAdapters.push_back( _bodyAdapter );
+
+            auto _collisions = _body->collisions();
+            for ( auto _collision : _collisions )
+            {
+                auto _collisionAdapter = new TBtCollisionAdapter( _collision );
+                _collision->setAdapter( _collisionAdapter );
+
+                m_collisionAdapters.push_back( _collisionAdapter );
+            }
         }
 
-        auto _terraingens = m_scenarioPtr->getTerrainGenerators();
-        for ( size_t q = 0; q < _terraingens.size(); q++ )
-        {
-            auto _terrainGenWrapper = new TBtTerrainGenWrapper( _terraingens[q],
-                                                                 m_workingDir );
+        // auto _agents = m_scenarioPtr->getAgents();
+        // for ( size_t q = 0; q < _agents.size(); q++ )
+        // {
+        //     auto _agentWrapper = new TBtKinTreeAgentWrapper( (TAgent*) _agents[q],
+        //                                                       m_workingDir );
 
-            m_terrainGenWrappers.push_back( _terrainGenWrapper );
-        }
+        //     m_agentWrappers.push_back( _agentWrapper );
+        // }
+
+        // auto _terraingens = m_scenarioPtr->getTerrainGenerators();
+        // for ( size_t q = 0; q < _terraingens.size(); q++ )
+        // {
+        //     auto _terrainGenWrapper = new TBtTerrainGenWrapper( _terraingens[q],
+        //                                                          m_workingDir );
+
+        //     m_terrainGenWrappers.push_back( _terrainGenWrapper );
+        // }
     }
 
     TBtSimulation::~TBtSimulation()
@@ -121,27 +139,30 @@ namespace bullet {
 
     bool TBtSimulation::_initializeInternal()
     {
-        /* Initialize wrappers (to create their internal resources) ***********/
+        /* Initialize and assemble low-level resources ********************************************/
 
-        for ( size_t q = 0; q < m_agentWrappers.size(); q++ )
-        {
-            auto _btAgentWrapper = reinterpret_cast< TBtKinTreeAgentWrapper* >( m_agentWrappers[q] );
+        for ( auto _bodyAdapter : m_bodyAdapters )
+            m_btWorldPtr->addRigidBody( dynamic_cast< TBtBodyAdapter* >( _bodyAdapter )->btRigidBodyPtr() );
 
-            _btAgentWrapper->setBtWorld( m_btWorldPtr );
-            _btAgentWrapper->setParentSimulation( this );
-            _btAgentWrapper->initialize();
-            _btAgentWrapper->finishedCreatingResources();
-        }
+        // for ( size_t q = 0; q < m_agentWrappers.size(); q++ )
+        // {
+        //     auto _btAgentWrapper = reinterpret_cast< TBtKinTreeAgentWrapper* >( m_agentWrappers[q] );
 
-        for ( size_t q = 0; q < m_terrainGenWrappers.size(); q++ )
-        {
-            auto _btTerrainGenWrapper = reinterpret_cast< TBtTerrainGenWrapper* >( m_terrainGenWrappers[q] );
+        //     _btAgentWrapper->setBtWorld( m_btWorldPtr );
+        //     _btAgentWrapper->setParentSimulation( this );
+        //     _btAgentWrapper->initialize();
+        //     _btAgentWrapper->finishedCreatingResources();
+        // }
 
-            _btTerrainGenWrapper->setBtWorld( m_btWorldPtr );
-            _btTerrainGenWrapper->initialize();
-        }
+        // for ( size_t q = 0; q < m_terrainGenWrappers.size(); q++ )
+        // {
+        //     auto _btTerrainGenWrapper = reinterpret_cast< TBtTerrainGenWrapper* >( m_terrainGenWrappers[q] );
 
-        /**********************************************************************/
+        //     _btTerrainGenWrapper->setBtWorld( m_btWorldPtr );
+        //     _btTerrainGenWrapper->initialize();
+        // }
+
+        /******************************************************************************************/
 
         return true;
     }
@@ -156,19 +177,19 @@ namespace bullet {
         if ( !m_btWorldPtr )
             return;
 
-        for (int i = 0; i < m_btWorldPtr->getNumMultibodies(); i++)
-        {
-            btMultiBody* mb = m_btWorldPtr->getMultiBody(i);
-            for (int l = 0; l < mb->getNumLinks(); l++)
-            {
-                for (int d = 0; d < mb->getLink(l).m_dofCount; d++)
-                {
-                    double damping_coefficient = 0.1;
-                    double damping = -damping_coefficient * mb->getJointVelMultiDof(l)[d];
-                    mb->addJointTorqueMultiDof(l, d, damping);
-                }
-            }
-        }
+        // for (int i = 0; i < m_btWorldPtr->getNumMultibodies(); i++)
+        // {
+        //     btMultiBody* mb = m_btWorldPtr->getMultiBody(i);
+        //     for (int l = 0; l < mb->getNumLinks(); l++)
+        //     {
+        //         for (int d = 0; d < mb->getLink(l).m_dofCount; d++)
+        //         {
+        //             double damping_coefficient = 0.1;
+        //             double damping = -damping_coefficient * mb->getJointVelMultiDof(l)[d];
+        //             mb->addJointTorqueMultiDof(l, d, damping);
+        //         }
+        //     }
+        // }
 
         m_btWorldPtr->stepSimulation( 1.0f / 60.0f );
 
@@ -190,11 +211,10 @@ namespace bullet {
         // do nothing here, as call to wrappers is enough (made in base)
     }
 
-    extern "C" TISimulation* simulation_create( TScenario* scenarioPtr,
-                                                const std::string& workingDir )
+    extern "C" TISimulation* simulation_create( TScenario* scenarioPtr )
     {
         std::cout << "INFO> creating bullet simulation" << std::endl;
-        return new TBtSimulation( scenarioPtr, workingDir );
+        return new TBtSimulation( scenarioPtr );
     }
 
 }}
