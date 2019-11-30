@@ -74,6 +74,7 @@ include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/include/" )
 include_directories( "${CMAKE_SOURCE_DIR}/core/include" )
 include_directories( "${CMAKE_SOURCE_DIR}/core/ext/json" )
 include_directories( "${CMAKE_SOURCE_DIR}/core/ext/tinyxml2" )
+include_directories( "${CMAKE_SOURCE_DIR}/ext/spdlog/include" )
 
 # include bullet src, which can be found in either this repo's ext ...
 # folder, or in the master's repo ext folder

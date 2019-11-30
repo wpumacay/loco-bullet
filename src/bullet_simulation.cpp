@@ -213,7 +213,7 @@ namespace bullet {
 
     extern "C" TISimulation* simulation_create( TScenario* scenarioPtr )
     {
-        std::cout << "INFO> creating bullet simulation" << std::endl;
+        TYSOC_CORE_INFO( "Simulation-Bullet >>> creating simulation" );
         return new TBtSimulation( scenarioPtr );
     }
 
