@@ -38,6 +38,9 @@ namespace tysoc {
             _collisionAdapter->setCompoundShapeRef( m_btCompoundShape.get() );
             _collisionAdapter->setIndexInCompoundShape( m_btCompoundShape->getNumChildShapes() );
 
+            if ( !_collisionAdapter->collisionShape() )
+                continue;
+
             m_btCompoundShape->addChildShape( _collisionAdapter->collisionLocalTf(), 
                                               _collisionAdapter->collisionShape() );
         }

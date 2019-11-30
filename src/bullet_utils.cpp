@@ -162,6 +162,9 @@ namespace utils {
             std::vector< TVec3 > _vertices;
             _createMeshVertices( data, _vertices );
 
+            if ( _vertices.size() < 1 )
+                return nullptr;
+
             /* create a convex-hull shape, with vertices scaled by data.size (scale factors) */
             auto _convexHullShape = new btConvexHullShape();
             for ( auto _vertex : _vertices )
@@ -201,7 +204,50 @@ namespace utils {
 
     void _createMeshVertices( const TShapeData& data, std::vector< TVec3 >& vertices )
     {
+        auto _assimpScenePtr = aiImportFile( data.filename.c_str(),
+                                             aiProcessPreset_TargetRealtime_MaxQuality |
+                                             aiProcess_PreTransformVertices );
 
+        if ( !_assimpScenePtr )
+        {
+            TYSOC_CORE_ERROR( "Bullet-utils >>> Couldn't load mesh from path {0}", data.filename );
+            return;
+        }
+
+        // recursively copy the data from assimp to our buffer
+        _processAssimpNode( _assimpScenePtr, _assimpScenePtr->mRootNode, vertices );
+
+        // make sure we release the assimp resources
+        aiReleaseImport( _assimpScenePtr );
+    }
+
+    void _processAssimpNode( const aiScene* assimpScenePtr,
+                             aiNode* assimpNodePtr,
+                             std::vector< TVec3 >& vertices )
+    {
+        for ( size_t i = 0; i < assimpNodePtr->mNumMeshes; i++ )
+        {
+            aiMesh* _assimpMeshPtr = assimpScenePtr->mMeshes[ assimpNodePtr->mMeshes[i] ];
+            _processAssimpSubmesh( _assimpMeshPtr, vertices );
+        }
+
+        for ( size_t i = 0; i < assimpNodePtr->mNumChildren; i++ )
+        {
+            _processAssimpNode( assimpScenePtr,
+                                assimpNodePtr->mChildren[i], 
+                                vertices );
+        }
+    }
+
+    void _processAssimpSubmesh( aiMesh* assimpMeshPtr, std::vector< TVec3 >& vertices )
+    {
+        // grab all vertices, in spite of the ordering (in faces-tris, quads, ...)
+        for ( size_t i = 0; i < assimpMeshPtr->mNumVertices; i++ )
+        {
+            vertices.push_back( { assimpMeshPtr->mVertices[i].x,
+                                  assimpMeshPtr->mVertices[i].y,
+                                  assimpMeshPtr->mVertices[i].z } );
+        }
     }
 
     btScalar computeVolumeFromShape( btCollisionShape* colShape )
@@ -329,70 +375,6 @@ namespace utils {
         // all other cases have limited dofs, so the next body to the base ...
         // configures the required dofs
         return true;
-    }
-
-    void loadMesh( const std::string& filePath, TMeshObject& mesh )
-    {
-        auto _assimpScenePtr = aiImportFile( filePath.c_str(),
-                                             aiProcessPreset_TargetRealtime_MaxQuality );
-
-        if ( !_assimpScenePtr )
-        {
-            return;
-        }
-
-        // recursively copy the data from assimp to our data structure
-        _processAssimpNode( _assimpScenePtr, _assimpScenePtr->mRootNode, mesh );
-
-        // make sure we release the assimp resources
-        aiReleaseImport( _assimpScenePtr );
-    }
-
-    void _processAssimpNode( const aiScene* assimpScenePtr,
-                             aiNode* assimpNodePtr,
-                             TMeshObject& mesh )
-    {
-        for ( size_t i = 0; i < assimpNodePtr->mNumMeshes; i++ )
-        {
-            aiMesh* _assimpMeshPtr = assimpScenePtr->mMeshes[ assimpNodePtr->mMeshes[i] ];
-            _processAssimpMesh( _assimpMeshPtr, mesh );
-        }
-
-        for ( size_t i = 0; i < assimpNodePtr->mNumChildren; i++ )
-        {
-            _processAssimpNode( assimpScenePtr,
-                                assimpNodePtr->mChildren[i], 
-                                mesh );
-        }
-    }
-
-    void _processAssimpMesh( aiMesh* assimpMeshPtr, TMeshObject& mesh )
-    {
-        std::vector< TVec3 > _vertices;
-
-        for ( size_t i = 0; i < assimpMeshPtr->mNumVertices; i++ )
-        {
-            _vertices.push_back( TVec3( assimpMeshPtr->mVertices[i].x,
-                                        assimpMeshPtr->mVertices[i].y,
-                                        assimpMeshPtr->mVertices[i].z ) );
-        }
-
-        for ( size_t i = 0; i < assimpMeshPtr->mNumFaces; i++ )
-        {
-            aiFace _assimpFace = assimpMeshPtr->mFaces[i];
-            // grab only in tris. we are assuming it comes this way
-            // @TODO: Check this part as may have to support quads
-            for ( size_t j = 0; j < _assimpFace.mNumIndices / 3; j++ )
-            {
-                auto _p1 = _vertices[ _assimpFace.mIndices[ 3 * j + 0 ] ];
-                auto _p2 = _vertices[ _assimpFace.mIndices[ 3 * j + 1 ] ];
-                auto _p3 = _vertices[ _assimpFace.mIndices[ 3 * j + 2 ] ];
-
-                mesh.vertices.push_back( _p1 );
-                mesh.vertices.push_back( _p2 );
-                mesh.vertices.push_back( _p3 );
-            }
-        }
     }
 
     void logShapeInfo( btCollisionShape* colShape, bool isChild )

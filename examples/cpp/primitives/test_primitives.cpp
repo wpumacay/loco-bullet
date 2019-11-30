@@ -12,7 +12,7 @@ std::uniform_real_distribution<double>  g_randomUniformDistribution = std::unifo
 #define NUM_SPHERES 5
 #define NUM_CYLINDERS 5
 #define NUM_CAPSULES 5
-#define NUM_MESHES 0
+#define NUM_MESHES 5
 
 tysoc::TBody* createSimpleBody( const std::string& name, 
                                 const std::string& type, 

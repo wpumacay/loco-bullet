@@ -100,12 +100,37 @@ namespace utils {
     void _createEllipsoidVertices( const TShapeData& data, std::vector< TVec3 >& vertices );
 
     /**
-    *   Creates vertices of a given mesh, used for a convex-hull shape
+    *   Creates vertices of a given mesh, used for a convex-hull shape.
+    *   
+    *   A mesh is loaded using assimp from the given data (filename), and the
+    *   points in the mesh are all placed into a single buffer (even submeshes),
+    *   in accordance with the requirements for bullet convex-hull shapes, which
+    *   only requires all the points (not in order, nor in faces) to be passed to
+    *   compute a single convex-hull.
     *
     *   @param data         Shape data information of the mesh
     *   @param vertices     Buffer to place the mesh's data
     */
     void _createMeshVertices( const TShapeData& data, std::vector< TVec3 >& vertices );
+
+    /**
+    *   Internal helper function to process a node of the tree from an assimp scene
+    *
+    *   @param assimpScenePtr   Scene currently being processed
+    *   @param assimpNodePtr    Node from the assimp-scene to be processed
+    *   @param vertices         A reference to the buffer of vertices to be populated in-place
+    */
+    void _processAssimpNode( const aiScene* assimpScenePtr,
+                             aiNode* assimpNodePtr, 
+                             std::vector< TVec3 >& vertices );
+
+    /**
+    *   Internal helper function to process a submesh from an assimp-node
+    *
+    *   @param assimpMeshPtr    Mesh from the assimp-node to be processed
+    *   @param vertices         A reference to the buffer of vertices to be populated in-place
+    */
+    void _processAssimpSubmesh( aiMesh* assimpMeshPtr, std::vector< TVec3 >& vertices );
 
     /**
     *   Computes the volume of a given collision shape using their actual ...
@@ -132,33 +157,6 @@ namespace utils {
     *   @param kintree  TAgent object in question
     */
     bool shouldBaseBeFixed( TAgent* kinTreePtr );
-
-    /**
-    *   Loads a mesh from a given file
-    *
-    *   @param filePath     Full path to the file to be loaded
-    *   @param mesh         A reference to the mesh to be populated in-place
-    */
-    void loadMesh( const std::string& filePath, TMeshObject& mesh );
-
-    /**
-    *   Internal helper function to process a node of the tree from an assimp scene
-    *
-    *   @param assimpScenePtr   Scene currently being processed
-    *   @param assimpNodePtr    Node from the assimp-scene to be processed
-    *   @param mesh             A reference to the mesh to be populated in-place
-    */
-    void _processAssimpNode( const aiScene* assimpScenePtr,
-                             aiNode* assimpNodePtr, 
-                             TMeshObject& mesh );
-
-    /**
-    *   Internal helper function to process a mesh from an assimp-node
-    *
-    *   @param assimpMeshPtr    Mesh from the assimp-node to be processed
-    *   @param mesh             A reference to the mesh to be populated in-place
-    */
-    void _processAssimpMesh( aiMesh* assimpMeshPtr, TMeshObject& mesh );
 
     /**
     *   Logs the information of a collision shape
