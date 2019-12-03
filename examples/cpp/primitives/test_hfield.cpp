@@ -1,5 +1,4 @@
 
-#include <chrono>
 #include <runtime.h>
 #include <model_loader.h>
 #include <bullet_config.h>
@@ -8,17 +7,75 @@
 std::default_random_engine              g_randomGenerator;
 std::uniform_real_distribution<double>  g_randomUniformDistribution = std::uniform_real_distribution<double>( -2.0, 2.0 );
 
-#define NUM_BOXES       10
-#define NUM_SPHERES     10
-#define NUM_CYLINDERS   10
-#define NUM_CAPSULES    10
-#define NUM_MESHES      10
+#define NUM_BOXES       1
+#define NUM_SPHERES     1
+#define NUM_CYLINDERS   1
+#define NUM_CAPSULES    1
+#define NUM_MESHES      1
 
-tysoc::TBody* createSimpleBody( const std::string& name, 
-                                const std::string& type, 
-                                const tysoc::TVec3& size = { 0.0f, 0.0f, 0.0f },
-                                const tysoc::TVec3& pos = { 0.0f, 0.0f, 0.0f },
-                                const tysoc::TVec3& rot = { 0.0f, 0.0f, 0.0f } )
+tysoc::TBody* createHfield( const std::string& name, const tysoc::TVec3& position )
+{
+    const int nxSamples = 50;
+    const int nySamples = 50;
+    const float xExtent = 5.0f;
+    const float yExtent = 5.0f;
+
+    float _maxHeight = 0.0f;
+    std::vector< float > _heightData;
+    for ( size_t i = 0; i < nxSamples; i++ )
+    {
+        for ( size_t j = 0; j < nySamples; j++ )
+        {
+            float _x = xExtent * ( ( (float) i ) / nxSamples - 0.5f );
+            float _y = yExtent * ( ( (float) j ) / nySamples - 0.5f );
+
+            float _z = 10.0f * ( _x * _x + _y * _y ) / ( xExtent * xExtent + yExtent * yExtent );
+
+            // float _u = _x * 2.0f;
+            // float _v = _y * 2.0f;
+            // float _z = std::cos( std::sqrt( ( _u * _u + _v * _v ) ) );
+
+            _heightData.push_back( _z );
+
+            // book keeping: save the max-height for later normalization
+            _maxHeight = std::max( _z, _maxHeight );
+        }
+    }
+
+    if ( _maxHeight > 0.0f )
+    {
+        for ( size_t i = 0; i < _heightData.size(); i++ )
+            _heightData[i] = _heightData[i] / _maxHeight;
+    }
+
+    tysoc::TCollisionData _collisionData;
+    _collisionData.type = tysoc::eShapeType::HFIELD;
+    _collisionData.size = { xExtent, yExtent, _maxHeight };
+    _collisionData.hdata.nWidthSamples = nxSamples;
+    _collisionData.hdata.nDepthSamples = nySamples;
+    _collisionData.hdata.heightData = _heightData;
+
+    tysoc::TVisualData _visualData;
+    _visualData.type = tysoc::eShapeType::HFIELD;
+    _visualData.size = { xExtent, yExtent, _maxHeight };
+    _visualData.hdata.nWidthSamples = nxSamples;
+    _visualData.hdata.nDepthSamples = nySamples;
+    _visualData.hdata.heightData = _heightData;
+
+    _visualData.ambient     = { 0.2f, 0.3f, 0.4f };
+    _visualData.diffuse     = { 0.2f, 0.3f, 0.4f };
+    _visualData.specular    = { 0.2f, 0.3f, 0.4f };
+    _visualData.shininess   = 50.0f;
+
+    tysoc::TBodyData _bodyData;
+    _bodyData.dyntype = tysoc::eDynamicsType::STATIC;
+    _bodyData.collision = _collisionData;
+    _bodyData.visual = _visualData;
+
+    return new tysoc::TBody( name, _bodyData, position, tysoc::TMat3() );;
+}
+
+tysoc::TBody* createSimpleBody( const std::string& name, const std::string& type )
 {
     tysoc::TCollisionData _collisionData;
     tysoc::TVisualData _visualData;
@@ -68,13 +125,7 @@ tysoc::TBody* createSimpleBody( const std::string& name,
     }
     else 
     {
-        return nullptr;
-    }
-
-    if ( size != tysoc::TVec3( 0.0f, 0.0f, 0.0f ) )
-    {
-        _collisionData.size = size;
-        _visualData.size = size;
+        return NULL;
     }
 
     _collisionData.density = 1000.0;
@@ -87,37 +138,21 @@ tysoc::TBody* createSimpleBody( const std::string& name,
     _visualData.specular = { 0.7, 0.5, 0.3 };
     _visualData.shininess = 50.0f;
 
-    if ( size != tysoc::TVec3( 0.0f, 0.0f, 0.0f ) )
-    {
-        _visualData.ambient = { 0.3, 0.5, 0.7 };
-        _visualData.diffuse = { 0.3, 0.5, 0.7 };
-        _visualData.specular = { 0.3, 0.5, 0.7 };
-    }
-
     _bodyData.dyntype = tysoc::eDynamicsType::DYNAMIC;
     _bodyData.collision = _collisionData;
     _bodyData.visual = _visualData;
-
-    if ( size != tysoc::TVec3( 0.0f, 0.0f, 0.f ) )
-        _bodyData.dyntype = tysoc::eDynamicsType::STATIC;
 
     // choose a random position
     tysoc::TVec3 _position;
     _position.x = g_randomUniformDistribution( g_randomGenerator );
     _position.y = g_randomUniformDistribution( g_randomGenerator );
-    _position.z = 3.0;
+    _position.z = 3.0f;
 
     // choose a random orientation
     tysoc::TVec3 _rotation;
-    _rotation.x = TYSOC_PI * g_randomUniformDistribution( g_randomGenerator ) / 4.;
-    _rotation.y = TYSOC_PI * g_randomUniformDistribution( g_randomGenerator ) / 4.;
-    _rotation.z = TYSOC_PI * g_randomUniformDistribution( g_randomGenerator ) / 4.;
-
-    if ( size != tysoc::TVec3( 0.0f, 0.0f, 0.0f ) )
-    {
-        _position = pos;
-        _rotation = rot;
-    }
+    // _rotation.x = TYSOC_PI / 4.0f;
+    // _rotation.y = TYSOC_PI / 4.0f;
+    // _rotation.z = TYSOC_PI / 4.0f;
 
     // create the abstract body
     auto _bodyPtr = new tysoc::TBody( name, 
@@ -130,19 +165,10 @@ tysoc::TBody* createSimpleBody( const std::string& name,
 
 int main()
 {
-    // auto _terrainGenStatic = new tysoc::TStaticTerrainGenerator( "terrainGen0" );
-    // _terrainGenStatic->createPrimitive( "plane", 
-    //                                     { 10.0f, 10.0f, 0.2f }, 
-    //                                     { 0.0f, 0.0f, 0.0f },
-    //                                     tysoc::TMat3(),
-    //                                     { 0.2f, 0.3f, 0.4f },
-    //                                     "built_in_chessboard" );
-
     auto _scenario = new tysoc::TScenario();
-    // _scenario->addTerrainGenerator( _terrainGenStatic );
 
-    auto _plane = createSimpleBody( std::string( "plane_0" ), "box", { 10.0f, 10.0f, 1.0f }, { 0.0f, 0.0f, -0.5f } );
-    _scenario->addBody( _plane );
+    auto _hfield = createHfield( "terrain_0", { 0.0f, 0.0f, 0.0f } );
+    _scenario->addBody( _hfield );
 
     for ( size_t i = 0; i < NUM_BOXES; i++ )
     {
@@ -187,27 +213,24 @@ int main()
 
     while ( _visualizer->isActive() )
     {
-        auto _start = std::chrono::high_resolution_clock::now();
-
         if ( _visualizer->checkSingleKeyPress( tysoc::keys::KEY_P ) )
             _simulation->togglePause();
-        else if ( _visualizer->checkSingleKeyPress( tysoc::keys::KEY_R ) )
-            _simulation->reset();
-        else if ( _visualizer->checkSingleKeyPress( tysoc::keys::KEY_ESCAPE ) )
+
+        if ( _visualizer->checkSingleKeyPress( tysoc::keys::KEY_ESCAPE ) )
             break;
+
+        if ( _visualizer->checkSingleKeyPress( tysoc::keys::KEY_R ) )
+            _simulation->reset();
 
         _simulation->step();
 
         _visualizer->update();
-
-        auto _duration = std::chrono::duration_cast<std::chrono::milliseconds>( std::chrono::high_resolution_clock::now() - _start );
-        TYSOC_TRACE( "step-time: {0} ||| fps: {1}", _duration.count(), 1000.0 / _duration.count() );
     }
 
     _runtime->destroyVisualizer();
-    // _runtime->destroySimulation();
-    _visualizer = nullptr;
-    _simulation = nullptr;
+    _runtime->destroySimulation();
+    _visualizer = NULL;
+    _simulation = NULL;
 
     return 0;
 }

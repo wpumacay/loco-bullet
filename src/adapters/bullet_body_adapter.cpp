@@ -31,18 +31,18 @@ namespace tysoc {
 
         m_btCompoundShape = std::unique_ptr< btCompoundShape >( new btCompoundShape() );
 
-        auto _collisions = m_bodyPtr->collisions();
-        for ( auto _collision : _collisions )
+        auto _collider = m_bodyPtr->collision();
+        if ( _collider && _collider->adapter() )
         {
-            auto _collisionAdapter = dynamic_cast< TBtCollisionAdapter* >( _collision->adapter() );
+            auto _collisionAdapter = dynamic_cast< TBtCollisionAdapter* >( _collider->adapter() );
             _collisionAdapter->setCompoundShapeRef( m_btCompoundShape.get() );
             _collisionAdapter->setIndexInCompoundShape( m_btCompoundShape->getNumChildShapes() );
 
-            if ( !_collisionAdapter->collisionShape() )
-                continue;
-
-            m_btCompoundShape->addChildShape( _collisionAdapter->collisionLocalTf(), 
-                                              _collisionAdapter->collisionShape() );
+            if ( _collisionAdapter->collisionShape() )
+            {
+                m_btCompoundShape->addChildShape( _collisionAdapter->collisionLocalTf(), 
+                                                  _collisionAdapter->collisionShape() );
+            }
         }
 
         /* create rigid body (using maximal-coordinates bullet API) *******************************/

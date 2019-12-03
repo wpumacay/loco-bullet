@@ -38,11 +38,11 @@ namespace bullet {
 
             m_bodyAdapters.push_back( _bodyAdapter );
 
-            auto _collisions = _body->collisions();
-            for ( auto _collision : _collisions )
+            auto _collider = _body->collision();
+            if ( _collider )
             {
-                auto _collisionAdapter = new TBtCollisionAdapter( _collision );
-                _collision->setAdapter( _collisionAdapter );
+                auto _collisionAdapter = new TBtCollisionAdapter( _collider );
+                _collider->setAdapter( _collisionAdapter );
 
                 m_collisionAdapters.push_back( _collisionAdapter );
             }
