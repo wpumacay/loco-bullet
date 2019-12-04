@@ -76,22 +76,20 @@ namespace bullet {
         if ( m_btDebugDrawer )
         {
             delete m_btDebugDrawer;
-            m_btDebugDrawer = NULL;
+            m_btDebugDrawer = nullptr;
         }
 
         if ( m_btFilterCallback )
         {
             // @TODO: Should delete here?
-            m_btFilterCallback = NULL;
+            m_btFilterCallback = nullptr;
         }
 
         if ( m_btWorldPtr )
         {
             // Remove all constraints
             for ( int q = m_btWorldPtr->getNumConstraints() - 1; q >= 0; q-- )
-            {
                 m_btWorldPtr->removeConstraint( m_btWorldPtr->getConstraint( q ) );
-            }
 
             // Remove all
             for ( int q = m_btWorldPtr->getNumCollisionObjects() - 1; q >= 0; q-- )
@@ -101,39 +99,37 @@ namespace bullet {
 
                 // if it's a rigid body (see upcast), then proceed
                 if ( _body && _body->getMotionState() )
-                {
                     delete _body->getMotionState();
-                }
+
                 m_btWorldPtr->removeCollisionObject( _obj );
-                delete _obj;
             }
             
             delete m_btWorldPtr;
-            m_btWorldPtr = NULL;
+            m_btWorldPtr = nullptr;
         }
 
         if ( m_btConstraintSolverPtr )
         {
             delete m_btConstraintSolverPtr;
-            m_btConstraintSolverPtr = NULL;
+            m_btConstraintSolverPtr = nullptr;
         }
 
         if ( m_btBroadphaseInterfacePtr )
         {
             delete m_btBroadphaseInterfacePtr;
-            m_btBroadphaseInterfacePtr = NULL;
+            m_btBroadphaseInterfacePtr = nullptr;
         }
 
         if ( m_btCollisionDispatcherPtr )
         {
             delete m_btCollisionDispatcherPtr;
-            m_btCollisionDispatcherPtr = NULL;
+            m_btCollisionDispatcherPtr = nullptr;
         }
 
         if ( m_btCollisionConfigurationPtr )
         {
             delete m_btCollisionConfigurationPtr;
-            m_btCollisionConfigurationPtr = NULL;
+            m_btCollisionConfigurationPtr = nullptr;
         }
     }
 

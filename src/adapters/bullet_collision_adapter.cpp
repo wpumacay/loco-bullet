@@ -10,22 +10,17 @@ namespace tysoc
         : TICollisionAdapter( collision )
     {
         m_btCollisionShape = nullptr;
-        m_btCompoundShapeRef = nullptr;
-        m_indexInCompoundShape = -1;
-        m_btCollisionLocalTf.setIdentity();
     }
 
     TBtCollisionAdapter::~TBtCollisionAdapter()
     {
         m_btCollisionShape = nullptr;
-        m_btCompoundShapeRef = nullptr;
-        m_indexInCompoundShape = -1;
     }
 
     void TBtCollisionAdapter::build()
     {
         // create collider according to user-data
-        m_btCollisionShape = std::unique_ptr< btCollisionShape >( utils::createCollisionShape( m_collisionPtr->data() ) );
+        m_btCollisionShape = std::unique_ptr< btCollisionShape >( utils::createCollisionShape( m_collisionPtr->dataRef() ) );
         // save initial size for resizing purposes
         m_size0 = m_size = m_collisionPtr->data().size;
         // set this as base scale for resizing
@@ -46,43 +41,17 @@ namespace tysoc
 
     void TBtCollisionAdapter::setLocalPosition( const TVec3& position )
     {
-        if ( !m_btCompoundShapeRef || m_indexInCompoundShape == -1 )
-            return; // @todo: add logs
-
-        // @todo: should recompute inertia matrix in body-adapter, as the collider defines the mass + inertia
-        //        of a component of the body (in case custom inertia-props were not given).
-
-        btTransform _newTransform( m_btCompoundShapeRef->getChildTransform( m_indexInCompoundShape ) );
-        _newTransform.setOrigin( utils::toBtVec3( position ) );
-
-        m_btCompoundShapeRef->updateChildTransform( m_indexInCompoundShape, _newTransform, true );
+        // @nop: not required for now
     }
 
     void TBtCollisionAdapter::setLocalRotation( const TMat3& rotation )
     {
-        if ( !m_btCompoundShapeRef || m_indexInCompoundShape == -1 )
-            return; // @todo: add logs
-
-        // @todo: should recompute inertia matrix in body-adapter, as the collider defines the mass + inertia
-        //        of a component of the body (in case custom inertia-props were not given).
-
-        btTransform _newTransform( m_btCompoundShapeRef->getChildTransform( m_indexInCompoundShape ) );
-        _newTransform.setBasis( utils::toBtMat3( rotation ) );
-
-        m_btCompoundShapeRef->updateChildTransform( m_indexInCompoundShape, _newTransform, true );
+        // @nop: not required for now
     }
 
     void TBtCollisionAdapter::setLocalTransform( const TMat4& transform )
     {
-        if ( !m_btCompoundShapeRef || m_indexInCompoundShape == -1 )
-            return; // @todo: add logs
-
-        // @todo: should recompute inertia matrix in body-adapter, as the collider defines the mass + inertia
-        //        of a component of the body (in case custom inertia-props were not given).
-
-        btTransform _newTransform = utils::toBtTransform( transform );
-
-        m_btCompoundShapeRef->updateChildTransform( m_indexInCompoundShape, _newTransform, true );
+        // @nop: not required for now
     }
 
     void TBtCollisionAdapter::changeSize( const TVec3& newSize )

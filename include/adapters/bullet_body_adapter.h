@@ -37,12 +37,13 @@ namespace tysoc {
 
         btRigidBody* btRigidBodyPtr() const { return m_btRigidBody.get(); }
 
-        btCompoundShape* btCompoundShapePtr() const { return m_btCompoundShape.get(); }
-
     private :
 
         std::unique_ptr< btRigidBody > m_btRigidBody;
-        std::unique_ptr< btCompoundShape > m_btCompoundShape;
+
+        bool m_isHeightfield;
+        btTransform m_btHfieldTfCompensation;
+        btTransform m_btHfieldTfCompensationInv;
 
     };
 

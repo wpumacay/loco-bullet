@@ -5,20 +5,20 @@
 #include <random>
 
 std::default_random_engine              g_randomGenerator;
-std::uniform_real_distribution<double>  g_randomUniformDistribution = std::uniform_real_distribution<double>( -2.0, 2.0 );
+std::uniform_real_distribution<double>  g_randomUniformDistribution = std::uniform_real_distribution<double>( -4.0, 4.0 );
 
-#define NUM_BOXES       1
-#define NUM_SPHERES     1
-#define NUM_CYLINDERS   1
-#define NUM_CAPSULES    1
-#define NUM_MESHES      1
+#define NUM_BOXES       2
+#define NUM_SPHERES     2
+#define NUM_CYLINDERS   2
+#define NUM_CAPSULES    2
+#define NUM_MESHES      2
 
 tysoc::TBody* createHfield( const std::string& name, const tysoc::TVec3& position )
 {
     const int nxSamples = 50;
     const int nySamples = 50;
-    const float xExtent = 5.0f;
-    const float yExtent = 5.0f;
+    const float xExtent = 10.0f;
+    const float yExtent = 10.0f;
 
     float _maxHeight = 0.0f;
     std::vector< float > _heightData;
@@ -29,11 +29,12 @@ tysoc::TBody* createHfield( const std::string& name, const tysoc::TVec3& positio
             float _x = xExtent * ( ( (float) i ) / nxSamples - 0.5f );
             float _y = yExtent * ( ( (float) j ) / nySamples - 0.5f );
 
-            float _z = 10.0f * ( _x * _x + _y * _y ) / ( xExtent * xExtent + yExtent * yExtent );
+            // float _z = 10.0f * ( _x * _x + _y * _y ) / ( xExtent * xExtent + yExtent * yExtent );
+            // float _z = 1.0f;
 
-            // float _u = _x * 2.0f;
-            // float _v = _y * 2.0f;
-            // float _z = std::cos( std::sqrt( ( _u * _u + _v * _v ) ) );
+            float _u = _x * 2.0f;
+            float _v = _y * 2.0f;
+            float _z = ( 1.0f + std::cos( std::sqrt( ( _u * _u + _v * _v ) ) ) );
 
             _heightData.push_back( _z );
 

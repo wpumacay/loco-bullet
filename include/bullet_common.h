@@ -3,6 +3,8 @@
 
 // main bullet API
 #include <btBulletDynamicsCommon.h>
+// heightfield terrain functionality
+#include <BulletCollision/CollisionShapes/btHeightfieldTerrainShape.h>
 // Multibody bullet functionality
 #include <BulletDynamics/Featherstone/btMultiBody.h>
 #include <BulletDynamics/Featherstone/btMultiBodyConstraint.h>

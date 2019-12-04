@@ -179,8 +179,17 @@ namespace utils {
         }
         else if ( data.type == eShapeType::HFIELD )
         {
-            // @todo: implement using btHeightfieldTerrainShape
-            _colShape = nullptr;
+            const int _upAxis = 2; // up = z-axis
+            _colShape = new btHeightfieldTerrainShape( data.hdata.nWidthSamples,
+                                                       data.hdata.nDepthSamples,
+                                                       (void*)data.hdata.heightData.data(), 
+                                                       btScalar( 1.0f ),
+                                                       btScalar( 0.0f ), btScalar( data.size.z ), 
+                                                       _upAxis, PHY_FLOAT, false );
+            _colShape->setLocalScaling( toBtVec3( { data.size.x / ( data.hdata.nWidthSamples - 1 ),
+                                                    data.size.y / ( data.hdata.nDepthSamples - 1 ),
+                                                    data.size.z } ) );
+            dynamic_cast< btHeightfieldTerrainShape* >( _colShape )->setFlipTriangleWinding( true );
         }
         else if ( data.type == eShapeType::NONE )
         {

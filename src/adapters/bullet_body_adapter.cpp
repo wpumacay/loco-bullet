@@ -8,13 +8,14 @@ namespace tysoc {
     TBtBodyAdapter::TBtBodyAdapter( TBody* bodyPtr )
         : TIBodyAdapter( bodyPtr )
     {
-        m_btCompoundShape = nullptr;
         m_btRigidBody = nullptr;
+        m_btHfieldTfCompensation.setIdentity();
+        m_btHfieldTfCompensationInv.setIdentity();
+        m_isHeightfield = false;
     }
 
     TBtBodyAdapter::~TBtBodyAdapter()
     {
-        m_btCompoundShape = nullptr;
         m_btRigidBody = nullptr;
     }
 
@@ -29,20 +30,33 @@ namespace tysoc {
         /* create a compound shape for the colliders (even for a single-collider, as it might
            have relative-transform to the parent body) ********************************************/
 
-        m_btCompoundShape = std::unique_ptr< btCompoundShape >( new btCompoundShape() );
-
         auto _collider = m_bodyPtr->collision();
-        if ( _collider && _collider->adapter() )
+        if ( !_collider )
         {
-            auto _collisionAdapter = dynamic_cast< TBtCollisionAdapter* >( _collider->adapter() );
-            _collisionAdapter->setCompoundShapeRef( m_btCompoundShape.get() );
-            _collisionAdapter->setIndexInCompoundShape( m_btCompoundShape->getNumChildShapes() );
+            TYSOC_CORE_ERROR( "Bullet body-adapter >>> body {0} has no collider", m_bodyPtr->name() );
+            return;
+        }
 
-            if ( _collisionAdapter->collisionShape() )
-            {
-                m_btCompoundShape->addChildShape( _collisionAdapter->collisionLocalTf(), 
-                                                  _collisionAdapter->collisionShape() );
-            }
+        auto _colliderAdapter = _collider->adapter();
+        if ( !_colliderAdapter )
+        {
+            TYSOC_CORE_ERROR( "Bullet body-adapter >>> body {0} has collider with no adapter", m_bodyPtr->name() );
+            return;
+        }
+
+        auto _collisionShape = dynamic_cast< TBtCollisionAdapter* >( _colliderAdapter )->collisionShape();
+        if ( !_collisionShape )
+        {
+            TYSOC_CORE_ERROR( "Bullet body-adapter >>> body {0} has collider without valid btCollisionShape", m_bodyPtr->name() );
+            return;
+        }
+
+        // create compensation transform if the collider is a hfield shape
+        if ( _collider->shape() == eShapeType::HFIELD )
+        {
+            m_isHeightfield = true;
+            m_btHfieldTfCompensation.setOrigin( utils::toBtVec3( { 0.0f, 0.0f, 0.5f * _collider->data().size.z * _collider->data().size.z } ) );
+            m_btHfieldTfCompensationInv = m_btHfieldTfCompensation.inverse();
         }
 
         /* create rigid body (using maximal-coordinates bullet API) *******************************/
@@ -51,26 +65,30 @@ namespace tysoc {
         auto _data = m_bodyPtr->data();
 
         // rigid-body start configuration. @todo: check if local when adding support for joints and linkages
-        auto _rbMotionState = new btDefaultMotionState( utils::toBtTransform( m_bodyPtr->tf0() ) );
+        btDefaultMotionState* _rbMotionState = nullptr;
+        if ( _collider->shape() == eShapeType::HFIELD ) 
+            _rbMotionState = new btDefaultMotionState( utils::toBtTransform( m_bodyPtr->tf0() ) * m_btHfieldTfCompensation );
+        else
+            _rbMotionState = new btDefaultMotionState( utils::toBtTransform( m_bodyPtr->tf0() ) );
 
         // inertial properties (compute only if dynamic). @todo: compound uses aabb approximation, should handle compound differently
-        btScalar _rbInertiaMass = 0.0f;
+        btScalar _rbMass = 0.0f;
         btVector3 _rbInertiaDiag;
         if ( m_bodyPtr->dyntype() == eDynamicsType::DYNAMIC )
         {
             if ( _data.inertialData.mass != 0.0f )
-                _rbInertiaMass = _data.inertialData.mass;
+                _rbMass = _data.inertialData.mass;
             else
-                _rbInertiaMass = utils::computeVolumeFromShape( m_btCompoundShape.get() ) * TYSOC_DEFAULT_DENSITY;
+                _rbMass = utils::computeVolumeFromShape( _collisionShape ) * TYSOC_DEFAULT_DENSITY;
 
-            if ( _rbInertiaMass != 0.0f )
-                m_btCompoundShape->calculateLocalInertia( _rbInertiaMass, _rbInertiaDiag );
+            if ( _rbMass != 0.0f )
+                _collisionShape->calculateLocalInertia( _rbMass, _rbInertiaDiag );
         }
 
         // finally, create the bullet-rigid-body (maximal-coordinates)
-        btRigidBody::btRigidBodyConstructionInfo _rbConstructionInfo( _rbInertiaMass, 
+        btRigidBody::btRigidBodyConstructionInfo _rbConstructionInfo( _rbMass, 
                                                                       _rbMotionState, 
-                                                                      m_btCompoundShape.get(), 
+                                                                      _collisionShape, 
                                                                       _rbInertiaDiag );
         m_btRigidBody = std::unique_ptr< btRigidBody >( new btRigidBody( _rbConstructionInfo ) );
         m_btRigidBody->forceActivationState( DISABLE_DEACTIVATION );
@@ -78,9 +96,10 @@ namespace tysoc {
 
     void TBtBodyAdapter::reset()
     {
-        assert( m_bodyPtr && m_btRigidBody );
+        if ( !m_btRigidBody )
+            return;
 
-        m_btRigidBody->setWorldTransform( utils::toBtTransform( m_bodyPtr->tf0() ) );
+        m_btRigidBody->setWorldTransform( utils::toBtTransform( m_bodyPtr->tf0() ) * m_btHfieldTfCompensation );
         m_btRigidBody->setLinearVelocity( btVector3( 0.0f, 0.0f, 0.0f ) );
         m_btRigidBody->setAngularVelocity( btVector3( 0.0f, 0.0f, 0.0f ) );
         m_btRigidBody->forceActivationState( DISABLE_DEACTIVATION );
@@ -93,47 +112,68 @@ namespace tysoc {
 
     void TBtBodyAdapter::setPosition( const TVec3& position )
     {
-        assert( m_bodyPtr && m_btRigidBody );
+        if ( !m_btRigidBody )
+            return;
 
-        // @todo: validate for parent body when supporting multi-links
         m_btRigidBody->getWorldTransform().setOrigin( utils::toBtVec3( position ) );
+
+        if ( m_isHeightfield )
+            m_btRigidBody->setWorldTransform( m_btRigidBody->getWorldTransform() * m_btHfieldTfCompensation );
     }
 
     void TBtBodyAdapter::setRotation( const TMat3& rotation )
     {
-        assert( m_bodyPtr && m_btRigidBody );
+        if ( !m_btRigidBody )
+            return;
 
-        // @todo: validate for parent body when supporting multi-links
         m_btRigidBody->getWorldTransform().setBasis( utils::toBtMat3( rotation ) );
+
+        if ( m_isHeightfield )
+            m_btRigidBody->setWorldTransform( m_btRigidBody->getWorldTransform() * m_btHfieldTfCompensation );
     }
 
     void TBtBodyAdapter::setTransform( const TMat4& transform )
     {
-        assert( m_bodyPtr && m_btRigidBody );
+        if ( !m_btRigidBody )
+            return;
 
-        // @todo: validate for parent body when supporting multi-links
         m_btRigidBody->setWorldTransform( utils::toBtTransform( transform ) );
+
+        if ( m_isHeightfield )
+            m_btRigidBody->setWorldTransform( m_btRigidBody->getWorldTransform() * m_btHfieldTfCompensation );
     }
 
     void TBtBodyAdapter::getPosition( TVec3& dstPosition )
     {
-        assert( m_bodyPtr && m_btRigidBody );
+        if ( !m_btRigidBody )
+            return;
 
-        dstPosition = utils::fromBtVec3( m_btRigidBody->getWorldTransform().getOrigin() );
+        if ( m_isHeightfield )
+            dstPosition = utils::fromBtVec3( ( m_btRigidBody->getWorldTransform() * m_btHfieldTfCompensationInv ).getOrigin() );
+        else
+            dstPosition = utils::fromBtVec3( ( m_btRigidBody->getWorldTransform() ).getOrigin() );
     }
 
     void TBtBodyAdapter::getRotation( TMat3& dstRotation )
     {
-        assert( m_bodyPtr && m_btRigidBody );
+        if ( !m_btRigidBody )
+            return;
 
-        dstRotation = utils::fromBtMat3( m_btRigidBody->getWorldTransform().getBasis() );
+        if ( m_isHeightfield )
+            dstRotation = utils::fromBtMat3( ( m_btRigidBody->getWorldTransform() * m_btHfieldTfCompensationInv ).getBasis() );
+        else
+            dstRotation = utils::fromBtMat3( ( m_btRigidBody->getWorldTransform() ).getBasis() );
     }
 
     void TBtBodyAdapter::getTransform( TMat4& dstTransform )
     {
-        assert( m_bodyPtr && m_btRigidBody );
+        if ( !m_btRigidBody )
+            return;
 
-        dstTransform = utils::fromBtTransform( m_btRigidBody->getWorldTransform() );
+        if ( m_isHeightfield )
+            dstTransform = utils::fromBtTransform( ( m_btRigidBody->getWorldTransform() * m_btHfieldTfCompensationInv ) );
+        else
+            dstTransform = utils::fromBtTransform( ( m_btRigidBody->getWorldTransform() ) );
     }
 
     extern "C" TIBodyAdapter* simulation_createBodyAdapter( TBody* bodyPtr )
