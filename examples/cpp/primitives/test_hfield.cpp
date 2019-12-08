@@ -5,7 +5,7 @@
 #include <random>
 
 std::default_random_engine              g_randomGenerator;
-std::uniform_real_distribution<double>  g_randomUniformDistribution = std::uniform_real_distribution<double>( -4.0, 4.0 );
+std::uniform_real_distribution<double>  g_randomUniformDistribution = std::uniform_real_distribution<double>( -3.0, 3.0 );
 
 #define NUM_BOXES       2
 #define NUM_SPHERES     2
@@ -17,20 +17,22 @@ tysoc::TBody* createHfield( const std::string& name, const tysoc::TVec3& positio
 {
     const int nxSamples = 50;
     const int nySamples = 50;
-    const float xExtent = 10.0f;
+    const float xExtent = 15.0f;
     const float yExtent = 10.0f;
 
     float _maxHeight = 0.0f;
     std::vector< float > _heightData;
-    for ( size_t i = 0; i < nxSamples; i++ )
+    // recall we use row-major format (i <> y <> depth <> row, j <> x <> width <> column)
+    for ( size_t i = 0; i < nySamples; i++ )
     {
-        for ( size_t j = 0; j < nySamples; j++ )
+        for ( size_t j = 0; j < nxSamples; j++ )
         {
-            float _x = xExtent * ( ( (float) i ) / nxSamples - 0.5f );
-            float _y = yExtent * ( ( (float) j ) / nySamples - 0.5f );
+            float _x = xExtent * ( ( (float) j ) / nxSamples - 0.5f );
+            float _y = yExtent * ( ( (float) i ) / nySamples - 0.5f );
 
-            // float _z = 10.0f * ( _x * _x + _y * _y ) / ( xExtent * xExtent + yExtent * yExtent );
-            // float _z = 1.0f;
+            //// float _z = 20.0f * ( _x * _x + _y * _y ) / ( xExtent * xExtent + yExtent * yExtent );
+
+            //// float _z = 1.0f;
 
             float _u = _x * 2.0f;
             float _v = _y * 2.0f;
@@ -42,7 +44,7 @@ tysoc::TBody* createHfield( const std::string& name, const tysoc::TVec3& positio
             _maxHeight = std::max( _z, _maxHeight );
         }
     }
-
+    TYSOC_TRACE( "max-height: {0}", _maxHeight );
     if ( _maxHeight > 0.0f )
     {
         for ( size_t i = 0; i < _heightData.size(); i++ )
@@ -62,6 +64,7 @@ tysoc::TBody* createHfield( const std::string& name, const tysoc::TVec3& positio
     _visualData.hdata.nWidthSamples = nxSamples;
     _visualData.hdata.nDepthSamples = nySamples;
     _visualData.hdata.heightData = _heightData;
+    _visualData.texture = "built_in_chessboard";
 
     _visualData.ambient     = { 0.2f, 0.3f, 0.4f };
     _visualData.diffuse     = { 0.2f, 0.3f, 0.4f };
