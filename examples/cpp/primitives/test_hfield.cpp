@@ -5,22 +5,21 @@
 #include <random>
 
 std::default_random_engine              g_randomGenerator;
-std::uniform_real_distribution<double>  g_randomUniformDistribution = std::uniform_real_distribution<double>( -3.0, 3.0 );
+std::uniform_real_distribution<double>  g_randomUniformDistribution = std::uniform_real_distribution<double>( -4.0, 4.0 );
 
-#define NUM_BOXES       2
-#define NUM_SPHERES     2
-#define NUM_CYLINDERS   2
-#define NUM_CAPSULES    2
-#define NUM_MESHES      2
+#define NUM_BOXES       5
+#define NUM_SPHERES     5
+#define NUM_CYLINDERS   5
+#define NUM_CAPSULES    5
+#define NUM_MESHES      5
 
 tysoc::TBody* createHfield( const std::string& name, const tysoc::TVec3& position )
 {
     const int nxSamples = 50;
     const int nySamples = 50;
-    const float xExtent = 15.0f;
+    const float xExtent = 10.0f;
     const float yExtent = 10.0f;
 
-    float _maxHeight = 0.0f;
     std::vector< float > _heightData;
     // recall we use row-major format (i <> y <> depth <> row, j <> x <> width <> column)
     for ( size_t i = 0; i < nySamples; i++ )
@@ -30,37 +29,24 @@ tysoc::TBody* createHfield( const std::string& name, const tysoc::TVec3& positio
             float _x = xExtent * ( ( (float) j ) / nxSamples - 0.5f );
             float _y = yExtent * ( ( (float) i ) / nySamples - 0.5f );
 
-            //// float _z = 20.0f * ( _x * _x + _y * _y ) / ( xExtent * xExtent + yExtent * yExtent );
-
             //// float _z = 1.0f;
-
-            float _u = _x * 2.0f;
-            float _v = _y * 2.0f;
-            float _z = ( 1.0f + std::cos( std::sqrt( ( _u * _u + _v * _v ) ) ) );
+            float _z = 15.0f * ( _x * _x + _y * _y ) / ( xExtent * xExtent + yExtent * yExtent );
+            //// float _z = ( 1.0f + std::cos( std::sqrt( ( ( 2.0f * _x ) * ( 2.0f * _x ) + ( 2.0f * _y ) * ( 2.0f * _y ) ) ) ) );
 
             _heightData.push_back( _z );
-
-            // book keeping: save the max-height for later normalization
-            _maxHeight = std::max( _z, _maxHeight );
         }
-    }
-    TYSOC_TRACE( "max-height: {0}", _maxHeight );
-    if ( _maxHeight > 0.0f )
-    {
-        for ( size_t i = 0; i < _heightData.size(); i++ )
-            _heightData[i] = _heightData[i] / _maxHeight;
     }
 
     tysoc::TCollisionData _collisionData;
     _collisionData.type = tysoc::eShapeType::HFIELD;
-    _collisionData.size = { xExtent, yExtent, _maxHeight };
+    _collisionData.size = { xExtent, yExtent, 1.5f };
     _collisionData.hdata.nWidthSamples = nxSamples;
     _collisionData.hdata.nDepthSamples = nySamples;
     _collisionData.hdata.heightData = _heightData;
 
     tysoc::TVisualData _visualData;
     _visualData.type = tysoc::eShapeType::HFIELD;
-    _visualData.size = { xExtent, yExtent, _maxHeight };
+    _visualData.size = { xExtent, yExtent, 1.5f };
     _visualData.hdata.nWidthSamples = nxSamples;
     _visualData.hdata.nDepthSamples = nySamples;
     _visualData.hdata.heightData = _heightData;
@@ -150,13 +136,13 @@ tysoc::TBody* createSimpleBody( const std::string& name, const std::string& type
     tysoc::TVec3 _position;
     _position.x = g_randomUniformDistribution( g_randomGenerator );
     _position.y = g_randomUniformDistribution( g_randomGenerator );
-    _position.z = 3.0f;
+    _position.z = 5.0f;
 
     // choose a random orientation
     tysoc::TVec3 _rotation;
-    // _rotation.x = TYSOC_PI / 4.0f;
-    // _rotation.y = TYSOC_PI / 4.0f;
-    // _rotation.z = TYSOC_PI / 4.0f;
+    _rotation.x = TYSOC_PI / 4.0f;
+    _rotation.y = TYSOC_PI / 4.0f;
+    _rotation.z = TYSOC_PI / 4.0f;
 
     // create the abstract body
     auto _bodyPtr = new tysoc::TBody( name, 

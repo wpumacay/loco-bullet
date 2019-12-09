@@ -55,7 +55,11 @@ namespace tysoc {
         if ( _collider->shape() == eShapeType::HFIELD )
         {
             m_isHeightfield = true;
-            m_btHfieldTfCompensation.setOrigin( utils::toBtVec3( { 0.0f, 0.0f, 0.5f * _collider->data().size.z * _collider->data().size.z } ) );
+            const float _zMax = *std::max_element( _collider->dataRef().hdata.heightData.begin(), _collider->dataRef().hdata.heightData.end() );
+            const float _zScale = _collider->data().size.z;
+            const float _zOffset = 0.5f * ( _zMax * _zScale ) * _zScale;
+            TYSOC_CORE_TRACE( "zoffset: {0}", _zOffset );
+            m_btHfieldTfCompensation.setOrigin( utils::toBtVec3( { 0.0f, 0.0f, _zOffset } ) );
             m_btHfieldTfCompensationInv = m_btHfieldTfCompensation.inverse();
         }
 

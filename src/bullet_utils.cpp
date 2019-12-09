@@ -56,41 +56,7 @@ namespace utils {
 
     btCollisionShape* createCollisionShape( const std::string& type, const TVec3& size )
     {
-//         btCollisionShape* _collisionShapePtr = NULL;
-// 
-//         auto _modSize = size;
-// 
-//         if ( type == "box" )
-//         {
-//             _collisionShapePtr = new btBoxShape( btVector3( 0.5, 0.5, 0.5 ) );
-//         }
-//         else if ( type == "sphere" )
-//         {
-//             _collisionShapePtr = new btSphereShape( 1.0 );
-//         }
-//         else if ( type == "capsule" )
-//         {
-//             _modSize = { size.x, size.x, size.y };
-//             _collisionShapePtr = new btCapsuleShapeZ( 1.0, 1.0 );
-//         }
-//         else if ( type == "cylinder" )
-//         {
-//             _modSize = { size.x, size.x, size.y };
-//             _collisionShapePtr = new btCylinderShapeZ( btVector3( 1.0, 1.0, 0.5 ) );
-//         }
-//         else if ( type == "none" )
-//         {
-//             _collisionShapePtr = new btCompoundShape();
-//         }
-// 
-//         if ( !_collisionShapePtr )
-//             std::cout << "ERROR> could not create shape of type: " << type << std::endl;
-//         else if ( type != "plane" )
-//             _collisionShapePtr->setLocalScaling( utils::toBtVec3( _modSize ) );
-// 
-//         return _collisionShapePtr;
-
-        btCollisionShape* _colShape = NULL;
+        btCollisionShape* _colShape = nullptr;
 
         if ( type == "box" )
             _colShape = new btBoxShape( btVector3( 0.5 * size.x, 0.5 * size.y, 0.5 * size.z ) );
@@ -107,10 +73,10 @@ namespace utils {
         else if ( type == "none" )
             _colShape = new btCompoundShape();
         else
-            std::cout << "ERROR> shape: " << type << " not supported" << std::endl;
+            TYSOC_CORE_ERROR( "Shape {0} not supported yet", type );
 
         if ( !_colShape )
-            return NULL;
+            return nullptr;
 
         _colShape->setMargin( 0.0f );
 
@@ -180,12 +146,18 @@ namespace utils {
         else if ( data.type == eShapeType::HFIELD )
         {
             const int _upAxis = 2; // up = z-axis
+            // compute max-height (required to compute aabb)
+            float _zMax = *std::max_element( data.hdata.heightData.begin(), data.hdata.heightData.end() );
+            //// TYSOC_CORE_TRACE( "zmax: {0}, zscale: {1}", _zMax, data.size.z );
             _colShape = new btHeightfieldTerrainShape( data.hdata.nWidthSamples,
                                                        data.hdata.nDepthSamples,
                                                        (void*)data.hdata.heightData.data(), 
                                                        btScalar( 1.0f ),
-                                                       btScalar( 0.0f ), btScalar( data.size.z ), 
-                                                       _upAxis, PHY_FLOAT, false );
+                                                       btScalar( 0.0f ),
+                                                       btScalar( _zMax * data.size.z ), // max-z (for aabb) is z-max * z-scale
+                                                       _upAxis,
+                                                       PHY_FLOAT,
+                                                       false );
             _colShape->setLocalScaling( toBtVec3( { data.size.x / ( data.hdata.nWidthSamples - 1 ),
                                                     data.size.y / ( data.hdata.nDepthSamples - 1 ),
                                                     data.size.z } ) );
@@ -197,11 +169,11 @@ namespace utils {
         }
         else
         {
-            std::cout << "ERROR> shape: " << tysoc::toString( data.type ) << " not supported" << std::endl;
+            TYSOC_CORE_ERROR( "Bullet-utils >>> Shape {0} is not supported", data.type );
         }
 
         if ( _colShape )
-            _colShape->setMargin( 0.0f );
+            _colShape->setMargin( 0.001f );
 
         return _colShape;
     }
@@ -263,7 +235,7 @@ namespace utils {
     {
         if ( !colShape )
         {
-            std::cout << "ERROR> no collision shape provided for mass calculation" << std::endl;
+            TYSOC_CORE_ERROR( "No collision shape provided for mass calculation, returning 0.0" );
             return btScalar( 0.0f );
         }
 
@@ -446,7 +418,7 @@ namespace utils {
     *          Singleton File-Logger functionality            *
     ***********************************************************/
 
-    TBtLogger* TBtLogger::_instance = NULL;
+    TBtLogger* TBtLogger::_instance = nullptr;
 
     void TBtLogger::log( const std::string& message )
     {
@@ -460,7 +432,7 @@ namespace utils {
     {
         if ( !TBtLogger::_instance )
         {
-            std::cout << "WARNING> hey, there was no logger to save" << std::endl;
+            TYSOC_CORE_WARN( "There's no file-logger to use yet" );
             return;
         }
 
@@ -564,7 +536,7 @@ namespace utils {
 
     TBtDebugDrawer::TBtDebugDrawer()
     {
-        m_visualizerPtr = NULL;
+        m_visualizerPtr = nullptr;
 
         // m_debugMode = btIDebugDraw::DBG_DrawWireframe | 
         //               btIDebugDraw::DBG_DrawAabb |
@@ -579,7 +551,7 @@ namespace utils {
 
     TBtDebugDrawer::~TBtDebugDrawer()
     {
-        m_visualizerPtr = NULL;
+        m_visualizerPtr = nullptr;
     }
 
     void TBtDebugDrawer::setVisualizer( TIVisualizer* visualizerPtr )
@@ -611,7 +583,7 @@ namespace utils {
 
     void TBtDebugDrawer::reportErrorWarning( const char* warningString )
     {
-        std::cout << "WARNING> BtDebugDrawer says: " << warningString << std::endl;
+        TYSOC_CORE_ERROR( "BtDebugDrawer says: {0}", warningString );
     }
 
     void TBtDebugDrawer::draw3dText( const btVector3& location, const char* textString )
