@@ -19,12 +19,13 @@ pytysoc.egg-info/
 tysoc_bullet.egg-info/
 
 # dependencies-exclusions
-ext/cat1
-ext/imgui
-ext/spdlog
-ext/pybind11
+ext/tiny_math*
+ext/tiny_renderer*
+ext/imgui*
+ext/spdlog*
+ext/pybind11*
 ext/bullet*
-core/
+core*
 
 # specific file-exclusions
 model_info.txt
