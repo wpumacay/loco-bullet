@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
-GIT_DEPS_REPO=(tiny_math pybind11 imgui spdlog tiny_renderer tysoc bullet3)
-GIT_DEPS_USER=(wpumacay pybind wpumacay gabime wpumacay wpumacay bulletphysics)
-GIT_DEPS_BRANCH=(tysoc-stable master docking v1.x tysoc-stable master master)
-GIT_DEPS_DEST=(ext/tiny_math ext/pybind11 ext/imgui ext/spdlog ext/tiny_renderer core ext/bullet3)
+GIT_DEPS_REPO=(tiny_math pybind11 imgui spdlog tiny_renderer tysoc googletest bullet3)
+GIT_DEPS_USER=(wpumacay RobotLocomotion wpumacay gabime wpumacay wpumacay google bulletphysics)
+GIT_DEPS_BRANCH=(master drake docking v1.x master master master master)
+GIT_DEPS_DEST=(ext/tiny_math ext/pybind11 ext/imgui ext/spdlog ext/tiny_renderer core ext/googletest ext/bullet3)
 
-for i in {0..6}
+for i in {0..7}
 do
     USER=${GIT_DEPS_USER[$i]}
     REPO=${GIT_DEPS_REPO[$i]}

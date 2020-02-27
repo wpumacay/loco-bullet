@@ -1,111 +1,131 @@
 cmake_minimum_required( VERSION 3.0.0 )
 
-project( tysocBullet )
+#### aka TysocBullet project
+project( LocoBullet )
 
-# in case nobody set the project type, set it (parent project might have set it for all)
+set( CMAKE_CXX_STANDARD 11 )
+set( CMAKE_CXX_FLAGS "-g ${CMAKE_CXX_FLAGS}" )
+
+# In case nobody set the project type, set it (parent project might have set it for all)
 if ( NOT CMAKE_BUILD_TYPE )
     set( CMAKE_BUILD_TYPE Debug )
 endif()
 
-set( CMAKE_CXX_STANDARD 11 )
-set( CMAKE_CXX_FLAGS " -g ${CMAKE_CXX_FLAGS}" )
-
 if ( NOT CMAKE_LIBRARY_OUTPUT_DIRECTORY )
-    message( "TYSOCBULLET> Sending generated libs to OWN build directory" )
+    message( "LOCO::BULLET >>> Sending generated libs to OWN build directory" )
     set( CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/libs" )
 else()
-    message( "TYSOCBULLET> Sending generated libs to EXTERNAL build directory" )
+    message( "LOCO::BULLET >>> Sending generated libs to EXTERNAL build directory" )
 endif()
+message( "LOCO::BULLET >>> LIBRARY_OUT_DIR: ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}" )
 
-message( "TYSOCBULLET> LIBRARY_OUT_DIR: ${CMAKE_LIBRARY_OUTPUT_DIRECTORY}" )
-
-set( TYSOCBULLET_IS_MASTER_PROJECT OFF )
+set( LOCO_BULLET_IS_MASTER_PROJECT OFF )
 if( CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR )
-    message( "TYSOCBULLET> Configuring as MASTER project" )
-    set( TYSOCBULLET_IS_MASTER_PROJECT ON )
+    message( "LOCO::BULLET >>> Configuring as MASTER project" )
+    set( LOCO_BULLET_IS_MASTER_PROJECT ON )
 else()
-    message( "TYSOCBULLET> Configuring as CHILD project" )
+    message( "LOCO::BULLET >>> Configuring as CHILD project" )
 endif()
 
-# Add core targets only if master project. If not, parent project must configure it
-if ( TYSOCBULLET_IS_MASTER_PROJECT )
-    # Configure dependencies for tysoc
+# Add external dependencies only if master project. If not, parent project must configure it
+if ( LOCO_BULLET_IS_MASTER_PROJECT )
+    # Setup and add core library (Loco::Core)
+    set( LOCO_CORE_BUILD_WINDOWED_VISUALIZER ON CACHE BOOL "Build Loco::Core OpenGL-based windowed(GLFW) visualizer" )
+    set( LOCO_CORE_BUILD_HEADLESS_VISUALIZER ON CACHE BOOL "Build Loco::Core OpenGL-based headless(EGL) visualizer" )
+    set( LOCO_CORE_BUILD_DOCS OFF CACHE BOOL "Don't build Loco::Core documentation" )
+    set( LOCO_CORE_BUILD_EXAMPLES ON CACHE BOOL "Build Loco::Core C/C++ examples" )
+    set( LOCO_CORE_BUILD_TESTS ON CACHE BOOL "Don't build Loco::Core C/C++ tests" )
+    set( LOCO_CORE_BUILD_PYTHON_BINDINGS ON CACHE BOOL "Build Loco::Core Python-bindings" )
+    set( LOCO_CORE_BUILD_WITH_LOGS ON CACHE BOOL "Build Loco::Core using logging functionality" )
+    set( LOCO_CORE_BUILD_WITH_TRACK_ALLOCS ON CACHE BOOL "Build Loco::Core using tracking of objects allocations|deallocations" )
+
+    # Resources path: if not given by other project|setup-script, then use the default (this project's core/res folder location)
+    if ( NOT LOCO_CORE_RESOURCES_PATH )
+        set( LOCO_CORE_RESOURCES_PATH "${CMAKE_SOURCE_DIR}/core/res/" )
+    endif()
+    # Libraries path: if not given by other project|setup-script, then use the default (this project's build-libs folder location)
+    if ( NOT LOCO_CORE_LIBRARIES_PATH )
+        set( LOCO_CORE_LIBRARIES_PATH "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/" )
+    endif()
+
     add_subdirectory( ext )
-    # Configure core functionality
     add_subdirectory( core )
+
+    # Repeat some required definitions (for bullet-backend target and tests targets) ###############
+    if ( LOCO_CORE_BUILD_WITH_LOGS OR ( CMAKE_BUILD_TYPE STREQUAL Debug ) )
+        add_definitions( -DLOCO_CORE_USE_LOGS )
+    endif()
+    if ( LOCO_CORE_BUILD_WITH_TRACK_ALLOCS OR ( CMAKE_BUILD_TYPE STREQUAL Debug ) )
+        add_definitions( -DLOCO_CORE_USE_TRACK_ALLOCS )
+    endif()
+
+    add_definitions( -DLOCO_PATH_RESOURCES="${LOCO_CORE_RESOURCES_PATH}" )
+    if ( WIN32 )
+        add_definitions( -DLOCO_BACKEND_GRAPHICS_GLVIZ_GLFW="${LOCO_CORE_LIBRARIES_PATH}liblocoRenderingGlvizGLFW.dll" )
+        add_definitions( -DLOCO_BACKEND_GRAPHICS_GLVIZ_EGL="${LOCO_CORE_LIBRARIES_PATH}liblocoRenderingGlvizEGL.dll" )
+        add_definitions( -DLOCO_BACKEND_PHYSICS_MUJOCO="${LOCO_CORE_LIBRARIES_PATH}liblocoPhysicsMUJOCO.dll" )
+        add_definitions( -DLOCO_BACKEND_PHYSICS_BULLET="${LOCO_CORE_LIBRARIES_PATH}liblocoPhysicsBULLET.dll" )
+        add_definitions( -DLOCO_BACKEND_PHYSICS_RAISIM="${LOCO_CORE_LIBRARIES_PATH}liblocoPhysicsRAISIM.dll" )
+        add_definitions( -DLOCO_BACKEND_PHYSICS_DART="${LOCO_CORE_LIBRARIES_PATH}liblocoPhysicsDART.dll" )
+    elseif ( UNIX )
+        if ( APPLE )
+            add_definitions( -DLOCO_BACKEND_GRAPHICS_GLVIZ_GLFW="${LOCO_CORE_LIBRARIES_PATH}liblocoRenderingGlvizGLFW.dylib" )
+            add_definitions( -DLOCO_BACKEND_GRAPHICS_GLVIZ_EGL="${LOCO_CORE_LIBRARIES_PATH}liblocoRenderingGlvizEGL.dylib" )
+            add_definitions( -DLOCO_BACKEND_PHYSICS_MUJOCO="${LOCO_CORE_LIBRARIES_PATH}liblocoPhysicsMUJOCO.dylib" )
+            add_definitions( -DLOCO_BACKEND_PHYSICS_BULLET="${LOCO_CORE_LIBRARIES_PATH}liblocoPhysicsBULLET.dylib" )
+            add_definitions( -DLOCO_BACKEND_PHYSICS_RAISIM="${LOCO_CORE_LIBRARIES_PATH}liblocoPhysicsRAISIM.dylib" )
+            add_definitions( -DLOCO_BACKEND_PHYSICS_DART="${LOCO_CORE_LIBRARIES_PATH}liblocoPhysicsDART.dylib" )
+        else ()
+            add_definitions( -DLOCO_BACKEND_GRAPHICS_GLVIZ_GLFW="${LOCO_CORE_LIBRARIES_PATH}liblocoRenderingGlvizGLFW.so" )
+            add_definitions( -DLOCO_BACKEND_GRAPHICS_GLVIZ_EGL="${LOCO_CORE_LIBRARIES_PATH}liblocoRenderingGlvizEGL.so" )
+            add_definitions( -DLOCO_BACKEND_PHYSICS_MUJOCO="${LOCO_CORE_LIBRARIES_PATH}liblocoPhysicsMUJOCO.so" )
+            add_definitions( -DLOCO_BACKEND_PHYSICS_BULLET="${LOCO_CORE_LIBRARIES_PATH}liblocoPhysicsBULLET.so" )
+            add_definitions( -DLOCO_BACKEND_PHYSICS_RAISIM="${LOCO_CORE_LIBRARIES_PATH}liblocoPhysicsRAISIM.so" )
+            add_definitions( -DLOCO_BACKEND_PHYSICS_DART="${LOCO_CORE_LIBRARIES_PATH}liblocoPhysicsDART.so" )
+        endif ()
+    endif()
+    ################################################################################################
 endif()
 
-# Configure tysocBullet project ************************************************
+set( LOCO_BULLET_SRCS
+     "${CMAKE_CURRENT_SOURCE_DIR}/src/loco_common_bullet.cpp"
+     "${CMAKE_CURRENT_SOURCE_DIR}/src/loco_simulation_bullet.cpp" )
 
-# Set the lbirary paths as props to allow usage from other projects
-set_property( GLOBAL PROPERTY PROP_TYSOC_BACKEND_PHYSICS_BULLET "${CMAKE_LIBRARY_OUTPUT_DIRECTORY}/libtysocPhysicsBullet.so" )
+set( LOCO_BULLET_INCLUDE_DIRS
+     "${CMAKE_CURRENT_SOURCE_DIR}/include"
+     "${CMAKE_SOURCE_DIR}/core/include"
+     "${CMAKE_SOURCE_DIR}/core/ext/json"
+     "${CMAKE_SOURCE_DIR}/core/ext/tinyxml2"
+     "${CMAKE_SOURCE_DIR}/ext/spdlog/include"
+     "${CMAKE_SOURCE_DIR}/ext/tiny_math/include"
+     "${CMAKE_SOURCE_DIR}/ext/bullet3/src" )
+include_directories( ${LOCO_BULLET_INCLUDE_DIRS} )
 
-# get properties defined in core library
-get_property( VAR_TYSOC_PATH_RESOURCES              GLOBAL PROPERTY PROP_TYSOC_PATH_RESOURCES )
-get_property( VAR_TYSOC_PATH_WORKING_DIR            GLOBAL PROPERTY PROP_TYSOC_PATH_WORKING_DIR )
-get_property( VAR_TYSOC_PATH_MJCF_TEMPLATES         GLOBAL PROPERTY PROP_TYSOC_PATH_MJCF_TEMPLATES )
-get_property( VAR_TYSOC_PATH_URDF_TEMPLATES         GLOBAL PROPERTY PROP_TYSOC_PATH_URDF_TEMPLATES )
-get_property( VAR_TYSOC_PATH_RLSIM_TEMPLATES        GLOBAL PROPERTY PROP_TYSOC_PATH_RLSIM_TEMPLATES )
-get_property( VAR_TYSOC_PATH_MESHES_DIR             GLOBAL PROPERTY PROP_TYSOC_PATH_MESHES_DIR )
-get_property( VAR_TYSOC_BACKEND_GRAPHICS_GLVIZ      GLOBAL PROPERTY PROP_TYSOC_BACKEND_GRAPHICS_GLVIZ )
-get_property( VAR_TYSOC_BACKEND_PHYSICS_BULLET      GLOBAL PROPERTY PROP_TYSOC_BACKEND_PHYSICS_BULLET )
-
-# repeat definitions from core library, as they are not propagated up
-add_definitions( -DTYSOC_PATH_RESOURCES="${VAR_TYSOC_PATH_RESOURCES}" )
-add_definitions( -DTYSOC_PATH_WORKING_DIR="${VAR_TYSOC_PATH_WORKING_DIR}" )
-add_definitions( -DTYSOC_PATH_MJCF_TEMPLATES="${VAR_TYSOC_PATH_MJCF_TEMPLATES}" )
-add_definitions( -DTYSOC_PATH_URDF_TEMPLATES="${VAR_TYSOC_PATH_URDF_TEMPLATES}" )
-add_definitions( -DTYSOC_PATH_RLSIM_TEMPLATES="${VAR_TYSOC_PATH_RLSIM_TEMPLATES}" )
-add_definitions( -DTYSOC_PATH_MESHES_DIR="${VAR_TYSOC_PATH_MESHES_DIR}" )
-add_definitions( -DTYSOC_BACKEND_GRAPHICS_GLVIZ="${VAR_TYSOC_BACKEND_GRAPHICS_GLVIZ}" )
-add_definitions( -DTYSOC_BACKEND_PHYSICS_BULLET="${VAR_TYSOC_BACKEND_PHYSICS_BULLET}" )
-
-# test all properties
-message( "PROP_TYSOC_PATH_RESOURCES         : ${VAR_TYSOC_PATH_RESOURCES}" )
-message( "PROP_TYSOC_PATH_WORKING_DIR       : ${VAR_TYSOC_PATH_WORKING_DIR}" )
-message( "PROP_TYSOC_PATH_MJCF_TEMPLATES    : ${VAR_TYSOC_PATH_MJCF_TEMPLATES}" )
-message( "PROP_TYSOC_PATH_URDF_TEMPLATES    : ${VAR_TYSOC_PATH_URDF_TEMPLATES}" )
-message( "PROP_TYSOC_PATH_RLSIM_TEMPLATES   : ${VAR_TYSOC_PATH_RLSIM_TEMPLATES}" )
-message( "PROP_TYSOC_PATH_MESHES_DIR        : ${VAR_TYSOC_PATH_MESHES_DIR}" )
-message( "PROP_TYSOC_BACKEND_GRAPHICS_GLVIZ : ${VAR_TYSOC_BACKEND_GRAPHICS_GLVIZ}" )
-message( "PROP_TYSOC_BACKEND_PHYSICS_BULLET : ${VAR_TYSOC_BACKEND_PHYSICS_BULLET}" )
-
-# grab all the sources for compilation
-file( GLOB_RECURSE TYSOCBULLET_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/*.cpp" )
-message( "TYSOCBULLET_SOURCES: ${TYSOCBULLET_SOURCES}" )
-
-# add this project headers to includepath
-include_directories( "${CMAKE_CURRENT_SOURCE_DIR}/include/" )
-
-# include_dirs for tysoc-core dependency: either case (master or non-master project) ... 
-# we should find it at root level
-include_directories( "${CMAKE_SOURCE_DIR}/core/include" )
-include_directories( "${CMAKE_SOURCE_DIR}/core/ext/json" )
-include_directories( "${CMAKE_SOURCE_DIR}/core/ext/tinyxml2" )
-include_directories( "${CMAKE_SOURCE_DIR}/ext/spdlog/include" )
-
-# include bullet src, which can be found in either this repo's ext ...
-# folder, or in the master's repo ext folder
-include_directories( "${CMAKE_SOURCE_DIR}/ext/bullet3/src" )
-
+# Assimp is required to load meshes and do some computations on them
 find_package( assimp REQUIRED )
 
-# Configure the resulting library
-add_library( tysocPhysicsBullet SHARED
-             ${TYSOCBULLET_SOURCES} )
-target_link_libraries( tysocPhysicsBullet
-                       tysocCore
+add_library( locoPhysicsBULLET SHARED
+             ${LOCO_BULLET_SRCS} )
+target_link_libraries( locoPhysicsBULLET
+                       loco_core
                        assimp
-                       BulletDynamics 
-                       BulletCollision 
+                       BulletDynamics
+                       BulletCollision
                        LinearMath )
 
-# ******************************************************************************
+if ( LOCO_BULLET_IS_MASTER_PROJECT AND LOCO_CORE_BUILD_TESTS )
+    enable_testing()
+    add_subdirectory( tests )
+endif()
 
-# Only generate samples if not using as dependency
-if ( TYSOCBULLET_IS_MASTER_PROJECT )
-    # Configure examples
-    add_subdirectory( examples )
-    ## # Configure tests
-    ## add_subdirectory( tests )
+if ( LOCO_BULLET_IS_MASTER_PROJECT )
+    message( "|---------------------------------------------------------|" )
+    message( "|      LOCOMOTION SIMULATION TOOLKIT (Bullet backend)     |" )
+    message( "|---------------------------------------------------------|" )
+    message( "
+                                   .--~~,__   (Bullet)
+                      :-....,-------`~~'._.'
+                       `-,,,  ,_      ;'~U'
+                        _,-' ,'`-__; '--.
+                       (_/'~~      ''''(;" )
 endif()

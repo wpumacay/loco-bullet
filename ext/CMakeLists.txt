@@ -1,29 +1,55 @@
+message( "LOCO::BULLET >>> Configuring external dependencies" )
 
-# Configure dependencies
-message( "Configuring external dependencies" )
-
-# build spdlog as a shared library
 set( SPDLOG_BUILD_SHARED ON CACHE BOOL "Build shared library" )
-
-# build tiny_math without examples
 set( TINYMATH_BUILD_DOCS OFF CACHE BOOL "Don't build tinymath's documentation" )
 set( TINYMATH_BUILD_EXAMPLES OFF CACHE BOOL "Don't build tinymath's examples" )
 set( TINYMATH_BUILD_PYTHON_BINDINGS ON CACHE BOOL "Build tinymath's python-bindings" )
-
-# build tiny_renderer without examples
-set( CAT1_BUILD_EXAMPLES OFF CACHE BOOL "Do not build tiny_renderer examples" )
 
 add_subdirectory( imgui )
 add_subdirectory( spdlog )
 add_subdirectory( pybind11 )
 add_subdirectory( tiny_math )
-add_subdirectory( tiny_renderer )
 
-# remove bullet examples from build
+if ( LOCO_CORE_BUILD_WINDOWED_VISUALIZER OR LOCO_CORE_BUILD_HEADLESS_VISUALIZER )
+    if ( LOCO_CORE_BUILD_WINDOWED_VISUALIZER )
+        set( TINYRENDERER_BUILD_WINDOWED_GLFW ON CACHE BOOL "Build tiny-renderer windowed-backend (glfw)" )
+    else()
+        set( TINYRENDERER_BUILD_WINDOWED_GLFW OFF CACHE BOOL "Don't build tiny-renderer windowed-bckend (glfw)" )
+    endif()
+
+    if ( LOCO_CORE_BUILD_HEADLESS_VISUALIZER )
+        set( TINYRENDERER_BUILD_HEADLESS_EGL ON CACHE BOOL "Build tiny-renderer headless-backend (egl)" )
+    else()
+        set( TINYRENDERER_BUILD_HEADLESS_EGL OFF CACHE BOOL "Don't build tiny-renderer headless-backend (egl)" )
+    endif()
+
+    set( TINYRENDERER_BUILD_DOCS OFF CACHE BOOL "Don't build tinyrenderer's documentation" )
+    set( TINYRENDERER_BUILD_EXAMPLES OFF CACHE BOOL "Don't build tinyrenderer's examples" )
+    set( TINYRENDERER_BUILD_PYTHON_BINDINGS OFF CACHE BOOL "Don't build tinyrenderer's python bindings" )
+
+    if ( LOCO_CORE_BUILD_WITH_LOGS OR ( CMAKE_BUILD_TYPE STREQUAL Debug ) )
+        set( TINYRENDERER_BUILD_WITH_LOGS ON CACHE BOOL "Build tinyrenderer with logs enabled" )
+    else()
+        set( TINYRENDERER_BUILD_WITH_LOGS OFF CACHE BOOL "Don't build tinyrenderer with logs enabled" )
+    endif()
+
+    if ( LOCO_CORE_BUILD_WITH_TRACK_ALLOCS OR ( CMAKE_BUILD_TYPE STREQUAL Debug ) )
+        set( TINYRENDERER_BUILD_WITH_TRACK_ALLOCS ON CACHE BOOL "Build tinyrenderer with logs enabled" )
+    else()
+        set( TINYRENDERER_BUILD_WITH_TRACK_ALLOCS OFF CACHE BOOL "Don't build tinyrenderer with logs enabled" )
+    endif()
+
+    add_subdirectory( tiny_renderer )
+endif()
+
+if ( LOCO_CORE_BUILD_TESTS )
+    add_subdirectory( googletest )
+endif()
+
 set( BUILD_BULLET2_DEMOS OFF CACHE BOOL "Do not build bullet-2 demos" )
 set( BUILD_CPU_DEMOS OFF CACHE BOOL "Do not build bullet cpu demos" )
 set( BUILD_EGL OFF CACHE BOOL "Do not build bullet-EGL" )
-set( USE_DOUBLE_PRECISION OFF CACHE BOOL "Do not build with double precision support (@TODO: fixing TScalar->double)" )
+set( USE_DOUBLE_PRECISION OFF CACHE BOOL "Do not build with double precision support" )
 set( BUILD_EXTRAS OFF CACHE BOOL "Do not build bullet-extras" )
 set( BUILD_CLSOCKET OFF CACHE BOOL "Do not build bullet-clsocket" )
 set( BUILD_OPENGL3_DEMOS OFF CACHE BOOL "Do not build bullet-opengl3-demos" )

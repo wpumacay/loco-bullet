@@ -1,19 +1,20 @@
 # file-exclusions
-*.so
-*.a
-*.out
 *.o
+*.out
 *.lib
-*.swp
-*.swo
 *.pyc
 *.pyo
+*.swp
+*.swo
+*.so
+*.so*
+*.a
 *.ini
+*.log
 
 # folder-exclusions
 build/
 .vscode/
-_legacy/
 dist/
 pytysoc.egg-info/
 tysoc_bullet.egg-info/
@@ -24,8 +25,15 @@ ext/tiny_renderer*
 ext/imgui*
 ext/spdlog*
 ext/pybind11*
+ext/googletest*
 ext/bullet*
 core*
 
 # specific file-exclusions
 model_info.txt
+
+# logging .json files
+sess_*.json
+
+# @todo: delete once porting+refactoring has been completed
+## _legacy/
