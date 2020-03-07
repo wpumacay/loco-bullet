@@ -4,6 +4,46 @@
 namespace loco {
 namespace bullet {
 
+    /***********************************************************************************************
+    *                                   Bullet DebugDrawer Impl.                                   *
+    ***********************************************************************************************/
+
+    TBulletDebugDrawer::TBulletDebugDrawer( TIVisualizer* visualizerRef )
+        : m_visualizerRef( visualizerRef )
+    {
+        LOCO_CORE_ASSERT( m_visualizerRef, "TBulletDebugDrawer >>> visualizer-ref must be valid (given nullptr)" );
+
+        m_debug_mode = btIDebugDraw::DBG_DrawWireframe |
+                       btIDebugDraw::DBG_DrawConstraints |
+                       btIDebugDraw::DBG_DrawContactPoints;
+    }
+
+    TBulletDebugDrawer::~TBulletDebugDrawer()
+    {
+        m_visualizerRef = nullptr;
+    }
+
+    void TBulletDebugDrawer::drawLine( const btVector3& from, const btVector3& to, const btVector3& color )
+    {
+        m_visualizerRef->DrawLine( vec3_from_bt( from ), vec3_from_bt( to ), vec3_from_bt( color ) );
+    }
+
+    void TBulletDebugDrawer::drawContactPoint( const btVector3& point_on_b, const btVector3& normal_on_b,
+                                               btScalar distance, int life_time, const btVector3& color )
+    {
+        m_visualizerRef->DrawLine( vec3_from_bt( point_on_b ), vec3_from_bt( point_on_b + normal_on_b * distance ), vec3_from_bt( color ) );
+        m_visualizerRef->DrawLine( vec3_from_bt( point_on_b ), vec3_from_bt( point_on_b + normal_on_b * 0.01 ), { 0.0, 0.0, 0.0 } );
+    }
+
+    void TBulletDebugDrawer::reportErrorWarning( const char* warning_string )
+    {
+        LOCO_CORE_WARN( "TBulletDebugDrawer::reportErrorWarning >>> {0}", warning_string );
+    }
+
+    /***********************************************************************************************
+    *                                   Bullet Simulation Impl.                                    *
+    ***********************************************************************************************/
+
     TBulletSimulation::TBulletSimulation( TScenario* scenarioRef )
         : TISimulation( scenarioRef )
     {
@@ -19,6 +59,7 @@ namespace bullet {
                                                                 m_bulletConstraintSolver.get(),
                                                                 m_bulletCollisionConfiguration.get() );
         m_bulletDynamicsWorld->setGravity( btVector3( 0, 0, -9.81 ) );
+        m_bulletDebugDrawer = nullptr;
 
     #if defined( LOCO_CORE_USE_TRACK_ALLOCS )
         if ( TLogger::IsActive() )
@@ -35,13 +76,20 @@ namespace bullet {
         m_bulletCollisionDispatcher = nullptr;
         m_bulletCollisionConfiguration = nullptr;
         m_bulletDynamicsWorld = nullptr;
+        m_bulletDebugDrawer = nullptr;
+
+    #if defined( LOCO_CORE_USE_TRACK_ALLOCS )
+        if ( TLogger::IsActive() )
+            LOCO_CORE_TRACE( "Loco::Allocs: Destroyed TBulletSimulation @ {0}", loco::PointerToHexAddress( this ) );
+        else
+            std::cout << "Loco::Allocs: Destroyed TBulletSimulation @ " << loco::PointerToHexAddress( this ) << std::endl;
+    #endif
     }
 
     bool TBulletSimulation::_InitializeInternal()
     {
-        // Collect xml-resources from the adapters, assemble them into a single xml-object, and save to disk
+        // Collect bullet-resources from the adapters, assemble them and add to the bullet-world
         // @todo: implement-me ...
-
 
         LOCO_CORE_TRACE( "Bullet-backend >>> broadphase         : {0}", typeid( *m_bulletBroadphase ).name() );
         LOCO_CORE_TRACE( "Bullet-backend >>> collision config.  : {0}", typeid( *m_bulletCollisionConfiguration ).name() );
@@ -70,12 +118,19 @@ namespace bullet {
 
     void TBulletSimulation::_PostStepInternal()
     {
-        // @todo: run loco-contact-manager here to grabs all detected contacts
+        // @todo: run loco-contact-manager here to grab all detected contacts
+
+        m_bulletDynamicsWorld->debugDrawWorld();
     }
 
     void TBulletSimulation::_ResetInternal()
     {
         // @todo: reset loco-contact-manager
+    }
+
+    void TBulletSimulation::_SetVisualizerInternal( TIVisualizer* visualizerRef )
+    {
+        m_bulletDebugDrawer = std::make_unique<TBulletDebugDrawer>( visualizerRef );
     }
 
     extern "C" TISimulation* simulation_create( TScenario* scenarioRef )

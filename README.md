@@ -4,7 +4,8 @@
 
 [![Build Status](https://travis-ci.com/wpumacay/tysocBullet.svg?branch=master)](https://travis-ci.com/wpumacay/tysocBullet)
 
-[gif-demo-sample](https://media.giphy.com/media/ZDEAQSUraLao0fOhHi/giphy.gif)
+<!-- Uncomment once all changes from legacy have been ported -->
+<!--![gif-demo-sample](https://media.giphy.com/media/ZDEAQSUraLao0fOhHi/giphy.gif)-->
 
 This is an instance of the [**loco**](https://github.com/wpumacay/tysocCore) framework for locomotion, 
 using [**Bullet**](http://bulletphysics.org) as physics backend. As explained in the core repository, the idea

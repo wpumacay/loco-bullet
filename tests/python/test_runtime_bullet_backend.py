@@ -5,7 +5,7 @@ import tinymath as tm
 import numpy as np
 import gc
 
-def test_runtime_mujoco_backend() :
+def test_runtime_bullet_backend() :
     vis_data = loco.sim.VisualData()
     vis_data.type = loco.sim.ShapeType.CAPSULE
     vis_data.size = [ 0.1, 0.2, 0.1 ]
@@ -57,7 +57,7 @@ def test_runtime_mujoco_backend() :
     runtime.DestroyVisualizer()
 
 if __name__ == '__main__' :
-    _ = input( 'Press ENTER to start test : test_runtime_mujoco_backend' )
-    test_runtime_mujoco_backend()
+    _ = input( 'Press ENTER to start test : test_runtime_bullet_backend' )
+    test_runtime_bullet_backend()
 
     _ = input( 'Press ENTER to continue ...' )
