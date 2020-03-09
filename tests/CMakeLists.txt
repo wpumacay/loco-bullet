@@ -1,3 +1,4 @@
-message( "LOCO::BULLET::tests >>> Configuring loco-bullet tests" )
+message( "LOCO::BULLET::tests::cpp >>> Configuring C/C++ loco-bullet tests" )
 
-add_subdirectory( cpp )
+add_subdirectory( cpp/generic )
+add_subdirectory( cpp/bullet )

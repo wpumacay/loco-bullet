@@ -34,6 +34,7 @@ namespace bullet {
     void TBulletCollisionAdapter::Build()
     {
         m_bulletCollisionShape = CreateCollisionShape( m_collisionRef->data() );
+        m_bulletCollisionShape->setMargin( 0.001 );
 
         m_size  = m_collisionRef->size();
         m_size0 = m_collisionRef->size();

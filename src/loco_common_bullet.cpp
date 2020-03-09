@@ -74,6 +74,13 @@ namespace bullet {
     {
         switch ( data.type )
         {
+            case eShapeType::PLANE :
+            #ifdef LOCO_BULLET_SINGLE_BODIES_USE_STATIC_PLANE
+                return std::make_unique<btStaticPlaneShape>( btVector3( 0.0, 0.0, 1.0 ), 50.0 );
+            #else
+                return std::make_unique<btBoxShape>( btVector3( 0.5 * data.size.x(), 0.5 * data.size.y(), 0.5 ) );
+            #endif /* LOCO_BULLET_SINGLE_BODIES_USE_STATIC_PLANE */
+
             case eShapeType::BOX :
                 return std::make_unique<btBoxShape>( vec3_to_bt( 0.5 * data.size ) );
 
@@ -209,9 +216,9 @@ namespace bullet {
         const ssize_t num_vertices = vertices.size() / 3;
         mesh_vertices.reserve( num_vertices );
         for ( ssize_t i = 0; i < num_vertices; i++ )
-            mesh_vertices[i] = { data.size.x() * vertices[3 * i + 0],
-                                 data.size.y() * vertices[3 * i + 1],
-                                 data.size.z() * vertices[3 * i + 2] };
+            mesh_vertices.push_back( { data.size.x() * vertices[3 * i + 0],
+                                       data.size.y() * vertices[3 * i + 1],
+                                       data.size.z() * vertices[3 * i + 2] } );
     }
 
     void aiSceneDeleter::operator() ( const aiScene* assimp_scene ) const

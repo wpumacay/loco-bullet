@@ -21,6 +21,9 @@
 #include <BulletDynamics/Featherstone/btMultiBodyFixedConstraint.h>
 #include <BulletDynamics/Featherstone/btMultiBodySliderConstraint.h>
 
+#define LOCO_BULLET_SINGLE_BODIES_USE_COMPOUND
+#define LOCO_BULLET_SINGLE_BODIES_USE_STATIC_PLANE
+
 namespace loco {
 namespace bullet {
 
