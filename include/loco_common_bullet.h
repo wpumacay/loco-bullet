@@ -1,6 +1,7 @@
 #pragma once
 
 #include <loco_common.h>
+#include <components/loco_data.h>
 // Main Bullet-API
 #include <btBulletDynamicsCommon.h>
 // Heightfield-terrain functionality
@@ -31,4 +32,30 @@ namespace bullet {
     TMat3 mat3_from_bt( const btMatrix3x3& mat );
     TMat4 mat4_from_bt( const btTransform& mat );
 
+    // Converts bullet's shape enum-type to its string representation
+    std::string bt_shape_enum_to_str( const BroadphaseNativeTypes& bt_shape_enum );
+
+    // Creates an appropriate bullet collision-shape given user shape data
+    std::unique_ptr<btCollisionShape> CreateCollisionShape( const TShapeData& data );
+
+    // Constructs a bt-convex-hull shape from a given set of vertices
+    std::unique_ptr<btConvexHullShape> CreateConvexHull( const std::vector<TVec3>& mesh_vertices );
+
+    // Creates vertices of an ellipsoid given user shape data
+    std::vector<TVec3> CreateEllipsoidVertices( const TShapeData& data );
+
+    // Creates vertices of a mesh given user shape data
+    std::vector<TVec3> CreateMeshVertices( const TShapeData& data );
+
+    // Gets vertices of a given mesh, using a filepath for a mesh model
+    void _CollectMeshVerticesFromFile( std::vector<TVec3>& mesh_vertices, const TShapeData& data );
+
+    // Gets vertices of a given mesh, using user vertex-data
+    void _CollectMeshVerticesFromUser( std::vector<TVec3>& mesh_vertices, const TShapeData& data );
+
+    // Custom deleter for assimp-scene objects
+    struct aiSceneDeleter
+    {
+        void operator() ( const aiScene* assimp_scene ) const;
+    };
 }}
