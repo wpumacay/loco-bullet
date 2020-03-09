@@ -41,6 +41,9 @@ namespace bullet {
     // Creates an appropriate bullet collision-shape given user shape data
     std::unique_ptr<btCollisionShape> CreateCollisionShape( const TShapeData& data );
 
+    // Returns the volume of a given btCollisionShape (either primitive or mesh)
+    double ComputeVolumeFromBtShape( const btCollisionShape* collision_shape );
+
     // Constructs a bt-convex-hull shape from a given set of vertices
     std::unique_ptr<btConvexHullShape> CreateConvexHull( const std::vector<TVec3>& mesh_vertices );
 

@@ -125,6 +125,56 @@ namespace bullet {
         return nullptr;
     }
 
+    double ComputeVolumeFromBtShape( const btCollisionShape* collision_shape )
+    {
+        LOCO_CORE_ASSERT( collision_shape, "ComputeVolumeFromBtShape >>> must pass a valid bullet collision-shape" );
+
+        switch ( collision_shape->getShapeType() )
+        {
+            case BroadphaseNativeTypes::BOX_SHAPE_PROXYTYPE :
+            {
+                const auto box_shape = dynamic_cast<const btBoxShape*>( collision_shape );
+                const auto box_dimensions = box_shape->getHalfExtentsWithMargin();
+                return 8.0 * box_dimensions.x() * box_dimensions.y() * box_dimensions.z();
+            }
+            case BroadphaseNativeTypes::SPHERE_SHAPE_PROXYTYPE :
+            {
+                const auto sphere_shape = dynamic_cast<const btSphereShape*>( collision_shape );
+                const auto sphere_radius = sphere_shape->getRadius();
+                return (4. / 3.) * loco::PI * sphere_radius * sphere_radius * sphere_radius;
+            }
+            case BroadphaseNativeTypes::CYLINDER_SHAPE_PROXYTYPE :
+            {
+                const auto cylinder_shape = dynamic_cast<const btCylinderShapeZ*>( collision_shape );
+                const auto cylinder_radius = cylinder_shape->getRadius();
+                const auto cylinder_up_axis = cylinder_shape->getUpAxis();
+                const auto cylinder_half_extents = cylinder_shape->getHalfExtentsWithMargin();
+                const auto cylinder_height = 2.0 * cylinder_half_extents[cylinder_up_axis];
+                return loco::PI * cylinder_radius * cylinder_radius * cylinder_height;
+            }
+            case BroadphaseNativeTypes::CAPSULE_SHAPE_PROXYTYPE :
+            {
+                const auto capsule_shape = dynamic_cast<const btCapsuleShapeZ*>( collision_shape );
+                const auto capsule_radius = capsule_shape->getRadius();
+                const auto capsule_height = 2.0 * capsule_shape->getHalfHeight();
+                return loco::PI * capsule_radius * capsule_radius * capsule_height +
+                       (4. / 3.) * loco::PI * capsule_radius * capsule_radius * capsule_radius;
+            }
+            case BroadphaseNativeTypes::CONVEX_HULL_SHAPE_PROXYTYPE :
+            {
+                btVector3 aabb_min, aabb_max;
+                collision_shape->getAabb( btTransform::getIdentity(), aabb_min, aabb_max );
+                return ( aabb_max.x() - aabb_min.x() ) *
+                       ( aabb_max.y() - aabb_min.y() ) *
+                       ( aabb_max.z() - aabb_min.z() );
+            }
+        }
+
+        LOCO_CORE_ERROR( "ComputeVolumeFromBtShape >>> unsupported shape: {0}",
+                         bt_shape_enum_to_str( (BroadphaseNativeTypes)collision_shape->getShapeType() ) );
+        return 1.0;
+    }
+
     std::unique_ptr<btConvexHullShape> CreateConvexHull( const std::vector<TVec3>& mesh_vertices )
     {
         auto convex_hull_shape = std::make_unique<btConvexHullShape>();

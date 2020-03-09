@@ -61,6 +61,11 @@ namespace bullet {
         m_bulletDynamicsWorld->setGravity( btVector3( 0, 0, -9.81 ) );
         m_bulletDebugDrawer = nullptr;
 
+        _CreateSingleBodyAdapters();
+        //// _CreateCompoundAdapters();
+        //// _CreateKintreeAdapters();
+        //// _CreateTerrainGeneratorAdapters();
+
     #if defined( LOCO_CORE_USE_TRACK_ALLOCS )
         if ( TLogger::IsActive() )
             LOCO_CORE_TRACE( "Loco::Allocs: Created TBulletSimulation @ {0}", loco::PointerToHexAddress( this ) );
@@ -69,13 +74,33 @@ namespace bullet {
     #endif
     }
 
+    void TBulletSimulation::_CreateSingleBodyAdapters()
+    {
+        auto single_bodies = m_scenarioRef->GetSingleBodiesList();
+        for ( auto single_body : single_bodies )
+        {
+            auto single_body_adapter = std::make_unique<TBulletSingleBodyAdapter>( single_body );
+            single_body_adapter->SetBulletWorld( m_bulletDynamicsWorld.get() );
+            single_body->SetAdapter( single_body_adapter.get() );
+            m_singleBodyAdapters.push_back( std::move( single_body_adapter ) );
+
+            auto collider = single_body->collision();
+            LOCO_CORE_ASSERT( collider, "TBulletSimulation::_CreateSingleBodyAdapters >>> single-body {0} \
+                              must have an associated collider", single_body->name() );
+
+            auto collider_adapter = std::make_unique<TBulletCollisionAdapter>( collider );
+            collider->SetAdapter( collider_adapter.get() );
+            m_collisionAdapters.push_back( std::move( collider_adapter ) );
+        }
+    }
+
     TBulletSimulation::~TBulletSimulation()
     {
+        m_bulletDynamicsWorld = nullptr;
         m_bulletConstraintSolver = nullptr;
         m_bulletBroadphase = nullptr;
         m_bulletCollisionDispatcher = nullptr;
         m_bulletCollisionConfiguration = nullptr;
-        m_bulletDynamicsWorld = nullptr;
         m_bulletDebugDrawer = nullptr;
 
     #if defined( LOCO_CORE_USE_TRACK_ALLOCS )
@@ -88,9 +113,6 @@ namespace bullet {
 
     bool TBulletSimulation::_InitializeInternal()
     {
-        // Collect bullet-resources from the adapters, assemble them and add to the bullet-world
-        // @todo: implement-me ...
-
         LOCO_CORE_TRACE( "Bullet-backend >>> broadphase         : {0}", typeid( *m_bulletBroadphase ).name() );
         LOCO_CORE_TRACE( "Bullet-backend >>> collision config.  : {0}", typeid( *m_bulletCollisionConfiguration ).name() );
         LOCO_CORE_TRACE( "Bullet-backend >>> constraint solver  : {0}", typeid( *m_bulletConstraintSolver ).name() );

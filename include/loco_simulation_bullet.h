@@ -4,6 +4,9 @@
 #include <loco_simulation.h>
 #include <typeinfo>
 
+#include <adapters/loco_collision_adapter_bullet.h>
+#include <adapters/loco_single_body_adapter_bullet.h>
+
 namespace loco {
     class TIVisualizer;
 }
@@ -80,6 +83,16 @@ namespace bullet {
         void _ResetInternal() override;
 
         void _SetVisualizerInternal( TIVisualizer* visualizerRef ) override;
+
+    private :
+
+        void _CreateSingleBodyAdapters();
+
+        // void _CreateCompoundAdapters();
+
+        // void _CreateKintreeAdapters();
+
+        // void _CreateTerrainGeneratorAdapters();
 
     private :
 

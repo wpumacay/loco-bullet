@@ -22,6 +22,14 @@ namespace bullet {
         m_size  = m_collisionRef->size();
         m_size0 = m_collisionRef->size();
         m_scale = { 1.0f, 1.0f, 1.0f };
+
+    #if defined( LOCO_CORE_USE_TRACK_ALLOCS )
+        const std::string name = ( m_collisionRef ) ? m_collisionRef->name() : "undefined";
+        if ( TLogger::IsActive() )
+            LOCO_CORE_TRACE( "Loco::Allocs: Created TBulletCollisionAdapter {0} @ {1}", name, loco::PointerToHexAddress( this ) );
+        else
+            std::cout << "Loco::Allocs: Created TBulletCollisionAdapter " << name << " @ " << loco::PointerToHexAddress( this ) << std::endl;
+    #endif
     }
 
     TBulletCollisionAdapter::~TBulletCollisionAdapter()
@@ -29,6 +37,14 @@ namespace bullet {
         m_bulletCollisionShape = nullptr;
         m_bulletRigidBodyRef = nullptr;
         m_bulletWorldRef = nullptr;
+
+    #if defined( LOCO_CORE_USE_TRACK_ALLOCS )
+        const std::string name = ( m_collisionRef ) ? m_collisionRef->name() : "undefined";
+        if ( TLogger::IsActive() )
+            LOCO_CORE_TRACE( "Loco::Allocs: Destroyed TBulletCollisionAdapter {0} @ {1}", name, loco::PointerToHexAddress( this ) );
+        else
+            std::cout << "Loco::Allocs: Destroyed TBulletCollisionAdapter " << name << " @ " << loco::PointerToHexAddress( this ) << std::endl;
+    #endif
     }
 
     void TBulletCollisionAdapter::Build()
