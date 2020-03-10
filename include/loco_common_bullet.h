@@ -22,7 +22,7 @@
 #include <BulletDynamics/Featherstone/btMultiBodySliderConstraint.h>
 
 #define LOCO_BULLET_SINGLE_BODIES_USE_COMPOUND
-#define LOCO_BULLET_SINGLE_BODIES_USE_STATIC_PLANE
+//// #define LOCO_BULLET_SINGLE_BODIES_USE_STATIC_PLANE // @todo: remove? this shape breaks the simulation :(
 
 namespace loco {
 namespace bullet {

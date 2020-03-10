@@ -51,7 +51,7 @@ namespace bullet {
                               collider (called {1}) doesn't have a valid btCollisionShape", m_bodyRef->name(), collision->name() );
             // Create rigid body (using maximal-coordinates bullet API) ****************************
             btScalar bt_mass = 0.0;
-            btVector3 bt_inertia_diag;
+            btVector3 bt_inertia_diag( 0.0, 0.0, 0.0 );
             if ( m_bodyRef->dyntype() == eDynamicsType::DYNAMIC )
             {
                 if ( collision->shape() != eShapeType::HFIELD && collision->shape() != eShapeType::PLANE )

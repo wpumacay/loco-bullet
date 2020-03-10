@@ -153,6 +153,7 @@ namespace bullet {
     void TBulletSimulation::_SetVisualizerInternal( TIVisualizer* visualizerRef )
     {
         m_bulletDebugDrawer = std::make_unique<TBulletDebugDrawer>( visualizerRef );
+        m_bulletDynamicsWorld->setDebugDrawer( m_bulletDebugDrawer.get() );
     }
 
     extern "C" TISimulation* simulation_create( TScenario* scenarioRef )
