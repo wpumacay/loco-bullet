@@ -90,8 +90,8 @@ endif()
 set( LOCO_BULLET_SRCS
      "${CMAKE_CURRENT_SOURCE_DIR}/src/loco_common_bullet.cpp"
      "${CMAKE_CURRENT_SOURCE_DIR}/src/loco_simulation_bullet.cpp"
-     "${CMAKE_CURRENT_SOURCE_DIR}/src/adapters/loco_collision_adapter_bullet.cpp"
-     "${CMAKE_CURRENT_SOURCE_DIR}/src/adapters/loco_single_body_adapter_bullet.cpp" )
+     "${CMAKE_CURRENT_SOURCE_DIR}/src/primitives/loco_single_body_collider_adapter_bullet.cpp"
+     "${CMAKE_CURRENT_SOURCE_DIR}/src/primitives/loco_single_body_adapter_bullet.cpp" )
 
 set( LOCO_BULLET_INCLUDE_DIRS
      "${CMAKE_CURRENT_SOURCE_DIR}/include"

@@ -4,8 +4,8 @@
 #include <loco_simulation.h>
 #include <typeinfo>
 
-#include <adapters/loco_collision_adapter_bullet.h>
-#include <adapters/loco_single_body_adapter_bullet.h>
+#include <primitives/loco_single_body_collider_adapter_bullet.h>
+#include <primitives/loco_single_body_adapter_bullet.h>
 
 namespace loco {
     class TIVisualizer;

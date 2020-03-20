@@ -3,13 +3,13 @@
 #include <gtest/gtest.h>
 
 #include <loco_simulation_bullet.h>
-#include <adapters/loco_single_body_adapter_bullet.h>
+#include <primitives/loco_single_body_adapter_bullet.h>
 
 struct BuildGroup
 {
     std::unique_ptr<loco::TSingleBody> body;
     std::unique_ptr<loco::bullet::TBulletSingleBodyAdapter> body_adapter;
-    std::unique_ptr<loco::bullet::TBulletCollisionAdapter> collision_adapter;
+    std::unique_ptr<loco::bullet::TBulletSingleBodyColliderAdapter> collision_adapter;
 };
 
 BuildGroup build_body( const std::string& name,
@@ -37,9 +37,9 @@ BuildGroup build_body( const std::string& name,
 
     auto body_obj = std::make_unique<loco::TSingleBody>( name, body_data, position, tinymath::rotation( roteuler ) );
     auto body_adapter = std::make_unique<loco::bullet::TBulletSingleBodyAdapter>( body_obj.get() );
-    auto collision_ref = body_obj->collision();
-    auto collision_adapter = std::make_unique<loco::bullet::TBulletCollisionAdapter>( collision_ref );
-    collision_ref->SetAdapter( collision_adapter.get() );
+    auto collision_ref = body_obj->collider();
+    auto collision_adapter = std::make_unique<loco::bullet::TBulletSingleBodyColliderAdapter>( collision_ref );
+    collision_ref->SetColliderAdapter( collision_adapter.get() );
     body_adapter->Build();
 
     return { std::move( body_obj ), std::move( body_adapter ), std::move( collision_adapter ) };

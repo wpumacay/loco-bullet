@@ -3,7 +3,7 @@
 #include <gtest/gtest.h>
 
 #include <loco_simulation_bullet.h>
-#include <adapters/loco_collision_adapter_bullet.h>
+#include <primitives/loco_single_body_collider_adapter_bullet.h>
 
 bool allclose_vec3( const btVector3& bt_vec_1, const btVector3& bt_vec_2, double tolerance = 1e-5 )
 {
@@ -71,13 +71,13 @@ TEST( TestLocoBulletCollisionAdapter, TestLocoBulletCollisionAdapterBuild )
         col_data.size = vec_col_sizes[i];
         vec_col_data.push_back( col_data );
     }
-    std::vector<std::unique_ptr<loco::TCollision>> vec_colliders;
-    std::vector<std::unique_ptr<loco::bullet::TBulletCollisionAdapter>> vec_colliders_adapters;
+    std::vector<std::unique_ptr<loco::TSingleBodyCollider>> vec_colliders;
+    std::vector<std::unique_ptr<loco::bullet::TBulletSingleBodyColliderAdapter>> vec_colliders_adapters;
     for ( size_t i = 0; i < vec_col_data.size(); i++ )
     {
         const auto collider_name = loco::ToString( vec_col_data[i].type ) + "_collider";
-        auto col_obj = std::make_unique<loco::TCollision>( collider_name, vec_col_data[i] );
-        auto col_adapter = std::make_unique<loco::bullet::TBulletCollisionAdapter>( col_obj.get() );
+        auto col_obj = std::make_unique<loco::TSingleBodyCollider>( collider_name, vec_col_data[i] );
+        auto col_adapter = std::make_unique<loco::bullet::TBulletSingleBodyColliderAdapter>( col_obj.get() );
         col_adapter->Build();
         ASSERT_TRUE( col_adapter->collision_shape() != nullptr );
         vec_colliders.push_back( std::move( col_obj ) );
@@ -86,7 +86,7 @@ TEST( TestLocoBulletCollisionAdapter, TestLocoBulletCollisionAdapterBuild )
 
     std::vector<loco::TSizef> vec_expected_sizes = { { 0.05f, 0.1f, 0.15f },
                                                      { 0.1f },
-                                                     { 5.0f, 5.0f, 1.0f },
+                                                     { 5.0f, 5.0f, 0.01f },
                                                      { 0.2f, 0.4f },
                                                      { 0.2f, 0.4f },
                                                      { 0.2f, 0.3f, 0.4f } };
@@ -104,28 +104,32 @@ TEST( TestLocoBulletCollisionAdapter, TestLocoBulletCollisionAdapterBuild )
     {
         auto bt_collision_shape = vec_colliders_adapters[i]->collision_shape();
         EXPECT_EQ( bt_collision_shape->getShapeType(), vec_expected_types[i] );
-        if ( auto box_shape = dynamic_cast<btBoxShape*>( bt_collision_shape ) )
+        if ( vec_col_types[i] == loco::eShapeType::BOX )
         {
+            auto box_shape = dynamic_cast<btBoxShape*>( bt_collision_shape );
             const btVector3 bt_half_extents = box_shape->getHalfExtentsWithMargin();
             const loco::TVec3 expected_half_extensions = { 0.05f, 0.1f, 0.15f };
             EXPECT_TRUE( allclose_vec3( bt_half_extents, expected_half_extensions ) );
         }
-        else if ( auto sphere_shape = dynamic_cast<btSphereShape*>( bt_collision_shape ) )
+        else if ( vec_col_types[i] == loco::eShapeType::SPHERE )
         {
+            auto sphere_shape = dynamic_cast<btSphereShape*>( bt_collision_shape );
             const btScalar bt_radius = sphere_shape->getRadius();
             const loco::TScalar expected_radius = 0.1;
             EXPECT_TRUE( std::abs( bt_radius - expected_radius ) < 1e-5 );
         }
-        else if ( auto cylinder_shape = dynamic_cast<btCylinderShapeZ*>( bt_collision_shape ) )
+        else if ( vec_col_types[i] == loco::eShapeType::CYLINDER )
         {
+            auto cylinder_shape = dynamic_cast<btCylinderShapeZ*>( bt_collision_shape );
             const btVector3 bt_half_extents = cylinder_shape->getHalfExtentsWithMargin();
             const loco::TScalar expected_radius = 0.2;
             const loco::TScalar expected_half_height = 0.4;
             EXPECT_TRUE( std::abs( bt_half_extents.x() - expected_radius ) < 1e-5 );
             EXPECT_TRUE( std::abs( bt_half_extents.z() - expected_half_height ) < 1e-5 );
         }
-        else if ( auto capsule_shape = dynamic_cast<btCapsuleShapeZ*>( bt_collision_shape ) )
+        else if ( vec_col_types[i] == loco::eShapeType::CAPSULE )
         {
+            auto capsule_shape = dynamic_cast<btCapsuleShapeZ*>( bt_collision_shape );
             const btScalar bt_radius = capsule_shape->getRadius();
             const btScalar bt_half_height = capsule_shape->getHalfHeight();
             const loco::TScalar expected_radius = 0.2;
@@ -146,8 +150,8 @@ TEST( TestLocoBulletCollisionAdapter, TestLocoBulletCollisionAdapterMeshBuild )
     col_data.mesh_data.filename = loco::PATH_RESOURCES + "meshes/monkey.stl";
 
     const auto collider_name = loco::ToString( col_data.type ) + "_collider";
-    auto col_obj = std::make_unique<loco::TCollision>( collider_name, col_data );
-    auto col_adapter = std::make_unique<loco::bullet::TBulletCollisionAdapter>( col_obj.get() );
+    auto col_obj = std::make_unique<loco::TSingleBodyCollider>( collider_name, col_data );
+    auto col_adapter = std::make_unique<loco::bullet::TBulletSingleBodyColliderAdapter>( col_obj.get() );
     col_adapter->Build();
     auto bt_collision_shape = col_adapter->collision_shape();
     ASSERT_TRUE( bt_collision_shape != nullptr );
@@ -169,8 +173,8 @@ TEST( TestLocoBulletCollisionAdapter, TestLocoBulletCollisionAdapterMeshUserBuil
     col_data.mesh_data.faces = vertices_faces.second;
 
     const auto collider_name = loco::ToString( col_data.type ) + "_collider";
-    auto col_obj = std::make_unique<loco::TCollision>( collider_name, col_data );
-    auto col_adapter = std::make_unique<loco::bullet::TBulletCollisionAdapter>( col_obj.get() );
+    auto col_obj = std::make_unique<loco::TSingleBodyCollider>( collider_name, col_data );
+    auto col_adapter = std::make_unique<loco::bullet::TBulletSingleBodyColliderAdapter>( col_obj.get() );
     col_adapter->Build();
     auto bt_collision_shape = col_adapter->collision_shape();
     ASSERT_TRUE( bt_collision_shape != nullptr );
@@ -201,8 +205,8 @@ TEST( TestLocoBulletCollisionAdapter, TestLocoBulletCollisionAdapterHfieldBuild 
                                         loco::bullet::LOCO_BULLET_HFIELD_BASE };
 
     const auto collider_name = loco::ToString( col_data.type ) + "_collider";
-    auto col_obj = std::make_unique<loco::TCollision>( collider_name, col_data );
-    auto col_adapter = std::make_unique<loco::bullet::TBulletCollisionAdapter>( col_obj.get() );
+    auto col_obj = std::make_unique<loco::TSingleBodyCollider>( collider_name, col_data );
+    auto col_adapter = std::make_unique<loco::bullet::TBulletSingleBodyColliderAdapter>( col_obj.get() );
     col_adapter->Build();
     auto bt_collision_shape = col_adapter->collision_shape();
     ASSERT_TRUE( bt_collision_shape != nullptr );

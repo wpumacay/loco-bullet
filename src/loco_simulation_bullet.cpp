@@ -81,15 +81,15 @@ namespace bullet {
         {
             auto single_body_adapter = std::make_unique<TBulletSingleBodyAdapter>( single_body );
             single_body_adapter->SetBulletWorld( m_bulletDynamicsWorld.get() );
-            single_body->SetAdapter( single_body_adapter.get() );
+            single_body->SetBodyAdapter( single_body_adapter.get() );
             m_singleBodyAdapters.push_back( std::move( single_body_adapter ) );
 
-            auto collider = single_body->collision();
+            auto collider = single_body->collider();
             LOCO_CORE_ASSERT( collider, "TBulletSimulation::_CreateSingleBodyAdapters >>> single-body {0} \
                               must have an associated collider", single_body->name() );
 
-            auto collider_adapter = std::make_unique<TBulletCollisionAdapter>( collider );
-            collider->SetAdapter( collider_adapter.get() );
+            auto collider_adapter = std::make_unique<TBulletSingleBodyColliderAdapter>( collider );
+            collider->SetColliderAdapter( collider_adapter.get() );
             m_collisionAdapters.push_back( std::move( collider_adapter ) );
         }
     }
