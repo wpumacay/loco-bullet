@@ -75,11 +75,7 @@ namespace bullet {
         switch ( data.type )
         {
             case eShapeType::PLANE :
-            #ifdef LOCO_BULLET_SINGLE_BODIES_USE_STATIC_PLANE // @todo: remove? this shape breaks the simulation :(
-                return std::make_unique<btStaticPlaneShape>( btVector3( 0.0, 0.0, 1.0 ), 50.0 );
-            #else
-                return std::make_unique<btBoxShape>( btVector3( 0.5 * data.size.x(), 0.5 * data.size.y(), 0.01 ) );
-            #endif /* LOCO_BULLET_SINGLE_BODIES_USE_STATIC_PLANE */
+                return std::make_unique<btStaticPlaneShape>( btVector3( 0.0, 0.0, 1.0 ), 0.0 );
 
             case eShapeType::BOX :
                 return std::make_unique<btBoxShape>( vec3_to_bt( 0.5 * data.size ) );
