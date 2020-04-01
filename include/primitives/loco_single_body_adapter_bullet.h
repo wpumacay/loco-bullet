@@ -63,6 +63,10 @@ namespace bullet {
         std::unique_ptr<btRigidBody> m_BulletRigidBody;
         // Reference to the bullet world used for the simulation
         btDynamicsWorld* m_BulletWorldRef;
+        // Compensation-matrix for the case of heightfield colliders
+        btTransform m_HfieldTfCompensation;
+        // Inverse of the hfield compensation matrix
+        btTransform m_HfieldTfCompensationInv;
     };
 
 }}

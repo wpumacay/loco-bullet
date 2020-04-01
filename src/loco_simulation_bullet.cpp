@@ -80,17 +80,8 @@ namespace bullet {
         for ( auto single_body : single_bodies )
         {
             auto single_body_adapter = std::make_unique<TBulletSingleBodyAdapter>( single_body );
-            single_body_adapter->SetBulletWorld( m_bulletDynamicsWorld.get() );
             single_body->SetBodyAdapter( single_body_adapter.get() );
             m_singleBodyAdapters.push_back( std::move( single_body_adapter ) );
-
-            auto collider = single_body->collider();
-            LOCO_CORE_ASSERT( collider, "TBulletSimulation::_CreateSingleBodyAdapters >>> single-body {0} \
-                              must have an associated collider", single_body->name() );
-
-            auto collider_adapter = std::make_unique<TBulletSingleBodyColliderAdapter>( collider );
-            collider->SetColliderAdapter( collider_adapter.get() );
-            m_collisionAdapters.push_back( std::move( collider_adapter ) );
         }
     }
 
@@ -113,6 +104,12 @@ namespace bullet {
 
     bool TBulletSimulation::_InitializeInternal()
     {
+        for ( auto& single_body_adapter : m_singleBodyAdapters )
+        {
+            if ( auto bullet_adapter = dynamic_cast<TBulletSingleBodyAdapter*>( single_body_adapter.get() ) )
+                bullet_adapter->SetBulletWorld( m_bulletDynamicsWorld.get() );
+        }
+
         LOCO_CORE_TRACE( "Bullet-backend >>> broadphase         : {0}", typeid( *m_bulletBroadphase ).name() );
         LOCO_CORE_TRACE( "Bullet-backend >>> collision config.  : {0}", typeid( *m_bulletCollisionConfiguration ).name() );
         LOCO_CORE_TRACE( "Bullet-backend >>> constraint solver  : {0}", typeid( *m_bulletConstraintSolver ).name() );

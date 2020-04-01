@@ -14,6 +14,8 @@ namespace bullet {
 
         m_BulletRigidBody = nullptr;
         m_BulletWorldRef = nullptr;
+        m_HfieldTfCompensation.setIdentity();
+        m_HfieldTfCompensationInv.setIdentity();
 
     #if defined( LOCO_CORE_USE_TRACK_ALLOCS )
         const std::string name = ( m_BodyRef ) ? m_BodyRef->name() : "undefined";
@@ -29,6 +31,7 @@ namespace bullet {
         if ( m_BodyRef )
             m_BodyRef->DetachSim();
         m_BodyRef = nullptr;
+        m_ColliderAdapter = nullptr;
 
         m_BulletRigidBody = nullptr;
         m_BulletWorldRef = nullptr;
@@ -45,40 +48,55 @@ namespace bullet {
     void TBulletSingleBodyAdapter::Build()
     {
         auto collider = m_BodyRef->collider();
-        if ( auto collider_adapter = dynamic_cast<TBulletSingleBodyColliderAdapter*>( collider->collider_adapter() ) )
+        LOCO_CORE_ASSERT( collider, "TBulletSingleBodyAdapter::Build >>> single-body {0} doesn't have \
+                          a valid collider (nullptr)", m_BodyRef->name() );
+
+        m_ColliderAdapter = std::make_unique<TBulletSingleBodyColliderAdapter>( collider );
+        collider->SetColliderAdapter( m_ColliderAdapter.get() );
+
+        auto bt_collider_adapter = static_cast<TBulletSingleBodyColliderAdapter*>( m_ColliderAdapter.get() );
+        bt_collider_adapter->Build();
+
+        auto bt_collision_shape = bt_collider_adapter->collision_shape();
+        LOCO_CORE_ASSERT( bt_collision_shape, "TBulletSingleBodyAdapter::Build >>> single-body {0}'s \
+                          collider (called {1}) doesn't have a valid btCollisionShape", m_BodyRef->name(), collider->name() );
+        // Create rigid body (using maximal-coordinates bullet API) ****************************
+        btScalar bt_mass = 0.0;
+        btVector3 bt_inertia_diag( 0.0, 0.0, 0.0 );
+        if ( m_BodyRef->dyntype() == eDynamicsType::DYNAMIC )
         {
-            collider_adapter->Build();
-            auto bt_collision_shape = collider_adapter->collision_shape();
-            LOCO_CORE_ASSERT( bt_collision_shape, "TBulletSingleBodyAdapter::Build >>> single-body {0}'s \
-                              collider (called {1}) doesn't have a valid btCollisionShape", m_BodyRef->name(), collider->name() );
-            // Create rigid body (using maximal-coordinates bullet API) ****************************
-            btScalar bt_mass = 0.0;
-            btVector3 bt_inertia_diag( 0.0, 0.0, 0.0 );
-            if ( m_BodyRef->dyntype() == eDynamicsType::DYNAMIC )
+            if ( collider->shape() != eShapeType::HFIELD && collider->shape() != eShapeType::PLANE )
             {
-                if ( collider->shape() != eShapeType::HFIELD && collider->shape() != eShapeType::PLANE )
-                {
-                    if ( m_BodyRef->data().inertia.mass > loco::EPS )
-                        bt_mass = m_BodyRef->data().inertia.mass;
-                    else
-                        bt_mass = ComputeVolumeFromBtShape( bt_collision_shape ) * loco::DEFAULT_DENSITY;
-
-                    if ( bt_mass > loco::EPS )
-                        bt_collision_shape->calculateLocalInertia( bt_mass, bt_inertia_diag );
-                }
+                if ( m_BodyRef->data().inertia.mass > loco::EPS )
+                    bt_mass = m_BodyRef->data().inertia.mass;
                 else
-                {
-                    LOCO_CORE_WARN( "TBulletSingleBodyAdapter::Build >>> single-body {0} has collider of \
-                                     type {1}, but it can't be dynamic", m_BodyRef->name(), ToString( collider->shape() ) );
-                }
+                    bt_mass = ComputeVolumeFromBtShape( bt_collision_shape ) * loco::DEFAULT_DENSITY;
+
+                if ( bt_mass > loco::EPS )
+                    bt_collision_shape->calculateLocalInertia( bt_mass, bt_inertia_diag );
             }
-
-            btRigidBody::btRigidBodyConstructionInfo bt_construction_info( bt_mass, nullptr, bt_collision_shape, bt_inertia_diag );
-            bt_construction_info.m_startWorldTransform = mat4_to_bt( m_BodyRef->tf0() );
-
-            m_BulletRigidBody = std::make_unique<btRigidBody>( bt_construction_info );
-            m_BulletRigidBody->forceActivationState( DISABLE_DEACTIVATION );
+            else
+            {
+                LOCO_CORE_WARN( "TBulletSingleBodyAdapter::Build >>> single-body {0} has collider of \
+                                 type {1}, but it can't be dynamic", m_BodyRef->name(), ToString( collider->shape() ) );
+            }
         }
+
+        if ( collider->shape() == eShapeType::HFIELD )
+        {
+            const auto& heights = collider->data().hfield_data.heights;
+            const float z_max = *std::max_element( heights.cbegin(), heights.cend() );
+            const float z_scale = collider->size().z();
+            const float z_offset = z_max / 2.0f * z_scale * z_scale;
+            m_HfieldTfCompensation.setOrigin( vec3_to_bt( { 0.0f, 0.0f, z_offset } ) );
+            m_HfieldTfCompensationInv = m_HfieldTfCompensation.inverse();
+        }
+
+        btRigidBody::btRigidBodyConstructionInfo bt_construction_info( bt_mass, nullptr, bt_collision_shape, bt_inertia_diag );
+        bt_construction_info.m_startWorldTransform = mat4_to_bt( m_BodyRef->tf0() ) * m_HfieldTfCompensation;
+
+        m_BulletRigidBody = std::make_unique<btRigidBody>( bt_construction_info );
+        m_BulletRigidBody->forceActivationState( DISABLE_DEACTIVATION );
     }
 
     void TBulletSingleBodyAdapter::Initialize()
@@ -88,12 +106,16 @@ namespace bullet {
         LOCO_CORE_ASSERT( m_BulletRigidBody, "TBulletSingleBodyAdapter::Initialize >>> body {0} must have \
                           a valid bullet-rigid-body. Perhaps missing call to ->Build()?", m_BodyRef->name() );
 
+        LOCO_CORE_ASSERT( m_ColliderAdapter, "TBulletSingleBodyAdapter::Initialize >>> body {0} must have \
+                          a related bt-collider-adapter for its collider. Perhaps forgot to call ->Build()?", m_BodyRef->name() );
+
         auto collider = m_BodyRef->collider();
-        if ( auto collider_adapter = dynamic_cast<TBulletSingleBodyColliderAdapter*>( collider->collider_adapter() ) )
-        {
-            collider_adapter->SetBulletRigidBody( m_BulletRigidBody.get() );
-            collider_adapter->Initialize();
-        }
+        if ( !collider )
+            return;
+
+        auto bt_collider_adapter = static_cast<TBulletSingleBodyColliderAdapter*>( m_ColliderAdapter.get() );
+        bt_collider_adapter->SetBulletRigidBody( m_BulletRigidBody.get() );
+        bt_collider_adapter->Initialize();
 
         const ssize_t collision_group = collider->collisionGroup();
         const ssize_t collision_mask = collider->collisionMask();
@@ -105,7 +127,7 @@ namespace bullet {
         LOCO_CORE_ASSERT( m_BulletRigidBody, "TBulletSingleBodyAdapter::Reset >>> body {0} must have \
                           a valid bullet-rigid-body. Perhaps missing call to ->Build()?", m_BodyRef->name() );
 
-        m_BulletRigidBody->setWorldTransform( mat4_to_bt( m_BodyRef->tf0() ) );
+        m_BulletRigidBody->setWorldTransform( mat4_to_bt( m_BodyRef->tf0() ) * m_HfieldTfCompensation );
         m_BulletRigidBody->setLinearVelocity( vec3_to_bt( m_BodyRef->linear_vel0() ) );
         m_BulletRigidBody->setAngularVelocity( vec3_to_bt( m_BodyRef->angular_vel0() ) );
         m_BulletRigidBody->forceActivationState( DISABLE_DEACTIVATION );
@@ -122,7 +144,7 @@ namespace bullet {
         LOCO_CORE_ASSERT( m_BulletRigidBody, "TBulletSingleBodyAdapter::SetTransform >>> body {0} must have \
                           a valid bullet-rigid-body. Perhaps missing call to ->Build()?", m_BodyRef->name() );
 
-        m_BulletRigidBody->setWorldTransform( mat4_to_bt( transform ) );
+        m_BulletRigidBody->setWorldTransform( mat4_to_bt( transform ) * m_HfieldTfCompensation );
     }
 
     void TBulletSingleBodyAdapter::SetLinearVelocity( const TVec3& linear_vel )
@@ -162,7 +184,7 @@ namespace bullet {
         LOCO_CORE_ASSERT( m_BulletRigidBody, "TBulletSingleBodyAdapter::GetTransform >>> body {0} must have \
                           a valid bullet-rigid-body. Perhaps missing call to ->Build()?", m_BodyRef->name() );
 
-        dst_transform = mat4_from_bt( m_BulletRigidBody->getWorldTransform() );
+        dst_transform = mat4_from_bt( m_BulletRigidBody->getWorldTransform() * m_HfieldTfCompensationInv );
     }
 
     void TBulletSingleBodyAdapter::GetLinearVelocity( TVec3& dst_linear_vel ) /* const */
@@ -184,8 +206,7 @@ namespace bullet {
     void TBulletSingleBodyAdapter::SetBulletWorld( btDynamicsWorld* world )
     {
         m_BulletWorldRef = world;
-        if ( auto collider = m_BodyRef->collider() )
-            if ( auto collider_adapter = dynamic_cast<TBulletSingleBodyColliderAdapter*>( collider->collider_adapter() ) )
-                collider_adapter->SetBulletWorld( world );
+        auto bt_collider_adapter = static_cast<TBulletSingleBodyColliderAdapter*>( m_ColliderAdapter.get() );
+        bt_collider_adapter->SetBulletWorld( world );
     }
 }}
