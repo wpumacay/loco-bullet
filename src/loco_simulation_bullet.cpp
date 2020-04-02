@@ -41,6 +41,18 @@ namespace bullet {
     }
 
     /***********************************************************************************************
+    *                        Bullet custom overlap-filter callback Impl.                           *
+    ***********************************************************************************************/
+
+    bool TBulletOverlapFilterCallback::needBroadphaseCollision( btBroadphaseProxy* proxy0, btBroadphaseProxy* proxy1 ) const 
+    {
+        bool proxy_affinity_0_1 = ( proxy0->m_collisionFilterGroup & proxy1->m_collisionFilterMask ) != 0;
+        bool proxy_affinity_1_0 = ( proxy1->m_collisionFilterGroup & proxy0->m_collisionFilterMask ) != 0;
+
+        return proxy_affinity_0_1 || proxy_affinity_1_0;
+    }
+
+    /***********************************************************************************************
     *                                   Bullet Simulation Impl.                                    *
     ***********************************************************************************************/
 
@@ -60,6 +72,9 @@ namespace bullet {
                                                                 m_bulletCollisionConfiguration.get() );
         m_bulletDynamicsWorld->setGravity( btVector3( 0, 0, -9.81 ) );
         m_bulletDebugDrawer = nullptr;
+
+        m_bulletOverlapFilterCallback = std::make_unique<TBulletOverlapFilterCallback>();
+        m_bulletDynamicsWorld->getPairCache()->setOverlapFilterCallback( m_bulletOverlapFilterCallback.get() );
 
         _CreateSingleBodyAdapters();
         //// _CreateCompoundAdapters();
@@ -93,6 +108,7 @@ namespace bullet {
         m_bulletCollisionDispatcher = nullptr;
         m_bulletCollisionConfiguration = nullptr;
         m_bulletDebugDrawer = nullptr;
+        m_bulletOverlapFilterCallback = nullptr;
 
     #if defined( LOCO_CORE_USE_TRACK_ALLOCS )
         if ( TLogger::IsActive() )

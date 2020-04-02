@@ -42,6 +42,12 @@ namespace bullet {
         int m_debug_mode;
     };
 
+    struct TBulletOverlapFilterCallback : public btOverlapFilterCallback
+    {
+        // custom collision checking
+        bool needBroadphaseCollision( btBroadphaseProxy* proxy0, btBroadphaseProxy* proxy1 ) const override;
+    };
+
     class TBulletSimulation : public TISimulation
     {
     public :
@@ -102,6 +108,7 @@ namespace bullet {
         std::unique_ptr<btCollisionConfiguration>       m_bulletCollisionConfiguration;
         std::unique_ptr<btBroadphaseInterface>          m_bulletBroadphase;
         std::unique_ptr<btIDebugDraw>                   m_bulletDebugDrawer;
+        std::unique_ptr<btOverlapFilterCallback>        m_bulletOverlapFilterCallback;
     };
 
     extern "C" TISimulation* simulation_create( TScenario* scenarioRef );

@@ -120,6 +120,9 @@ namespace bullet {
         const ssize_t collision_group = collider->collisionGroup();
         const ssize_t collision_mask = collider->collisionMask();
         m_BulletWorldRef->addRigidBody( m_BulletRigidBody.get(), collision_group, collision_mask );
+
+        m_BulletRigidBody->setLinearVelocity( vec3_to_bt( m_BodyRef->linear_vel0() ) );
+        m_BulletRigidBody->setAngularVelocity( vec3_to_bt( m_BodyRef->angular_vel0() ) );
     }
 
     void TBulletSingleBodyAdapter::Reset()
