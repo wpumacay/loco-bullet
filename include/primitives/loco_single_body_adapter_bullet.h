@@ -3,6 +3,7 @@
 #include <loco_common_bullet.h>
 #include <primitives/loco_single_body_adapter.h>
 #include <primitives/loco_single_body_collider_adapter_bullet.h>
+#include <primitives/loco_single_body_constraint_adapter_bullet.h>
 
 namespace loco {
     class TSingleBody;

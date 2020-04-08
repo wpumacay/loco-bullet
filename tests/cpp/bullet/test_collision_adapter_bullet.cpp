@@ -92,11 +92,7 @@ TEST( TestLocoBulletCollisionAdapter, TestLocoBulletCollisionAdapterBuild )
                                                      { 0.2f, 0.3f, 0.4f } };
     std::vector<BroadphaseNativeTypes> vec_expected_types = { BroadphaseNativeTypes::BOX_SHAPE_PROXYTYPE,
                                                               BroadphaseNativeTypes::SPHERE_SHAPE_PROXYTYPE,
-                                                            #ifdef LOCO_BULLET_SINGLE_BODIES_USE_STATIC_PLANE
                                                               BroadphaseNativeTypes::STATIC_PLANE_PROXYTYPE,
-                                                            #else
-                                                              BroadphaseNativeTypes::BOX_SHAPE_PROXYTYPE,
-                                                            #endif /* LOCO_BULLET_SINGLE_BODIES_USE_STATIC_PLANE */
                                                               BroadphaseNativeTypes::CYLINDER_SHAPE_PROXYTYPE,
                                                               BroadphaseNativeTypes::CAPSULE_SHAPE_PROXYTYPE,
                                                               BroadphaseNativeTypes::CONVEX_HULL_SHAPE_PROXYTYPE };
