@@ -181,27 +181,15 @@ namespace bullet {
         bt_collider_adapter->SetBulletRigidBody( m_BulletRigidBody.get() );
         bt_collider_adapter->Initialize();
 
-        if ( m_BodyRef->constraint() )
-        {
-            if ( auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodyRevoluteConstraintAdapter*>( m_ConstraintAdapter.get() ) )
-                bt_constraint_adapter->Initialize();
-            else if ( auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodyPrismaticConstraintAdapter*>( m_ConstraintAdapter.get() ) )
-                bt_constraint_adapter->Initialize();
-            else if ( auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodySphericalConstraintAdapter*>( m_ConstraintAdapter.get() ) )
-                bt_constraint_adapter->Initialize();
-            else if ( auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodyTranslational3dConstraintAdapter*>( m_ConstraintAdapter.get() ) )
-                bt_constraint_adapter->Initialize();
-            else if ( auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodyUniversal3dConstraintAdapter*>( m_ConstraintAdapter.get() ) )
-                bt_constraint_adapter->Initialize();
-            else if ( auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodyPlanarConstraintAdapter*>( m_ConstraintAdapter.get() ) )
-                bt_constraint_adapter->Initialize();
-        }
-
         const ssize_t collision_group = collider->collisionGroup();
         const ssize_t collision_mask = collider->collisionMask();
         m_BulletWorldRef->addRigidBody( m_BulletRigidBody.get(), collision_group, collision_mask );
 
-        if ( !m_BodyRef->constraint() )
+        if ( m_BodyRef->constraint() )
+        {
+            m_ConstraintAdapter->Initialize();
+        }
+        else
         {
             m_BulletRigidBody->setLinearVelocity( vec3_to_bt( m_BodyRef->linear_vel0() ) );
             m_BulletRigidBody->setAngularVelocity( vec3_to_bt( m_BodyRef->angular_vel0() ) );
@@ -217,21 +205,7 @@ namespace bullet {
         m_BulletRigidBody->forceActivationState( DISABLE_DEACTIVATION );
         if ( m_BodyRef->constraint() )
         {
-            if ( auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodyRevoluteConstraintAdapter*>( m_ConstraintAdapter.get() ) )
-                bt_constraint_adapter->Reset();
-            else if ( auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodyPrismaticConstraintAdapter*>( m_ConstraintAdapter.get() ) )
-                bt_constraint_adapter->Reset();
-            else if ( auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodySphericalConstraintAdapter*>( m_ConstraintAdapter.get() ) )
-                bt_constraint_adapter->Reset();
-            else if ( auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodyTranslational3dConstraintAdapter*>( m_ConstraintAdapter.get() ) )
-                bt_constraint_adapter->Reset();
-            else if ( auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodyUniversal3dConstraintAdapter*>( m_ConstraintAdapter.get() ) )
-                bt_constraint_adapter->Reset();
-            else if ( auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodyPlanarConstraintAdapter*>( m_ConstraintAdapter.get() ) )
-                bt_constraint_adapter->Reset();
-            else
-                LOCO_CORE_ERROR( "TBulletSingleBodyAdapter::Reset >>> body \"{0}\" has constraint \"{1}\" \
-                                  with unsupported bullet-constraint-adapter", m_BodyRef->name(), m_BodyRef->constraint()->name() );
+            m_ConstraintAdapter->Reset();
         }
         else
         {
@@ -316,17 +290,7 @@ namespace bullet {
         if ( auto bt_collider_adapter = dynamic_cast<TBulletSingleBodyColliderAdapter*>( m_ColliderAdapter.get() ) )
             bt_collider_adapter->SetBulletWorld( world );
 
-        if ( auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodyRevoluteConstraintAdapter*>( m_ConstraintAdapter.get() ) )
-            bt_constraint_adapter->SetBulletWorld( world );
-        else if ( auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodyPrismaticConstraintAdapter*>( m_ConstraintAdapter.get() ) )
-            bt_constraint_adapter->SetBulletWorld( world );
-        else if ( auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodySphericalConstraintAdapter*>( m_ConstraintAdapter.get() ) )
-            bt_constraint_adapter->SetBulletWorld( world );
-        else if ( auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodyTranslational3dConstraintAdapter*>( m_ConstraintAdapter.get() ) )
-            bt_constraint_adapter->SetBulletWorld( world );
-        else if ( auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodyUniversal3dConstraintAdapter*>( m_ConstraintAdapter.get() ) )
-            bt_constraint_adapter->SetBulletWorld( world );
-        else if ( auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodyPlanarConstraintAdapter*>( m_ConstraintAdapter.get() ) )
+        if ( auto bt_constraint_adapter = dynamic_cast<TIBulletSingleBodyConstraintAdapter*>( m_ConstraintAdapter.get() ) )
             bt_constraint_adapter->SetBulletWorld( world );
     }
 }}
