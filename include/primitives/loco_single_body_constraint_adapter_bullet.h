@@ -102,4 +102,95 @@ namespace bullet {
         void GetSlidePosition( TScalar& dst_slide_position ) override;
     };
 
+    class TBulletSingleBodySphericalConstraintAdapter : public TISingleBodyConstraintAdapter,
+                                                        public TIBulletSingleBodyConstraintAdapter
+    {
+    public :
+
+        TBulletSingleBodySphericalConstraintAdapter( TISingleBodyConstraint* constraint_ref )
+            : TISingleBodyConstraintAdapter( constraint_ref ), TIBulletSingleBodyConstraintAdapter() {}
+
+        TBulletSingleBodySphericalConstraintAdapter( const TBulletSingleBodySphericalConstraintAdapter& other ) = delete;
+
+        TBulletSingleBodySphericalConstraintAdapter& operator= ( const TBulletSingleBodySphericalConstraintAdapter& other ) = delete;
+
+        ~TBulletSingleBodySphericalConstraintAdapter();
+
+        void Build() override;
+
+        void Initialize() override;
+
+        void Reset() override;
+
+        void OnDetach() override;
+    };
+
+    class TBulletSingleBodyTranslational3dConstraintAdapter : public TISingleBodyConstraintAdapter,
+                                                              public TIBulletSingleBodyConstraintAdapter
+    {
+    public :
+
+        TBulletSingleBodyTranslational3dConstraintAdapter( TISingleBodyConstraint* constraint_ref )
+            : TISingleBodyConstraintAdapter( constraint_ref ), TIBulletSingleBodyConstraintAdapter() {}
+
+        TBulletSingleBodyTranslational3dConstraintAdapter( const TBulletSingleBodyTranslational3dConstraintAdapter& other ) = delete;
+
+        TBulletSingleBodyTranslational3dConstraintAdapter& operator= ( const TBulletSingleBodyTranslational3dConstraintAdapter& other ) = delete;
+
+        ~TBulletSingleBodyTranslational3dConstraintAdapter();
+
+        void Build() override;
+
+        void Initialize() override;
+
+        void Reset() override;
+
+        void OnDetach() override;
+    };
+
+    class TBulletSingleBodyUniversal3dConstraintAdapter : public TISingleBodyConstraintAdapter,
+                                                          public TIBulletSingleBodyConstraintAdapter
+    {
+    public :
+
+        TBulletSingleBodyUniversal3dConstraintAdapter( TISingleBodyConstraint* constraint_ref )
+            : TISingleBodyConstraintAdapter( constraint_ref ), TIBulletSingleBodyConstraintAdapter() {}
+
+        TBulletSingleBodyUniversal3dConstraintAdapter( const TBulletSingleBodyUniversal3dConstraintAdapter& other ) = delete;
+
+        TBulletSingleBodyUniversal3dConstraintAdapter& operator= ( const TBulletSingleBodyUniversal3dConstraintAdapter& other ) = delete;
+
+        ~TBulletSingleBodyUniversal3dConstraintAdapter();
+
+        void Build() override;
+
+        void Initialize() override;
+
+        void Reset() override;
+
+        void OnDetach() override;
+    };
+
+    class TBulletSingleBodyPlanarConstraintAdapter : public TISingleBodyConstraintAdapter,
+                                                     public TIBulletSingleBodyConstraintAdapter
+    {
+    public :
+
+        TBulletSingleBodyPlanarConstraintAdapter( TISingleBodyConstraint* constraint_ref )
+            : TISingleBodyConstraintAdapter( constraint_ref ), TIBulletSingleBodyConstraintAdapter() {}
+
+        TBulletSingleBodyPlanarConstraintAdapter( const TBulletSingleBodyPlanarConstraintAdapter& other ) = delete;
+
+        TBulletSingleBodyPlanarConstraintAdapter& operator= ( const TBulletSingleBodyPlanarConstraintAdapter& other ) = delete;
+
+        ~TBulletSingleBodyPlanarConstraintAdapter();
+
+        void Build() override;
+
+        void Initialize() override;
+
+        void Reset() override;
+
+        void OnDetach() override;
+    };
 }}

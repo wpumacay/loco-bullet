@@ -170,4 +170,197 @@ namespace bullet {
             dst_slide_position = bt_prismatic_constraint->getLinearPos();
     }
 
+    //********************************************************************************************//
+    //                              Spherical-constraint Adapter Impl                             //
+    //********************************************************************************************//
+
+    TBulletSingleBodySphericalConstraintAdapter::~TBulletSingleBodySphericalConstraintAdapter()
+    {
+        if ( m_ConstraintRef )
+            m_ConstraintRef->DetachSim();
+        m_ConstraintRef = nullptr;
+    }
+
+    void TBulletSingleBodySphericalConstraintAdapter::Build()
+    {
+        LOCO_CORE_ASSERT( m_BulletBodyRef, "TBulletSingleBodySphericalConstraintAdapter::Build >>> \
+                          rigid-body reference must be provided before calling ->Build(), for constraint named {0}", m_ConstraintRef->name() );
+
+        const auto pivot = vec3_to_bt( TVec3( m_ConstraintRef->local_tf().col( 3 ) ) );
+        auto point2point_constraint = std::make_unique<btPoint2PointConstraint>( *m_BulletBodyRef, pivot );
+        m_BulletConstraint = std::move( point2point_constraint );
+    }
+
+    void TBulletSingleBodySphericalConstraintAdapter::Initialize()
+    {
+        LOCO_CORE_ASSERT( m_BulletWorldRef, "TBulletSingleBodySphericalConstraintAdapter::Initialize >>> \
+                          bullet-world reference must be provided before calling ->Build(), for constraint named {0}", m_ConstraintRef->name() );
+        LOCO_CORE_ASSERT( m_BulletConstraint, "TBulletSingleBodySphericalConstraintAdapter::Initialize >>> \
+                          bullet typed-constraint must be created by now (got nullptr). Perhaps missing call to ->Build(), fof constraint named {0}", m_ConstraintRef->name() );
+        m_BulletWorldRef->addConstraint( m_BulletConstraint.get() );
+    }
+
+    void TBulletSingleBodySphericalConstraintAdapter::Reset()
+    {
+        // Nothing to do here (transform is set by body)
+    }
+
+    void TBulletSingleBodySphericalConstraintAdapter::OnDetach()
+    {
+        m_Detached = true;
+        m_ConstraintRef = nullptr;
+    }
+
+    //********************************************************************************************//
+    //                           Translational3d-constraint Adapter Impl                          //
+    //********************************************************************************************//
+
+    TBulletSingleBodyTranslational3dConstraintAdapter::~TBulletSingleBodyTranslational3dConstraintAdapter()
+    {
+        if ( m_ConstraintRef )
+            m_ConstraintRef->DetachSim();
+        m_ConstraintRef = nullptr;
+    }
+
+    void TBulletSingleBodyTranslational3dConstraintAdapter::Build()
+    {
+        LOCO_CORE_ASSERT( m_BulletBodyRef, "TBulletSingleBodyTranslational3dConstraintAdapter::Build >>> \
+                          rigid-body reference must be provided before calling ->Build(), for constraint named {0}", m_ConstraintRef->name() );
+
+        const auto constraint_frame = btTransform::getIdentity();
+        auto generic_6dof_constraint = std::make_unique<btGeneric6DofSpring2Constraint>( *m_BulletBodyRef, constraint_frame );
+        // Linear axes are free (lower > upper)
+        const auto lower_lin_limit = btVector3( 1.0, 1.0, 1.0 );
+        const auto upper_lin_limit = btVector3( 0.0, 0.0, 0.0 );
+        // Angular axes are locked (lower == upper)
+        const auto lower_ang_limit = btVector3( 0.0, 0.0, 0.0 );
+        const auto upper_ang_limit = btVector3( 0.0, 0.0, 0.0 );
+        generic_6dof_constraint->setLinearLowerLimit( lower_lin_limit );
+        generic_6dof_constraint->setLinearUpperLimit( upper_lin_limit );
+        generic_6dof_constraint->setAngularLowerLimit( lower_ang_limit );
+        generic_6dof_constraint->setAngularUpperLimit( upper_ang_limit );
+        m_BulletConstraint = std::move( generic_6dof_constraint );
+    }
+
+    void TBulletSingleBodyTranslational3dConstraintAdapter::Initialize()
+    {
+        LOCO_CORE_ASSERT( m_BulletWorldRef, "TBulletSingleBodyTranslational3dConstraintAdapter::Initialize >>> \
+                          bullet-world reference must be provided before calling ->Build(), for constraint named {0}", m_ConstraintRef->name() );
+        LOCO_CORE_ASSERT( m_BulletConstraint, "TBulletSingleBodyTranslational3dConstraintAdapter::Initialize >>> \
+                          bullet typed-constraint must be created by now (got nullptr). Perhaps missing call to ->Build(), fof constraint named {0}", m_ConstraintRef->name() );
+        m_BulletWorldRef->addConstraint( m_BulletConstraint.get() );
+    }
+
+    void TBulletSingleBodyTranslational3dConstraintAdapter::Reset()
+    {
+        // Nothing to do here (transform is set by body)
+    }
+
+    void TBulletSingleBodyTranslational3dConstraintAdapter::OnDetach()
+    {
+        m_Detached = true;
+        m_ConstraintRef = nullptr;
+    }
+
+    //********************************************************************************************//
+    //                             Universal3d-constraint Adapter Impl                            //
+    //********************************************************************************************//
+
+    TBulletSingleBodyUniversal3dConstraintAdapter::~TBulletSingleBodyUniversal3dConstraintAdapter()
+    {
+        if ( m_ConstraintRef )
+            m_ConstraintRef->DetachSim();
+        m_ConstraintRef = nullptr;
+    }
+
+    void TBulletSingleBodyUniversal3dConstraintAdapter::Build()
+    {
+        LOCO_CORE_ASSERT( m_BulletBodyRef, "TBulletSingleBodyUniversal3dConstraintAdapter::Build >>> \
+                          rigid-body reference must be provided before calling ->Build(), for constraint named {0}", m_ConstraintRef->name() );
+
+        const auto constraint_frame = btTransform::getIdentity();
+        auto generic_6dof_constraint = std::make_unique<btGeneric6DofSpring2Constraint>( *m_BulletBodyRef, constraint_frame );
+        // Linear axes are free (lower > upper)
+        const auto lower_lin_limit = btVector3( 1.0, 1.0, 1.0 );
+        const auto upper_lin_limit = btVector3( 0.0, 0.0, 0.0 );
+        // Angular axes are locked (lower == upper), expect z-axis
+        const auto lower_ang_limit = btVector3( 0.0, 0.0, 1.0 );
+        const auto upper_ang_limit = btVector3( 0.0, 0.0, 0.0 );
+        generic_6dof_constraint->setLinearLowerLimit( lower_lin_limit );
+        generic_6dof_constraint->setLinearUpperLimit( upper_lin_limit );
+        generic_6dof_constraint->setAngularLowerLimit( lower_ang_limit );
+        generic_6dof_constraint->setAngularUpperLimit( upper_ang_limit );
+        m_BulletConstraint = std::move( generic_6dof_constraint );
+    }
+
+    void TBulletSingleBodyUniversal3dConstraintAdapter::Initialize()
+    {
+        LOCO_CORE_ASSERT( m_BulletWorldRef, "TBulletSingleBodyUniversal3dConstraintAdapter::Initialize >>> \
+                          bullet-world reference must be provided before calling ->Build(), for constraint named {0}", m_ConstraintRef->name() );
+        LOCO_CORE_ASSERT( m_BulletConstraint, "TBulletSingleBodyUniversal3dConstraintAdapter::Initialize >>> \
+                          bullet typed-constraint must be created by now (got nullptr). Perhaps missing call to ->Build(), fof constraint named {0}", m_ConstraintRef->name() );
+        m_BulletWorldRef->addConstraint( m_BulletConstraint.get() );
+    }
+
+    void TBulletSingleBodyUniversal3dConstraintAdapter::Reset()
+    {
+        // Nothing to do here (transform is set by body)
+    }
+
+    void TBulletSingleBodyUniversal3dConstraintAdapter::OnDetach()
+    {
+        m_Detached = true;
+        m_ConstraintRef = nullptr;
+    }
+
+    //********************************************************************************************//
+    //                                Planar-constraint Adapter Impl                              //
+    //********************************************************************************************//
+
+    TBulletSingleBodyPlanarConstraintAdapter::~TBulletSingleBodyPlanarConstraintAdapter()
+    {
+        if ( m_ConstraintRef )
+            m_ConstraintRef->DetachSim();
+        m_ConstraintRef = nullptr;
+    }
+
+    void TBulletSingleBodyPlanarConstraintAdapter::Build()
+    {
+        LOCO_CORE_ASSERT( m_BulletBodyRef, "TBulletSingleBodyPlanarConstraintAdapter::Build >>> \
+                          rigid-body reference must be provided before calling ->Build(), for constraint named {0}", m_ConstraintRef->name() );
+
+        const auto constraint_frame = btTransform::getIdentity();
+        auto generic_6dof_constraint = std::make_unique<btGeneric6DofSpring2Constraint>( *m_BulletBodyRef, constraint_frame );
+        // Linear axes x and z are free (lower > upper), and y-axis is locked (lower == upper)
+        const auto lower_lin_limit = btVector3( 1.0, 0.0, 1.0 );
+        const auto upper_lin_limit = btVector3( 0.0, 0.0, 0.0 );
+        // Angular axes are locked (lower == upper), expect y-axis (lower > upper)
+        const auto lower_ang_limit = btVector3( 0.0, 1.0, 0.0 );
+        const auto upper_ang_limit = btVector3( 0.0, 0.0, 0.0 );
+        generic_6dof_constraint->setLinearLowerLimit( lower_lin_limit );
+        generic_6dof_constraint->setLinearUpperLimit( upper_lin_limit );
+        generic_6dof_constraint->setAngularLowerLimit( lower_ang_limit );
+        generic_6dof_constraint->setAngularUpperLimit( upper_ang_limit );
+        m_BulletConstraint = std::move( generic_6dof_constraint );
+    }
+
+    void TBulletSingleBodyPlanarConstraintAdapter::Initialize()
+    {
+        LOCO_CORE_ASSERT( m_BulletWorldRef, "TBulletSingleBodyPlanarConstraintAdapter::Initialize >>> \
+                          bullet-world reference must be provided before calling ->Build(), for constraint named {0}", m_ConstraintRef->name() );
+        LOCO_CORE_ASSERT( m_BulletConstraint, "TBulletSingleBodyPlanarConstraintAdapter::Initialize >>> \
+                          bullet typed-constraint must be created by now (got nullptr). Perhaps missing call to ->Build(), fof constraint named {0}", m_ConstraintRef->name() );
+        m_BulletWorldRef->addConstraint( m_BulletConstraint.get() );
+    }
+
+    void TBulletSingleBodyPlanarConstraintAdapter::Reset()
+    {
+        // Nothing to do here (transform is set by body)
+    }
+
+    void TBulletSingleBodyPlanarConstraintAdapter::OnDetach()
+    {
+        m_Detached = true;
+        m_ConstraintRef = nullptr;
+    }
 }}

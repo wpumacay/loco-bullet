@@ -120,6 +120,42 @@ namespace bullet {
                 bt_constraint_adapter->SetBulletRigidBody( m_BulletRigidBody.get() );
                 bt_constraint_adapter->Build();
             }
+            else if ( constraint_type == eConstraintType::SPHERICAL )
+            {
+                m_ConstraintAdapter = std::make_unique<TBulletSingleBodySphericalConstraintAdapter>( constraint );
+                constraint->SetConstraintAdapter( m_ConstraintAdapter.get() );
+
+                auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodySphericalConstraintAdapter*>( m_ConstraintAdapter.get() );
+                bt_constraint_adapter->SetBulletRigidBody( m_BulletRigidBody.get() );
+                bt_constraint_adapter->Build();
+            }
+            else if ( constraint_type == eConstraintType::TRANSLATIONAL3D )
+            {
+                m_ConstraintAdapter = std::make_unique<TBulletSingleBodyTranslational3dConstraintAdapter>( constraint );
+                constraint->SetConstraintAdapter( m_ConstraintAdapter.get() );
+
+                auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodyTranslational3dConstraintAdapter*>( m_ConstraintAdapter.get() );
+                bt_constraint_adapter->SetBulletRigidBody( m_BulletRigidBody.get() );
+                bt_constraint_adapter->Build();
+            }
+            else if ( constraint_type == eConstraintType::UNIVERSAL3D )
+            {
+                m_ConstraintAdapter = std::make_unique<TBulletSingleBodyUniversal3dConstraintAdapter>( constraint );
+                constraint->SetConstraintAdapter( m_ConstraintAdapter.get() );
+
+                auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodyUniversal3dConstraintAdapter*>( m_ConstraintAdapter.get() );
+                bt_constraint_adapter->SetBulletRigidBody( m_BulletRigidBody.get() );
+                bt_constraint_adapter->Build();
+            }
+            else if ( constraint_type == eConstraintType::PLANAR )
+            {
+                m_ConstraintAdapter = std::make_unique<TBulletSingleBodyPlanarConstraintAdapter>( constraint );
+                constraint->SetConstraintAdapter( m_ConstraintAdapter.get() );
+
+                auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodyPlanarConstraintAdapter*>( m_ConstraintAdapter.get() );
+                bt_constraint_adapter->SetBulletRigidBody( m_BulletRigidBody.get() );
+                bt_constraint_adapter->Build();
+            }
             else
             {
                 LOCO_CORE_ERROR( "TBulletSingleBodyAdapter::Build >>> constraint type {0} not supported", ToString( constraint_type ) );
@@ -151,6 +187,14 @@ namespace bullet {
                 bt_constraint_adapter->Initialize();
             else if ( auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodyPrismaticConstraintAdapter*>( m_ConstraintAdapter.get() ) )
                 bt_constraint_adapter->Initialize();
+            else if ( auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodySphericalConstraintAdapter*>( m_ConstraintAdapter.get() ) )
+                bt_constraint_adapter->Initialize();
+            else if ( auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodyTranslational3dConstraintAdapter*>( m_ConstraintAdapter.get() ) )
+                bt_constraint_adapter->Initialize();
+            else if ( auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodyUniversal3dConstraintAdapter*>( m_ConstraintAdapter.get() ) )
+                bt_constraint_adapter->Initialize();
+            else if ( auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodyPlanarConstraintAdapter*>( m_ConstraintAdapter.get() ) )
+                bt_constraint_adapter->Initialize();
         }
 
         const ssize_t collision_group = collider->collisionGroup();
@@ -176,6 +220,14 @@ namespace bullet {
             if ( auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodyRevoluteConstraintAdapter*>( m_ConstraintAdapter.get() ) )
                 bt_constraint_adapter->Reset();
             else if ( auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodyPrismaticConstraintAdapter*>( m_ConstraintAdapter.get() ) )
+                bt_constraint_adapter->Reset();
+            else if ( auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodySphericalConstraintAdapter*>( m_ConstraintAdapter.get() ) )
+                bt_constraint_adapter->Reset();
+            else if ( auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodyTranslational3dConstraintAdapter*>( m_ConstraintAdapter.get() ) )
+                bt_constraint_adapter->Reset();
+            else if ( auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodyUniversal3dConstraintAdapter*>( m_ConstraintAdapter.get() ) )
+                bt_constraint_adapter->Reset();
+            else if ( auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodyPlanarConstraintAdapter*>( m_ConstraintAdapter.get() ) )
                 bt_constraint_adapter->Reset();
             else
                 LOCO_CORE_ERROR( "TBulletSingleBodyAdapter::Reset >>> body \"{0}\" has constraint \"{1}\" \
@@ -267,6 +319,14 @@ namespace bullet {
         if ( auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodyRevoluteConstraintAdapter*>( m_ConstraintAdapter.get() ) )
             bt_constraint_adapter->SetBulletWorld( world );
         else if ( auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodyPrismaticConstraintAdapter*>( m_ConstraintAdapter.get() ) )
+            bt_constraint_adapter->SetBulletWorld( world );
+        else if ( auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodySphericalConstraintAdapter*>( m_ConstraintAdapter.get() ) )
+            bt_constraint_adapter->SetBulletWorld( world );
+        else if ( auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodyTranslational3dConstraintAdapter*>( m_ConstraintAdapter.get() ) )
+            bt_constraint_adapter->SetBulletWorld( world );
+        else if ( auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodyUniversal3dConstraintAdapter*>( m_ConstraintAdapter.get() ) )
+            bt_constraint_adapter->SetBulletWorld( world );
+        else if ( auto bt_constraint_adapter = dynamic_cast<TBulletSingleBodyPlanarConstraintAdapter*>( m_ConstraintAdapter.get() ) )
             bt_constraint_adapter->SetBulletWorld( world );
     }
 }}
