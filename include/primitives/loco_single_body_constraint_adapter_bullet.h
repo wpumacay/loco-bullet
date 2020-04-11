@@ -56,15 +56,13 @@ namespace bullet {
 
         TBulletSingleBodyRevoluteConstraintAdapter& operator= ( const TBulletSingleBodyRevoluteConstraintAdapter& other ) = delete;
 
-        ~TBulletSingleBodyRevoluteConstraintAdapter();
+        ~TBulletSingleBodyRevoluteConstraintAdapter() = default;
 
         void Build() override;
 
         void Initialize() override;
 
         void Reset() override;
-
-        void OnDetach() override;
 
         void SetHingeAngle( TScalar hinge_angle ) override;
 
@@ -85,15 +83,13 @@ namespace bullet {
 
         TBulletSingleBodyPrismaticConstraintAdapter& operator= ( const TBulletSingleBodyPrismaticConstraintAdapter& other ) = delete;
 
-        ~TBulletSingleBodyPrismaticConstraintAdapter();
+        ~TBulletSingleBodyPrismaticConstraintAdapter() = default;
 
         void Build() override;
 
         void Initialize() override;
 
         void Reset() override;
-
-        void OnDetach() override;
 
         void SetSlidePosition( TScalar slide_position ) override;
 
@@ -114,15 +110,13 @@ namespace bullet {
 
         TBulletSingleBodySphericalConstraintAdapter& operator= ( const TBulletSingleBodySphericalConstraintAdapter& other ) = delete;
 
-        ~TBulletSingleBodySphericalConstraintAdapter();
+        ~TBulletSingleBodySphericalConstraintAdapter() = default;
 
         void Build() override;
 
         void Initialize() override;
 
         void Reset() override;
-
-        void OnDetach() override;
     };
 
     class TBulletSingleBodyTranslational3dConstraintAdapter : public TISingleBodyConstraintAdapter,
@@ -137,15 +131,13 @@ namespace bullet {
 
         TBulletSingleBodyTranslational3dConstraintAdapter& operator= ( const TBulletSingleBodyTranslational3dConstraintAdapter& other ) = delete;
 
-        ~TBulletSingleBodyTranslational3dConstraintAdapter();
+        ~TBulletSingleBodyTranslational3dConstraintAdapter() = default;
 
         void Build() override;
 
         void Initialize() override;
 
         void Reset() override;
-
-        void OnDetach() override;
     };
 
     class TBulletSingleBodyUniversal3dConstraintAdapter : public TISingleBodyConstraintAdapter,
@@ -160,15 +152,13 @@ namespace bullet {
 
         TBulletSingleBodyUniversal3dConstraintAdapter& operator= ( const TBulletSingleBodyUniversal3dConstraintAdapter& other ) = delete;
 
-        ~TBulletSingleBodyUniversal3dConstraintAdapter();
+        ~TBulletSingleBodyUniversal3dConstraintAdapter() = default;
 
         void Build() override;
 
         void Initialize() override;
 
         void Reset() override;
-
-        void OnDetach() override;
     };
 
     class TBulletSingleBodyPlanarConstraintAdapter : public TISingleBodyConstraintAdapter,
@@ -183,14 +173,12 @@ namespace bullet {
 
         TBulletSingleBodyPlanarConstraintAdapter& operator= ( const TBulletSingleBodyPlanarConstraintAdapter& other ) = delete;
 
-        ~TBulletSingleBodyPlanarConstraintAdapter();
+        ~TBulletSingleBodyPlanarConstraintAdapter() = default;
 
         void Build() override;
 
         void Initialize() override;
 
         void Reset() override;
-
-        void OnDetach() override;
     };
 }}

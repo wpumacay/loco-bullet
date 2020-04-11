@@ -26,13 +26,6 @@ namespace bullet {
     //                              Revolute-constraint Adapter Impl                              //
     //********************************************************************************************//
 
-    TBulletSingleBodyRevoluteConstraintAdapter::~TBulletSingleBodyRevoluteConstraintAdapter()
-    {
-        if ( m_ConstraintRef )
-            m_ConstraintRef->DetachSim();
-        m_ConstraintRef = nullptr;
-    }
-
     void TBulletSingleBodyRevoluteConstraintAdapter::Build()
     {
         auto revolute_constraint = dynamic_cast<TSingleBodyRevoluteConstraint*>( m_ConstraintRef );
@@ -62,12 +55,6 @@ namespace bullet {
         SetHingeAngle( 0.0f );
     }
 
-    void TBulletSingleBodyRevoluteConstraintAdapter::OnDetach()
-    {
-        m_Detached = true;
-        m_ConstraintRef = nullptr;
-    }
-
     void TBulletSingleBodyRevoluteConstraintAdapter::SetHingeAngle( TScalar hinge_angle )
     {
         LOCO_CORE_ASSERT( m_BulletConstraint, "TBulletSingleBodyRevoluteConstraintAdapter::Initialize >>> \
@@ -94,13 +81,6 @@ namespace bullet {
     //********************************************************************************************//
     //                              Prismatic-constraint Adapter Impl                             //
     //********************************************************************************************//
-
-    TBulletSingleBodyPrismaticConstraintAdapter::~TBulletSingleBodyPrismaticConstraintAdapter()
-    {
-        if ( m_ConstraintRef )
-            m_ConstraintRef->DetachSim();
-        m_ConstraintRef = nullptr;
-    }
 
     void TBulletSingleBodyPrismaticConstraintAdapter::Build()
     {
@@ -138,12 +118,6 @@ namespace bullet {
         SetSlidePosition( 0.0f );
     }
 
-    void TBulletSingleBodyPrismaticConstraintAdapter::OnDetach()
-    {
-        m_Detached = true;
-        m_ConstraintRef = nullptr;
-    }
-
     void TBulletSingleBodyPrismaticConstraintAdapter::SetSlidePosition( TScalar slide_position )
     {
         LOCO_CORE_ASSERT( m_BulletConstraint, "TBulletSingleBodyPrismaticConstraintAdapter::Initialize >>> \
@@ -174,13 +148,6 @@ namespace bullet {
     //                              Spherical-constraint Adapter Impl                             //
     //********************************************************************************************//
 
-    TBulletSingleBodySphericalConstraintAdapter::~TBulletSingleBodySphericalConstraintAdapter()
-    {
-        if ( m_ConstraintRef )
-            m_ConstraintRef->DetachSim();
-        m_ConstraintRef = nullptr;
-    }
-
     void TBulletSingleBodySphericalConstraintAdapter::Build()
     {
         LOCO_CORE_ASSERT( m_BulletBodyRef, "TBulletSingleBodySphericalConstraintAdapter::Build >>> \
@@ -205,22 +172,9 @@ namespace bullet {
         // Nothing to do here (transform is set by body)
     }
 
-    void TBulletSingleBodySphericalConstraintAdapter::OnDetach()
-    {
-        m_Detached = true;
-        m_ConstraintRef = nullptr;
-    }
-
     //********************************************************************************************//
     //                           Translational3d-constraint Adapter Impl                          //
     //********************************************************************************************//
-
-    TBulletSingleBodyTranslational3dConstraintAdapter::~TBulletSingleBodyTranslational3dConstraintAdapter()
-    {
-        if ( m_ConstraintRef )
-            m_ConstraintRef->DetachSim();
-        m_ConstraintRef = nullptr;
-    }
 
     void TBulletSingleBodyTranslational3dConstraintAdapter::Build()
     {
@@ -256,22 +210,9 @@ namespace bullet {
         // Nothing to do here (transform is set by body)
     }
 
-    void TBulletSingleBodyTranslational3dConstraintAdapter::OnDetach()
-    {
-        m_Detached = true;
-        m_ConstraintRef = nullptr;
-    }
-
     //********************************************************************************************//
     //                             Universal3d-constraint Adapter Impl                            //
     //********************************************************************************************//
-
-    TBulletSingleBodyUniversal3dConstraintAdapter::~TBulletSingleBodyUniversal3dConstraintAdapter()
-    {
-        if ( m_ConstraintRef )
-            m_ConstraintRef->DetachSim();
-        m_ConstraintRef = nullptr;
-    }
 
     void TBulletSingleBodyUniversal3dConstraintAdapter::Build()
     {
@@ -307,22 +248,9 @@ namespace bullet {
         // Nothing to do here (transform is set by body)
     }
 
-    void TBulletSingleBodyUniversal3dConstraintAdapter::OnDetach()
-    {
-        m_Detached = true;
-        m_ConstraintRef = nullptr;
-    }
-
     //********************************************************************************************//
     //                                Planar-constraint Adapter Impl                              //
     //********************************************************************************************//
-
-    TBulletSingleBodyPlanarConstraintAdapter::~TBulletSingleBodyPlanarConstraintAdapter()
-    {
-        if ( m_ConstraintRef )
-            m_ConstraintRef->DetachSim();
-        m_ConstraintRef = nullptr;
-    }
 
     void TBulletSingleBodyPlanarConstraintAdapter::Build()
     {
@@ -356,11 +284,5 @@ namespace bullet {
     void TBulletSingleBodyPlanarConstraintAdapter::Reset()
     {
         // Nothing to do here (transform is set by body)
-    }
-
-    void TBulletSingleBodyPlanarConstraintAdapter::OnDetach()
-    {
-        m_Detached = true;
-        m_ConstraintRef = nullptr;
     }
 }}

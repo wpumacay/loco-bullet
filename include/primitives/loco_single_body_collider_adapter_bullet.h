@@ -28,8 +28,6 @@ namespace bullet {
 
         void Initialize() override;
 
-        void OnDetach() override;
-
         void ChangeSize( const TVec3& new_size ) override;
 
         void ChangeElevationData( const std::vector<float>& heights ) override;

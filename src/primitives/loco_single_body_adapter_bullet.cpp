@@ -28,9 +28,6 @@ namespace bullet {
 
     TBulletSingleBodyAdapter::~TBulletSingleBodyAdapter()
     {
-        if ( m_BodyRef )
-            m_BodyRef->DetachSim();
-        m_BodyRef = nullptr;
         m_ColliderAdapter = nullptr;
         m_ConstraintAdapter = nullptr;
 
@@ -212,12 +209,6 @@ namespace bullet {
             m_BulletRigidBody->setLinearVelocity( vec3_to_bt( m_BodyRef->linear_vel0() ) );
             m_BulletRigidBody->setAngularVelocity( vec3_to_bt( m_BodyRef->angular_vel0() ) );
         }
-    }
-
-    void TBulletSingleBodyAdapter::OnDetach()
-    {
-        m_Detached = true;
-        m_BodyRef = nullptr;
     }
 
     void TBulletSingleBodyAdapter::SetTransform( const TMat4& transform )

@@ -30,8 +30,6 @@ namespace bullet {
 
         void Reset() override;
 
-        void OnDetach() override;
-
         void SetTransform( const TMat4& transform ) override;
 
         void SetLinearVelocity( const TVec3& linear_vel ) override;

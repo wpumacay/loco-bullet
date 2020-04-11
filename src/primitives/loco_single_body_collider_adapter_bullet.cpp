@@ -28,10 +28,6 @@ namespace bullet {
 
     TBulletSingleBodyColliderAdapter::~TBulletSingleBodyColliderAdapter()
     {
-        if ( m_ColliderRef )
-            m_ColliderRef->DetachSim();
-        m_ColliderRef = nullptr;
-
         m_BulletCollisionShape = nullptr;
         m_BulletRigidBodyRef = nullptr;
         m_BulletWorldRef = nullptr;
@@ -93,12 +89,6 @@ namespace bullet {
 
             }
         }
-    }
-
-    void TBulletSingleBodyColliderAdapter::OnDetach()
-    {
-        m_Detached = true;
-        m_ColliderRef = nullptr;
     }
 
     void TBulletSingleBodyColliderAdapter::ChangeSize( const TVec3& newSize )
