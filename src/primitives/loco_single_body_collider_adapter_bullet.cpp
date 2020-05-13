@@ -19,10 +19,10 @@ namespace bullet {
 
     #if defined( LOCO_CORE_USE_TRACK_ALLOCS )
         const std::string name = ( m_ColliderRef ) ? m_ColliderRef->name() : "undefined";
-        if ( TLogger::IsActive() )
-            LOCO_CORE_TRACE( "Loco::Allocs: Created TBulletSingleBodyColliderAdapter {0} @ {1}", name, loco::PointerToHexAddress( this ) );
+        if ( tinyutils::Logger::IsActive() )
+            LOCO_CORE_TRACE( "Loco::Allocs: Created TBulletSingleBodyColliderAdapter {0} @ {1}", name, tinyutils::PointerToHexAddress( this ) );
         else
-            std::cout << "Loco::Allocs: Created TBulletSingleBodyColliderAdapter " << name << " @ " << loco::PointerToHexAddress( this ) << std::endl;
+            std::cout << "Loco::Allocs: Created TBulletSingleBodyColliderAdapter " << name << " @ " << tinyutils::PointerToHexAddress( this ) << std::endl;
     #endif
     }
 
@@ -34,10 +34,10 @@ namespace bullet {
 
     #if defined( LOCO_CORE_USE_TRACK_ALLOCS )
         const std::string name = ( m_ColliderRef ) ? m_ColliderRef->name() : "undefined";
-        if ( TLogger::IsActive() )
-            LOCO_CORE_TRACE( "Loco::Allocs: Destroyed TBulletSingleBodyColliderAdapter {0} @ {1}", name, loco::PointerToHexAddress( this ) );
+        if ( tinyutils::Logger::IsActive() )
+            LOCO_CORE_TRACE( "Loco::Allocs: Destroyed TBulletSingleBodyColliderAdapter {0} @ {1}", name, tinyutils::PointerToHexAddress( this ) );
         else
-            std::cout << "Loco::Allocs: Destroyed TBulletSingleBodyColliderAdapter " << name << " @ " << loco::PointerToHexAddress( this ) << std::endl;
+            std::cout << "Loco::Allocs: Destroyed TBulletSingleBodyColliderAdapter " << name << " @ " << tinyutils::PointerToHexAddress( this ) << std::endl;
     #endif
     }
 

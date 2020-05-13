@@ -19,10 +19,10 @@ namespace bullet {
 
     #if defined( LOCO_CORE_USE_TRACK_ALLOCS )
         const std::string name = ( m_BodyRef ) ? m_BodyRef->name() : "undefined";
-        if ( TLogger::IsActive() )
-            LOCO_CORE_TRACE( "Loco::Allocs: Created TBulletSingleBodyAdapter {0} @ {1}", name, loco::PointerToHexAddress( this ) );
+        if ( tinyutils::Logger::IsActive() )
+            LOCO_CORE_TRACE( "Loco::Allocs: Created TBulletSingleBodyAdapter {0} @ {1}", name, tinyutils::PointerToHexAddress( this ) );
         else
-            std::cout << "Loco::Allocs: Created TBulletSingleBodyAdapter " << name << " @ " << loco::PointerToHexAddress( this ) << std::endl;
+            std::cout << "Loco::Allocs: Created TBulletSingleBodyAdapter " << name << " @ " << tinyutils::PointerToHexAddress( this ) << std::endl;
     #endif
     }
 
@@ -36,10 +36,10 @@ namespace bullet {
 
     #if defined( LOCO_CORE_USE_TRACK_ALLOCS )
         const std::string name = ( m_BodyRef ) ? m_BodyRef->name() : "undefined";
-        if ( TLogger::IsActive() )
-            LOCO_CORE_TRACE( "Loco::Allocs: Destroyed TBulletSingleBodyAdapter {0} @ {1}", name, loco::PointerToHexAddress( this ) );
+        if ( tinyutils::Logger::IsActive() )
+            LOCO_CORE_TRACE( "Loco::Allocs: Destroyed TBulletSingleBodyAdapter {0} @ {1}", name, tinyutils::PointerToHexAddress( this ) );
         else
-            std::cout << "Loco::Allocs: Destroyed TBulletSingleBodyAdapter " << name << " @ " << loco::PointerToHexAddress( this ) << std::endl;
+            std::cout << "Loco::Allocs: Destroyed TBulletSingleBodyAdapter " << name << " @ " << tinyutils::PointerToHexAddress( this ) << std::endl;
     #endif
     }
 

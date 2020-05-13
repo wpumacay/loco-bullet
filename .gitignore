@@ -22,6 +22,7 @@ tysoc_bullet.egg-info/
 # dependencies-exclusions
 ext/tiny_math*
 ext/tiny_renderer*
+ext/tiny_utils*
 ext/imgui*
 ext/spdlog*
 ext/pybind11*

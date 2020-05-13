@@ -82,10 +82,10 @@ namespace bullet {
         //// _CreateTerrainGeneratorAdapters();
 
     #if defined( LOCO_CORE_USE_TRACK_ALLOCS )
-        if ( TLogger::IsActive() )
-            LOCO_CORE_TRACE( "Loco::Allocs: Created TBulletSimulation @ {0}", loco::PointerToHexAddress( this ) );
+        if ( tinyutils::Logger::IsActive() )
+            LOCO_CORE_TRACE( "Loco::Allocs: Created TBulletSimulation @ {0}", tinyutils::PointerToHexAddress( this ) );
         else
-            std::cout << "Loco::Allocs: Created TBulletSimulation @ " << loco::PointerToHexAddress( this ) << std::endl;
+            std::cout << "Loco::Allocs: Created TBulletSimulation @ " << tinyutils::PointerToHexAddress( this ) << std::endl;
     #endif
     }
 
@@ -111,10 +111,10 @@ namespace bullet {
         m_bulletOverlapFilterCallback = nullptr;
 
     #if defined( LOCO_CORE_USE_TRACK_ALLOCS )
-        if ( TLogger::IsActive() )
-            LOCO_CORE_TRACE( "Loco::Allocs: Destroyed TBulletSimulation @ {0}", loco::PointerToHexAddress( this ) );
+        if ( tinyutils::Logger::IsActive() )
+            LOCO_CORE_TRACE( "Loco::Allocs: Destroyed TBulletSimulation @ {0}", tinyutils::PointerToHexAddress( this ) );
         else
-            std::cout << "Loco::Allocs: Destroyed TBulletSimulation @ " << loco::PointerToHexAddress( this ) << std::endl;
+            std::cout << "Loco::Allocs: Destroyed TBulletSimulation @ " << tinyutils::PointerToHexAddress( this ) << std::endl;
     #endif
     }
 

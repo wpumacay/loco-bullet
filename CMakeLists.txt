@@ -101,6 +101,7 @@ set( LOCO_BULLET_INCLUDE_DIRS
      "${CMAKE_SOURCE_DIR}/core/ext/tinyxml2"
      "${CMAKE_SOURCE_DIR}/ext/spdlog/include"
      "${CMAKE_SOURCE_DIR}/ext/tiny_math/include"
+     "${CMAKE_SOURCE_DIR}/ext/tiny_utils/include"
      "${CMAKE_SOURCE_DIR}/ext/bullet3/src" )
 include_directories( ${LOCO_BULLET_INCLUDE_DIRS} )
 
