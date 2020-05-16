@@ -128,6 +128,63 @@ namespace bullet {
         return true;
     }
 
+    void TBulletSimulation::_CollectContacts()
+    {
+        LOCO_CORE_ASSERT( m_BulletDynamicsWorld, "TBulletSimulation::_CollectContacts >>> \
+                          btDynamicsWorld object is required, but got nullptr instead" );
+        LOCO_CORE_ASSERT( m_BulletCollisionDispatcher, "TBulletSimulation::_CollectContacts >>> \
+                          btCollisionDispatcher object is required, but got nullptr instead " );
+
+        std::map< std::string, std::vector<TContactData> > detected_contacts;
+        const ssize_t num_manifolds = m_BulletCollisionDispatcher->getNumManifolds();
+        for ( ssize_t i = 0; i < num_manifolds; i++ )
+        {
+            auto contact_manifold = m_BulletCollisionDispatcher->getManifoldByIndexInternal( i );
+            auto collision_object_id_1 = (eObjectType) contact_manifold->getBody0()->getUserIndex();
+            auto collision_object_id_2 = (eObjectType) contact_manifold->getBody1()->getUserIndex();
+            if ( collision_object_id_1 != eObjectType::SINGLE_BODY_COLLIDER ||
+                 collision_object_id_2 != eObjectType::SINGLE_BODY_COLLIDER )
+                continue;
+            auto collider_ref_1 = reinterpret_cast<TSingleBodyCollider*>( contact_manifold->getBody0()->getUserPointer() );
+            auto collider_ref_2 = reinterpret_cast<TSingleBodyCollider*>( contact_manifold->getBody1()->getUserPointer() );
+            const std::string collider_1 = collider_ref_1->name();
+            const std::string collider_2 = collider_ref_2->name();
+            const ssize_t num_contacts = contact_manifold->getNumContacts();
+            for ( ssize_t j = 0; j < num_contacts; j++ )
+            {
+                const btManifoldPoint& contact_info = contact_manifold->getContactPoint( j );
+                const TVec3 position = vec3_from_bt( contact_info.m_positionWorldOnB );
+                const TVec3 normal = vec3_from_bt( contact_info.m_normalWorldOnB );
+
+                if ( detected_contacts.find( collider_1 ) == detected_contacts.end() )
+                    detected_contacts[collider_1] = std::vector<TContactData>();
+                if ( detected_contacts.find( collider_2 ) == detected_contacts.end() )
+                    detected_contacts[collider_2] = std::vector<TContactData>();
+
+                TContactData contact_1, contact_2;
+                contact_1.position = position;  contact_2.position = position;
+                contact_1.normal = normal;      contact_2.normal = normal.scaled( -1.0 );
+                contact_1.name = collider_2;    contact_2.name = collider_1;
+
+                detected_contacts[collider_1].push_back( contact_1 );
+                detected_contacts[collider_2].push_back( contact_2 );
+            }
+        }
+
+        auto single_bodies = m_ScenarioRef->GetSingleBodiesList();
+        for ( auto single_body : single_bodies )
+        {
+            auto collider = single_body->collider();
+            auto collider_name = collider->name();
+
+            collider->contacts().clear();
+            if ( detected_contacts.find( collider_name ) != detected_contacts.end() )
+                collider->contacts() = detected_contacts[collider_name];
+
+            LOCO_CORE_INFO( "collider: {0}, num_contacts: {1}", collider_name, collider->contacts().size() );
+        }
+    }
+
     void TBulletSimulation::_PreStepInternal()
     {
         // Do nothing here, as call to wrappers is enough (made in base)
@@ -142,8 +199,7 @@ namespace bullet {
 
     void TBulletSimulation::_PostStepInternal()
     {
-        // @todo: run loco-contact-manager here to grab all detected contacts
-
+        _CollectContacts();
         m_BulletDynamicsWorld->debugDrawWorld();
     }
 

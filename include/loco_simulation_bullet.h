@@ -105,6 +105,8 @@ namespace bullet {
 
         // void _CreateTerrainGeneratorAdapters();
 
+        void _CollectContacts();
+
     private :
 
         /// Bullet's world used for the simulation

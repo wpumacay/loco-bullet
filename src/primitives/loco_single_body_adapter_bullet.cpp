@@ -95,6 +95,8 @@ namespace bullet {
 
         m_BulletRigidBody = std::make_unique<btRigidBody>( bt_construction_info );
         m_BulletRigidBody->forceActivationState( DISABLE_DEACTIVATION );
+        m_BulletRigidBody->setUserIndex( (int)eObjectType::SINGLE_BODY_COLLIDER );
+        m_BulletRigidBody->setUserPointer( (void*) m_BodyRef->collider() );
 
         if ( auto constraint = m_BodyRef->constraint() )
         {
