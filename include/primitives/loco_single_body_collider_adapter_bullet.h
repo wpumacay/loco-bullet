@@ -36,6 +36,8 @@ namespace bullet {
 
         void ChangeCollisionMask( int collisionMask ) override;
 
+        void ChangeFriction( const TScalar& friction ) override;
+
         void SetBulletRigidBody( btRigidBody* rigid_body ) { m_BulletRigidBodyRef = rigid_body; }
 
         void SetBulletWorld( btDynamicsWorld* world ) { m_BulletWorldRef = world; }

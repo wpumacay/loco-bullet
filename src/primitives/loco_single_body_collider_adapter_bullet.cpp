@@ -89,6 +89,7 @@ namespace bullet {
 
             }
         }
+        ChangeFriction( m_ColliderRef->data().friction.x() );
     }
 
     void TBulletSingleBodyColliderAdapter::ChangeSize( const TVec3& newSize )
@@ -197,6 +198,18 @@ namespace bullet {
         }
 
         m_BulletRigidBodyRef->getBroadphaseHandle()->m_collisionFilterMask = collisionMask;
+    }
+
+    void TBulletSingleBodyColliderAdapter::ChangeFriction( const TScalar& friction )
+    {
+        if ( !m_BulletRigidBodyRef )
+        {
+            LOCO_CORE_ERROR( "TBulletSingleBodyColliderAdapter::ChangeFriction >>> collider {0} doesn't \
+                              have a handle to its associated bullet rigid-body owner", m_ColliderRef->name() );
+            return;
+        }
+
+        m_BulletRigidBodyRef->setFriction( friction );
     }
 
 }}
