@@ -167,6 +167,38 @@ namespace bullet {
         m_BulletCollisionShape->setLocalScaling( vec3_to_bt( m_Scale ) );
     }
 
+    void TBulletSingleBodyColliderAdapter::ChangeVertexData( const std::vector<float>& vertices, const std::vector<int>& faces )
+    {
+        if ( !m_BulletCollisionShape )
+            return;
+
+
+        if ( m_ColliderRef->shape() != eShapeType::MESH )
+        {
+            LOCO_CORE_WARN( "TBulletSingleBodyColliderAdapter::ChangeVertexData >>> tried to set vertex-data \
+                             to the non-mesh collider {0}", m_ColliderRef->name() );
+            return;
+        }
+
+        const ssize_t num_vertices = vertices.size() / 3;
+        const ssize_t num_faces = faces.size() / 3;
+        const bool recalc_local_aabb = false;
+        const TVec3 scale = m_ColliderRef->data().size;
+
+        if ( auto convex_hull_shape = dynamic_cast<btConvexHullShape*>( m_BulletCollisionShape.get() ) )
+        {
+            convex_hull_shape->reset();
+            for ( ssize_t f = 0; f < num_faces; f++ )
+                for ( ssize_t v = 0; v < 3; v++ )
+                    convex_hull_shape->addPoint( btVector3( scale.x() * vertices[3 * faces[3 * f + v] + 0],
+                                                            scale.y() * vertices[3 * faces[3 * f + v] + 1],
+                                                            scale.z() * vertices[3 * faces[3 * f + v] + 2] ),
+                                                 recalc_local_aabb );
+            convex_hull_shape->recalcLocalAabb();
+            convex_hull_shape->optimizeConvexHull();
+        }
+    }
+
     void TBulletSingleBodyColliderAdapter::ChangeElevationData( const std::vector<float>& heights )
     {
         // Nothing extra here. Adaptee already updates heights buffer using memcpy to keep the
