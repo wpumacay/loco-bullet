@@ -6,11 +6,12 @@
 #include <primitives/loco_single_body_constraint_adapter_bullet.h>
 
 namespace loco {
+namespace primitives {
     class TSingleBody;
-}
+}}
 
 namespace loco {
-namespace bullet {
+namespace primitives {
 
     class TBulletSingleBodyAdapter : public TISingleBodyAdapter
     {
@@ -67,5 +68,4 @@ namespace bullet {
         // Inverse of the hfield compensation matrix
         btTransform m_HfieldTfCompensationInv;
     };
-
 }}

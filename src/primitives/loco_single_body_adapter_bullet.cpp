@@ -2,7 +2,7 @@
 #include <primitives/loco_single_body_adapter_bullet.h>
 
 namespace loco {
-namespace bullet {
+namespace primitives {
 
     TBulletSingleBodyAdapter::TBulletSingleBodyAdapter( TSingleBody* body_ref )
         : TISingleBodyAdapter( body_ref )
@@ -68,7 +68,7 @@ namespace bullet {
                 if ( m_BodyRef->data().inertia.mass > loco::EPS )
                     bt_mass = m_BodyRef->data().inertia.mass;
                 else
-                    bt_mass = ComputeVolumeFromBtShape( bt_collision_shape ) * loco::DEFAULT_DENSITY;
+                    bt_mass = bullet::ComputeVolumeFromBtShape( bt_collision_shape ) * loco::DEFAULT_DENSITY;
 
                 if ( bt_mass > loco::EPS )
                     bt_collision_shape->calculateLocalInertia( bt_mass, bt_inertia_diag );
@@ -86,12 +86,12 @@ namespace bullet {
             const float z_max = *std::max_element( heights.cbegin(), heights.cend() );
             const float z_scale = collider->size().z();
             const float z_offset = z_max / 2.0f * z_scale * z_scale;
-            m_HfieldTfCompensation.setOrigin( vec3_to_bt( { 0.0f, 0.0f, z_offset } ) );
+            m_HfieldTfCompensation.setOrigin( bullet::vec3_to_bt( { 0.0f, 0.0f, z_offset } ) );
             m_HfieldTfCompensationInv = m_HfieldTfCompensation.inverse();
         }
 
         btRigidBody::btRigidBodyConstructionInfo bt_construction_info( bt_mass, nullptr, bt_collision_shape, bt_inertia_diag );
-        bt_construction_info.m_startWorldTransform = mat4_to_bt( m_BodyRef->tf0() ) * m_HfieldTfCompensation;
+        bt_construction_info.m_startWorldTransform = bullet::mat4_to_bt( m_BodyRef->tf0() ) * m_HfieldTfCompensation;
 
         m_BulletRigidBody = std::make_unique<btRigidBody>( bt_construction_info );
         m_BulletRigidBody->forceActivationState( DISABLE_DEACTIVATION );
@@ -190,8 +190,8 @@ namespace bullet {
         }
         else
         {
-            m_BulletRigidBody->setLinearVelocity( vec3_to_bt( m_BodyRef->linear_vel0() ) );
-            m_BulletRigidBody->setAngularVelocity( vec3_to_bt( m_BodyRef->angular_vel0() ) );
+            m_BulletRigidBody->setLinearVelocity( bullet::vec3_to_bt( m_BodyRef->linear_vel0() ) );
+            m_BulletRigidBody->setAngularVelocity( bullet::vec3_to_bt( m_BodyRef->angular_vel0() ) );
         }
     }
 
@@ -200,7 +200,7 @@ namespace bullet {
         LOCO_CORE_ASSERT( m_BulletRigidBody, "TBulletSingleBodyAdapter::Reset >>> body {0} must have \
                           a valid bullet-rigid-body. Perhaps missing call to ->Build()?", m_BodyRef->name() );
 
-        m_BulletRigidBody->setWorldTransform( mat4_to_bt( m_BodyRef->tf0() ) * m_HfieldTfCompensation );
+        m_BulletRigidBody->setWorldTransform( bullet::mat4_to_bt( m_BodyRef->tf0() ) * m_HfieldTfCompensation );
         m_BulletRigidBody->forceActivationState( DISABLE_DEACTIVATION );
         if ( m_BodyRef->constraint() )
         {
@@ -208,8 +208,8 @@ namespace bullet {
         }
         else
         {
-            m_BulletRigidBody->setLinearVelocity( vec3_to_bt( m_BodyRef->linear_vel0() ) );
-            m_BulletRigidBody->setAngularVelocity( vec3_to_bt( m_BodyRef->angular_vel0() ) );
+            m_BulletRigidBody->setLinearVelocity( bullet::vec3_to_bt( m_BodyRef->linear_vel0() ) );
+            m_BulletRigidBody->setAngularVelocity( bullet::vec3_to_bt( m_BodyRef->angular_vel0() ) );
         }
     }
 
@@ -218,7 +218,7 @@ namespace bullet {
         LOCO_CORE_ASSERT( m_BulletRigidBody, "TBulletSingleBodyAdapter::SetTransform >>> body {0} must have \
                           a valid bullet-rigid-body. Perhaps missing call to ->Build()?", m_BodyRef->name() );
 
-        m_BulletRigidBody->setWorldTransform( mat4_to_bt( transform ) * m_HfieldTfCompensation );
+        m_BulletRigidBody->setWorldTransform( bullet::mat4_to_bt( transform ) * m_HfieldTfCompensation );
     }
 
     void TBulletSingleBodyAdapter::SetLinearVelocity( const TVec3& linear_vel )
@@ -226,7 +226,7 @@ namespace bullet {
         LOCO_CORE_ASSERT( m_BulletRigidBody, "TBulletSingleBodyAdapter::SetLinearVelocity >>> body {0} must have \
                           a valid bullet-rigid-body. Perhaps missing call to ->Build()?", m_BodyRef->name() );
 
-        m_BulletRigidBody->setLinearVelocity( vec3_to_bt( linear_vel ) );
+        m_BulletRigidBody->setLinearVelocity( bullet::vec3_to_bt( linear_vel ) );
     }
 
     void TBulletSingleBodyAdapter::SetAngularVelocity( const TVec3& angular_vel )
@@ -234,7 +234,7 @@ namespace bullet {
         LOCO_CORE_ASSERT( m_BulletRigidBody, "TBulletSingleBodyAdapter::SetAngularVelocity >>> body {0} must have \
                           a valid bullet-rigid-body. Perhaps missing call to ->Build()?", m_BodyRef->name() );
 
-        m_BulletRigidBody->setAngularVelocity( vec3_to_bt( angular_vel ) );
+        m_BulletRigidBody->setAngularVelocity( bullet::vec3_to_bt( angular_vel ) );
     }
 
     void TBulletSingleBodyAdapter::SetForceCOM( const TVec3& force_com )
@@ -242,7 +242,7 @@ namespace bullet {
         LOCO_CORE_ASSERT( m_BulletRigidBody, "TBulletSingleBodyAdapter::SetForceCOM >>> body {0} must have \
                           a valid bullet-rigid-body. Perhaps missing call to ->Build()?", m_BodyRef->name() );
 
-        m_BulletRigidBody->applyCentralForce( vec3_to_bt( force_com ) );
+        m_BulletRigidBody->applyCentralForce( bullet::vec3_to_bt( force_com ) );
     }
 
     void TBulletSingleBodyAdapter::SetTorqueCOM( const TVec3& torque_com )
@@ -250,7 +250,7 @@ namespace bullet {
         LOCO_CORE_ASSERT( m_BulletRigidBody, "TBulletSingleBodyAdapter::SetTorqueCOM >>> body {0} must have \
                           a valid bullet-rigid-body. Perhaps missing call to ->Build()?", m_BodyRef->name() );
 
-        m_BulletRigidBody->applyTorque( vec3_to_bt( torque_com ) );
+        m_BulletRigidBody->applyTorque( bullet::vec3_to_bt( torque_com ) );
     }
 
     void TBulletSingleBodyAdapter::GetTransform( TMat4& dst_transform ) /* const */
@@ -258,7 +258,7 @@ namespace bullet {
         LOCO_CORE_ASSERT( m_BulletRigidBody, "TBulletSingleBodyAdapter::GetTransform >>> body {0} must have \
                           a valid bullet-rigid-body. Perhaps missing call to ->Build()?", m_BodyRef->name() );
 
-        dst_transform = mat4_from_bt( m_BulletRigidBody->getWorldTransform() * m_HfieldTfCompensationInv );
+        dst_transform = bullet::mat4_from_bt( m_BulletRigidBody->getWorldTransform() * m_HfieldTfCompensationInv );
     }
 
     void TBulletSingleBodyAdapter::GetLinearVelocity( TVec3& dst_linear_vel ) /* const */
@@ -266,7 +266,7 @@ namespace bullet {
         LOCO_CORE_ASSERT( m_BulletRigidBody, "TBulletSingleBodyAdapter::GetLinearVelocity >>> body {0} must have \
                           a valid bullet-rigid-body. Perhaps missing call to ->Build()?", m_BodyRef->name() );
 
-        dst_linear_vel = vec3_from_bt( m_BulletRigidBody->getLinearVelocity() );
+        dst_linear_vel = bullet::vec3_from_bt( m_BulletRigidBody->getLinearVelocity() );
     }
 
     void TBulletSingleBodyAdapter::GetAngularVelocity( TVec3& dst_angular_vel ) /* const */
@@ -274,7 +274,7 @@ namespace bullet {
         LOCO_CORE_ASSERT( m_BulletRigidBody, "TBulletSingleBodyAdapter::GetAngularVelocity >>> body {0} must have \
                           a valid bullet-rigid-body. Perhaps missing call to ->Build()?", m_BodyRef->name() );
 
-        dst_angular_vel = vec3_from_bt( m_BulletRigidBody->getAngularVelocity() );
+        dst_angular_vel = bullet::vec3_from_bt( m_BulletRigidBody->getAngularVelocity() );
     }
 
     void TBulletSingleBodyAdapter::SetBulletWorld( btDynamicsWorld* world )

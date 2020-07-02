@@ -4,11 +4,12 @@
 #include <primitives/loco_single_body_constraint_adapter.h>
 
 namespace loco {
+namespace primitives {
     class TSingleBodyConstraint;
-}
+}}
 
 namespace loco {
-namespace bullet {
+namespace primitives {
 
     class TIBulletSingleBodyConstraintAdapter
     {

@@ -4,13 +4,14 @@
 #include <primitives/loco_single_body_collider_adapter.h>
 
 namespace loco {
+namespace primitives {
     class TSingleBodyCollider;
-}
+}}
 
 namespace loco {
-namespace bullet {
+namespace primitives {
 
-    const float LOCO_BULLET_HFIELD_BASE = 1.0f;
+    constexpr float LOCO_BULLET_HFIELD_BASE = 1.0f;
 
     class TBulletSingleBodyColliderAdapter : public TISingleBodyColliderAdapter
     {

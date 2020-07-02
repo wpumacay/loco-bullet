@@ -2,23 +2,22 @@
 
 #include <loco_common_bullet.h>
 #include <loco_simulation.h>
-#include <typeinfo>
 
 #include <primitives/loco_single_body_collider_adapter_bullet.h>
 #include <primitives/loco_single_body_adapter_bullet.h>
 
 namespace loco {
+namespace visualizer {
     class TIVisualizer;
-}
+}}
 
-namespace loco {
-namespace bullet {
-
+namespace loco
+{
     class TBulletDebugDrawer : public btIDebugDraw
     {
     public :
 
-        TBulletDebugDrawer( TIVisualizer* visualizerRef );
+        TBulletDebugDrawer( visualizer::TIVisualizer* visualizerRef );
 
         ~TBulletDebugDrawer();
 
@@ -38,7 +37,7 @@ namespace bullet {
     private :
 
         /// Reference to the visualizer used for internal drawing calls
-        TIVisualizer* m_VisualizerRef;
+        visualizer::TIVisualizer* m_VisualizerRef;
         /// Indicator of what can be drawn using the debug-drawer
         int m_DebugMode;
     };
@@ -93,13 +92,11 @@ namespace bullet {
 
         void _SetGravityInternal( const TVec3& gravity ) override;
 
-        void _SetVisualizerInternal( TIVisualizer* visualizerRef ) override;
+        void _SetVisualizerInternal( visualizer::TIVisualizer* visualizerRef ) override;
 
     private :
 
         void _CreateSingleBodyAdapters();
-
-        // void _CreateCompoundAdapters();
 
         // void _CreateKintreeAdapters();
 
@@ -128,5 +125,4 @@ namespace bullet {
     };
 
     extern "C" TISimulation* simulation_create( TScenario* scenarioRef );
-
-}}
+}

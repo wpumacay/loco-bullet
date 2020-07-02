@@ -2,7 +2,7 @@
 #include <primitives/loco_single_body_collider_adapter_bullet.h>
 
 namespace loco {
-namespace bullet {
+namespace primitives {
 
     TBulletSingleBodyColliderAdapter::TBulletSingleBodyColliderAdapter( TSingleBodyCollider* collision_ref )
         : TISingleBodyColliderAdapter( collision_ref )
@@ -43,7 +43,7 @@ namespace bullet {
 
     void TBulletSingleBodyColliderAdapter::Build()
     {
-        m_BulletCollisionShape = CreateCollisionShape( m_ColliderRef->data() );
+        m_BulletCollisionShape = bullet::CreateCollisionShape( m_ColliderRef->data() );
         m_BulletCollisionShape->setMargin( 0.001 );
 
         m_Size  = m_ColliderRef->size();
@@ -55,15 +55,15 @@ namespace bullet {
     {
         LOCO_CORE_ASSERT( m_BulletCollisionShape, "TBulletSingleBodyColliderAdapter::Initialize >>> must have \
                           already created a valid bullet collision shape (missing ->Build call?)" );
-
+    #if defined(LOCO_BULLET_DEBUG)
         LOCO_CORE_TRACE( "Bullet-backend >>> collision-adapter" );
         LOCO_CORE_TRACE( "\tname            : {0}", m_ColliderRef->name() );
         LOCO_CORE_TRACE( "\tcol-size        : {0}", ToString( m_ColliderRef->size() ) );
         LOCO_CORE_TRACE( "\tcol-shape       : {0}", ToString( m_ColliderRef->shape() ) );
         LOCO_CORE_TRACE( "\tcol-group       : {0}", std::to_string( m_ColliderRef->collisionGroup() ) );
         LOCO_CORE_TRACE( "\tcol-mask        : {0}", std::to_string( m_ColliderRef->collisionMask() ) );
-        LOCO_CORE_TRACE( "\tbt-geom-shape   : {0}", bt_shape_enum_to_str( (BroadphaseNativeTypes)m_BulletCollisionShape->getShapeType() ) );
-        LOCO_CORE_TRACE( "\tbt-local-scale  : {0}", ToString( vec3_from_bt( m_BulletCollisionShape->getLocalScaling() ) ) );
+        LOCO_CORE_TRACE( "\tbt-geom-shape   : {0}", bullet::bt_shape_enum_to_str( (BroadphaseNativeTypes)m_BulletCollisionShape->getShapeType() ) );
+        LOCO_CORE_TRACE( "\tbt-local-scale  : {0}", ToString( bullet::vec3_from_bt( m_BulletCollisionShape->getLocalScaling() ) ) );
         LOCO_CORE_TRACE( "\tbt-margin       : {0}", m_BulletCollisionShape->getMargin() );
         btVector3 aabb_min, aabb_max;
         m_BulletCollisionShape->getAabb( btTransform::getIdentity(), aabb_min, aabb_max );
@@ -79,16 +79,17 @@ namespace bullet {
             LOCO_CORE_TRACE( "\tbt-num-children : {0}", bt_num_children );
             for ( size_t i = 0; i < bt_num_children; i++ )
             {
-                LOCO_CORE_TRACE( "\tbt-child-tf     : \n{0}", ToString( mat4_from_bt( bt_compound_shape->getChildTransform( i ) ) ) );
+                LOCO_CORE_TRACE( "\tbt-child-tf     : \n{0}", ToString( bullet::mat4_from_bt( bt_compound_shape->getChildTransform( i ) ) ) );
                 if ( auto bt_child_shape = bt_compound_shape->getChildShape( i ) )
                 {
-                    LOCO_CORE_TRACE( "\tbt-child-type   : {0}", bt_shape_enum_to_str( (BroadphaseNativeTypes)bt_child_shape->getShapeType() ) );
-                    LOCO_CORE_TRACE( "\tbt-child-loc.scl: {0}", ToString( vec3_from_bt( bt_child_shape->getLocalScaling() ) ) );
+                    LOCO_CORE_TRACE( "\tbt-child-type   : {0}", bullet::bt_shape_enum_to_str( (BroadphaseNativeTypes)bt_child_shape->getShapeType() ) );
+                    LOCO_CORE_TRACE( "\tbt-child-loc.scl: {0}", ToString( bullet::vec3_from_bt( bt_child_shape->getLocalScaling() ) ) );
                     LOCO_CORE_TRACE( "\tbt-child-margin : {0}", bt_child_shape->getMargin() );
                 }
 
             }
         }
+    #endif
         ChangeFriction( m_ColliderRef->data().friction.x() );
     }
 
@@ -164,7 +165,7 @@ namespace bullet {
             }
         }
 
-        m_BulletCollisionShape->setLocalScaling( vec3_to_bt( m_Scale ) );
+        m_BulletCollisionShape->setLocalScaling( bullet::vec3_to_bt( m_Scale ) );
     }
 
     void TBulletSingleBodyColliderAdapter::ChangeVertexData( const std::vector<float>& vertices, const std::vector<int>& faces )

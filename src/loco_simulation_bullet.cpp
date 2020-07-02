@@ -1,14 +1,13 @@
 
 #include <loco_simulation_bullet.h>
 
-namespace loco {
-namespace bullet {
+namespace loco
+{
+    //--------------------------------------------------------------------------------------------//
+    //                                  Bullet DebugDrawer Impl.                                  //
+    //--------------------------------------------------------------------------------------------//
 
-    /***********************************************************************************************
-    *                                   Bullet DebugDrawer Impl.                                   *
-    ***********************************************************************************************/
-
-    TBulletDebugDrawer::TBulletDebugDrawer( TIVisualizer* visualizerRef )
+    TBulletDebugDrawer::TBulletDebugDrawer( visualizer::TIVisualizer* visualizerRef )
         : m_VisualizerRef( visualizerRef )
     {
         LOCO_CORE_ASSERT( m_VisualizerRef, "TBulletDebugDrawer >>> visualizer-ref must be valid (given nullptr)" );
@@ -22,14 +21,14 @@ namespace bullet {
 
     void TBulletDebugDrawer::drawLine( const btVector3& from, const btVector3& to, const btVector3& color )
     {
-        m_VisualizerRef->DrawLine( vec3_from_bt( from ), vec3_from_bt( to ), vec3_from_bt( color ) );
+        m_VisualizerRef->DrawLine( bullet::vec3_from_bt( from ), bullet::vec3_from_bt( to ), bullet::vec3_from_bt( color ) );
     }
 
     void TBulletDebugDrawer::drawContactPoint( const btVector3& point_on_b, const btVector3& normal_on_b,
                                                btScalar distance, int life_time, const btVector3& color )
     {
-        m_VisualizerRef->DrawLine( vec3_from_bt( point_on_b ), vec3_from_bt( point_on_b + normal_on_b * distance ), vec3_from_bt( color ) );
-        m_VisualizerRef->DrawLine( vec3_from_bt( point_on_b ), vec3_from_bt( point_on_b + normal_on_b * 0.01 ), { 0.0, 0.0, 0.0 } );
+        m_VisualizerRef->DrawLine( bullet::vec3_from_bt( point_on_b ), bullet::vec3_from_bt( point_on_b + normal_on_b * distance ), bullet::vec3_from_bt( color ) );
+        m_VisualizerRef->DrawLine( bullet::vec3_from_bt( point_on_b ), bullet::vec3_from_bt( point_on_b + normal_on_b * 0.01 ), { 0.0, 0.0, 0.0 } );
     }
 
     void TBulletDebugDrawer::reportErrorWarning( const char* warning_string )
@@ -37,9 +36,9 @@ namespace bullet {
         LOCO_CORE_WARN( "TBulletDebugDrawer::reportErrorWarning >>> {0}", warning_string );
     }
 
-    /***********************************************************************************************
-    *                        Bullet custom overlap-filter callback Impl.                           *
-    ***********************************************************************************************/
+    //--------------------------------------------------------------------------------------------//
+    //                       Bullet custom overlap-filter callback Impl.                          //
+    //--------------------------------------------------------------------------------------------//
 
     bool TBulletOverlapFilterCallback::needBroadphaseCollision( btBroadphaseProxy* proxy0, btBroadphaseProxy* proxy1 ) const 
     {
@@ -49,9 +48,9 @@ namespace bullet {
         return proxy_affinity_0_1 || proxy_affinity_1_0;
     }
 
-    /***********************************************************************************************
-    *                                   Bullet Simulation Impl.                                    *
-    ***********************************************************************************************/
+    //--------------------------------------------------------------------------------------------//
+    //                                  Bullet Simulation Impl.                                   //
+    //--------------------------------------------------------------------------------------------//
 
     TBulletSimulation::TBulletSimulation( TScenario* scenarioRef )
         : TISimulation( scenarioRef )
@@ -67,13 +66,12 @@ namespace bullet {
                                                                 m_BulletBroadphase.get(),
                                                                 m_BulletConstraintSolver.get(),
                                                                 m_BulletCollisionConfiguration.get() );
-        m_BulletDynamicsWorld->setGravity( vec3_to_bt( m_Gravity ) );
+        m_BulletDynamicsWorld->setGravity( bullet::vec3_to_bt( m_Gravity ) );
 
         m_BulletOverlapFilterCallback = std::make_unique<TBulletOverlapFilterCallback>();
         m_BulletDynamicsWorld->getPairCache()->setOverlapFilterCallback( m_BulletOverlapFilterCallback.get() );
 
         _CreateSingleBodyAdapters();
-        //// _CreateCompoundAdapters();
         //// _CreateKintreeAdapters();
         //// _CreateTerrainGeneratorAdapters();
 
@@ -90,7 +88,7 @@ namespace bullet {
         auto single_bodies = m_ScenarioRef->GetSingleBodiesList();
         for ( auto single_body : single_bodies )
         {
-            auto single_body_adapter = std::make_unique<TBulletSingleBodyAdapter>( single_body );
+            auto single_body_adapter = std::make_unique<primitives::TBulletSingleBodyAdapter>( single_body );
             single_body->SetBodyAdapter( single_body_adapter.get() );
             m_SingleBodyAdapters.push_back( std::move( single_body_adapter ) );
         }
@@ -117,14 +115,8 @@ namespace bullet {
     bool TBulletSimulation::_InitializeInternal()
     {
         for ( auto& single_body_adapter : m_SingleBodyAdapters )
-            if ( auto bullet_adapter = dynamic_cast<TBulletSingleBodyAdapter*>( single_body_adapter.get() ) )
+            if ( auto bullet_adapter = dynamic_cast<primitives::TBulletSingleBodyAdapter*>( single_body_adapter.get() ) )
                 bullet_adapter->SetBulletWorld( m_BulletDynamicsWorld.get() );
-
-        LOCO_CORE_TRACE( "Bullet-backend >>> broadphase         : {0}", typeid( *m_BulletBroadphase ).name() );
-        LOCO_CORE_TRACE( "Bullet-backend >>> collision config.  : {0}", typeid( *m_BulletCollisionConfiguration ).name() );
-        LOCO_CORE_TRACE( "Bullet-backend >>> constraint solver  : {0}", typeid( *m_BulletConstraintSolver ).name() );
-        LOCO_CORE_TRACE( "Bullet-backend >>> bullett-world      : {0}", typeid( *m_BulletDynamicsWorld ).name() );
-
         return true;
     }
 
@@ -145,16 +137,16 @@ namespace bullet {
             if ( collision_object_id_1 != eObjectType::SINGLE_BODY_COLLIDER ||
                  collision_object_id_2 != eObjectType::SINGLE_BODY_COLLIDER )
                 continue;
-            auto collider_ref_1 = reinterpret_cast<TSingleBodyCollider*>( contact_manifold->getBody0()->getUserPointer() );
-            auto collider_ref_2 = reinterpret_cast<TSingleBodyCollider*>( contact_manifold->getBody1()->getUserPointer() );
+            auto collider_ref_1 = reinterpret_cast<primitives::TSingleBodyCollider*>( contact_manifold->getBody0()->getUserPointer() );
+            auto collider_ref_2 = reinterpret_cast<primitives::TSingleBodyCollider*>( contact_manifold->getBody1()->getUserPointer() );
             const std::string collider_1 = collider_ref_1->name();
             const std::string collider_2 = collider_ref_2->name();
             const ssize_t num_contacts = contact_manifold->getNumContacts();
             for ( ssize_t j = 0; j < num_contacts; j++ )
             {
                 const btManifoldPoint& contact_info = contact_manifold->getContactPoint( j );
-                const TVec3 position = vec3_from_bt( contact_info.m_positionWorldOnB );
-                const TVec3 normal = vec3_from_bt( contact_info.m_normalWorldOnB );
+                const TVec3 position = bullet::vec3_from_bt( contact_info.m_positionWorldOnB );
+                const TVec3 normal = bullet::vec3_from_bt( contact_info.m_normalWorldOnB );
 
                 if ( detected_contacts.find( collider_1 ) == detected_contacts.end() )
                     detected_contacts[collider_1] = std::vector<TContactData>();
@@ -180,8 +172,6 @@ namespace bullet {
             collider->contacts().clear();
             if ( detected_contacts.find( collider_name ) != detected_contacts.end() )
                 collider->contacts() = detected_contacts[collider_name];
-
-            LOCO_CORE_INFO( "collider: {0}, num_contacts: {1}", collider_name, collider->contacts().size() );
         }
     }
 
@@ -205,7 +195,7 @@ namespace bullet {
 
     void TBulletSimulation::_ResetInternal()
     {
-        // @todo: reset loco-contact-manager
+        // Do nothing here, as call to wrappers is enough (made in base)
     }
 
     void TBulletSimulation::_SetTimeStepInternal( const TScalar& time_step )
@@ -219,10 +209,10 @@ namespace bullet {
     {
         LOCO_CORE_ASSERT( m_BulletDynamicsWorld, "TBulletSimulation::_SetGravityInternal >>> \
                           btDynamicsWorld object is required, but got nullptr instead" );
-        m_BulletDynamicsWorld->setGravity( vec3_to_bt( gravity ) );
+        m_BulletDynamicsWorld->setGravity( bullet::vec3_to_bt( gravity ) );
     }
 
-    void TBulletSimulation::_SetVisualizerInternal( TIVisualizer* visualizerRef )
+    void TBulletSimulation::_SetVisualizerInternal( visualizer::TIVisualizer* visualizerRef )
     {
         m_BulletDebugDrawer = std::make_unique<TBulletDebugDrawer>( visualizerRef );
         m_BulletDynamicsWorld->setDebugDrawer( m_BulletDebugDrawer.get() );
@@ -230,7 +220,6 @@ namespace bullet {
 
     extern "C" TISimulation* simulation_create( TScenario* scenarioRef )
     {
-        return new loco::bullet::TBulletSimulation( scenarioRef );
+        return new loco::TBulletSimulation( scenarioRef );
     }
-
-}}
+}

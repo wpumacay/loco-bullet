@@ -2,7 +2,7 @@
 #include <primitives/loco_single_body_constraint_adapter_bullet.h>
 
 namespace loco {
-namespace bullet {
+namespace primitives {
 
     //********************************************************************************************//
     //                              Bullet-Adapter Interface Impl.                                //
@@ -34,8 +34,8 @@ namespace bullet {
         LOCO_CORE_ASSERT( m_BulletBodyRef, "TBulletSingleBodyRevoluteConstraintAdapter::Build >>> \
                           rigid-body reference must be provided before calling ->Build(), for constraint named {0}", m_ConstraintRef->name() );
 
-        const btVector3 pivot = vec3_to_bt( TVec3( revolute_constraint->local_tf().col( 3 ) ) );
-        const btVector3 axis = vec3_to_bt( TMat3( revolute_constraint->local_tf() ) * revolute_constraint->axis() );
+        const btVector3 pivot = bullet::vec3_to_bt( TVec3( revolute_constraint->local_tf().col( 3 ) ) );
+        const btVector3 axis = bullet::vec3_to_bt( TMat3( revolute_constraint->local_tf() ) * revolute_constraint->axis() );
         auto hinge_constraint = std::make_unique<btHingeConstraint>( *m_BulletBodyRef, pivot, axis );
         hinge_constraint->setLimit( 1.0f, -1.0f ); // no limits first, user changes it with "SetLimits"
         m_BulletConstraint = std::move( hinge_constraint );
@@ -96,7 +96,7 @@ namespace bullet {
         const TVec4 quat_tf = ShortestArcQuat( x_axis_world, axis_world );
         const TMat3 tf_rot = tinymath::rotation( quat_tf );
         btTransform frame_constraint = btTransform::getIdentity();
-        frame_constraint.setBasis( mat3_to_bt( tf_rot ) );
+        frame_constraint.setBasis( bullet::mat3_to_bt( tf_rot ) );
 
         auto slider_constraint = std::make_unique<btSliderConstraint>( *m_BulletBodyRef, frame_constraint, false );
         slider_constraint->setLowerLinLimit( prismatic_constraint->limits().x() );
@@ -153,7 +153,7 @@ namespace bullet {
         LOCO_CORE_ASSERT( m_BulletBodyRef, "TBulletSingleBodySphericalConstraintAdapter::Build >>> \
                           rigid-body reference must be provided before calling ->Build(), for constraint named {0}", m_ConstraintRef->name() );
 
-        const auto pivot = vec3_to_bt( TVec3( m_ConstraintRef->local_tf().col( 3 ) ) );
+        const auto pivot = bullet::vec3_to_bt( TVec3( m_ConstraintRef->local_tf().col( 3 ) ) );
         auto point2point_constraint = std::make_unique<btPoint2PointConstraint>( *m_BulletBodyRef, pivot );
         m_BulletConstraint = std::move( point2point_constraint );
     }
