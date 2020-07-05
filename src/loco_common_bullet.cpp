@@ -92,10 +92,18 @@ namespace bullet {
             case eShapeType::ELLIPSOID :
                 return CreateConvexHull( CreateEllipsoidVertices( data ) );
 
-            case eShapeType::MESH :
-                return CreateConvexHull( CreateMeshVertices( data ) );
+            case eShapeType::CONVEX_MESH :
+                return CreateConvexHull( CreateConvexMeshVertices( data ) );
 
-            case eShapeType::HFIELD :
+            case eShapeType::TRIANGULAR_MESH :
+            {
+                std::vector<float> mesh_vertices;
+                std::vector<int> mesh_faces;
+                CreateTriangularMeshData( data, mesh_vertices, mesh_faces );
+                return CreateTriangularMesh( mesh_vertices, mesh_faces );
+            }
+
+            case eShapeType::HEIGHTFIELD :
             {
                 const auto& heights = data.hfield_data.heights;
                 const ssize_t nwidth_samples = data.hfield_data.nWidthSamples;
@@ -183,6 +191,35 @@ namespace bullet {
         return std::move( convex_hull_shape );
     }
 
+    std::unique_ptr<btBvhTriangleMeshShape> CreateTriangularMesh( const std::vector<float>& mesh_vertices,
+                                                                  const std::vector<int>& mesh_faces )
+    {
+        // Create some buffers to hold the data dynamically (will be attached to bullet's mesh-data struct)
+        float* vertices_data = new float[mesh_vertices.size()];
+        int* faces_data = new int[mesh_faces.size()];
+        memcpy( vertices_data, mesh_vertices.data(), sizeof(float) * mesh_vertices.size() );
+        memcpy( faces_data, mesh_faces.data(), sizeof(int) * mesh_faces.size() );
+        //------------------------------------------------------------------------------------------
+
+        btIndexedMesh bt_mesh_data;
+        bt_mesh_data.m_vertexDataPtr = vertices_data; // keep the data internally
+        bt_mesh_data.m_vertexBase = (const unsigned char*)vertices_data;
+        bt_mesh_data.m_vertexStride = sizeof(float) * 3;
+        bt_mesh_data.m_numVertices = mesh_vertices.size() / 3;
+        bt_mesh_data.m_triangleDataPtr = faces_data; // keep the data internally
+        bt_mesh_data.m_triangleIndexBase = (const unsigned char*)faces_data;
+        bt_mesh_data.m_triangleIndexStride = sizeof(int) * 3;
+        bt_mesh_data.m_numTriangles = mesh_faces.size() / 3;
+        bt_mesh_data.m_indexType = PHY_INTEGER;
+
+        auto mesh_interface = new btTriangleIndexVertexArray();
+        mesh_interface->addIndexedMesh( bt_mesh_data, PHY_INTEGER );
+        const bool use_quantized_aabb_compression = true;
+
+        auto bvh_trimesh_shape = std::make_unique<btBvhTriangleMeshShape>( mesh_interface, use_quantized_aabb_compression );
+        return std::move( bvh_trimesh_shape );
+    }
+
     std::vector<TVec3> CreateEllipsoidVertices( const TShapeData& data )
     {
         const ssize_t ndiv_1 = 20;
@@ -204,7 +241,7 @@ namespace bullet {
         return vertices;
     }
 
-    std::vector<TVec3> CreateMeshVertices( const TShapeData& data )
+    std::vector<TVec3> CreateConvexMeshVertices( const TShapeData& data )
     {
         std::vector<TVec3> mesh_vertices;
         if ( data.mesh_data.filename != "" )
@@ -212,7 +249,7 @@ namespace bullet {
         else if ( data.mesh_data.vertices.size() > 0 && data.mesh_data.faces.size() > 0 )
             _CollectMeshVerticesFromUser( mesh_vertices, data );
         else
-            LOCO_CORE_ERROR( "CreateMeshVertices >>> tried to construct a mesh without any data" );
+            LOCO_CORE_ERROR( "CreateConvexMeshVertices >>> tried to construct a mesh without any data" );
         return mesh_vertices;
     }
 
@@ -267,9 +304,90 @@ namespace bullet {
                                        data.size.z() * vertices[3 * i + 2] } );
     }
 
+    void CreateTriangularMeshData( const TShapeData& data, std::vector<float>& dst_vertices, std::vector<int>& dst_faces )
+    {
+        auto& mesh_data = data.mesh_data;
+        /**/ if ( mesh_data.filename != "" )
+            _CollectTrimeshDataFromFile( dst_vertices, dst_faces, data );
+        else if ( mesh_data.vertices.size() > 0 && mesh_data.faces.size() > 0 )
+            _CollectTrimeshDataFromUser( dst_vertices, dst_faces, data );
+        else
+            LOCO_CORE_ERROR( "CreateTriangularMeshData >>> tried to construct a tri-mesh without any data" );
+    }
+
+    void _CollectTrimeshDataFromFile( std::vector<float>& dst_vertices, std::vector<int>& dst_faces, const TShapeData& data )
+    {
+        const std::string filepath = data.mesh_data.filename;
+        auto assimp_scene = std::unique_ptr<const aiScene, aiSceneDeleter>( aiImportFile( 
+                                                                                filepath.c_str(),
+                                                                                aiProcessPreset_TargetRealtime_MaxQuality |
+                                                                                aiProcess_PreTransformVertices ) );
+        if ( !assimp_scene )
+        {
+            LOCO_CORE_ERROR( "_CollectTrimeshDataFromFile >>> couldn't open model {0}", filepath );
+            return;
+        }
+
+        std::stack<const aiNode*> dfs_traversal;
+        dfs_traversal.push( assimp_scene->mRootNode );
+        while( !dfs_traversal.empty() )
+        {
+            auto assimp_node = dfs_traversal.top();
+            dfs_traversal.pop();
+            if ( !assimp_node )
+                continue;
+
+            for ( ssize_t i = 0; i < assimp_node->mNumMeshes; i++ )
+            {
+                auto assimp_mesh = assimp_scene->mMeshes[assimp_node->mMeshes[i]];
+                for ( ssize_t v = 0; v < assimp_mesh->mNumVertices; v++ )
+                {
+                    dst_vertices.push_back( data.size.x() * assimp_mesh->mVertices[v].x );
+                    dst_vertices.push_back( data.size.y() * assimp_mesh->mVertices[v].y );
+                    dst_vertices.push_back( data.size.z() * assimp_mesh->mVertices[v].z );
+                }
+                for ( ssize_t f = 0; f < assimp_mesh->mNumFaces; f++ )
+                {
+                    auto assimp_face = assimp_mesh->mFaces[f];
+                    dst_faces.push_back( assimp_face.mIndices[0] );
+                    dst_faces.push_back( assimp_face.mIndices[1] );
+                    dst_faces.push_back( assimp_face.mIndices[2] );
+                }
+            }
+
+            for ( ssize_t i = 0; i < assimp_node->mNumChildren; i++ )
+                dfs_traversal.push( assimp_node->mChildren[i] );
+        }
+    }
+
+    void _CollectTrimeshDataFromUser( std::vector<float>& dst_vertices, std::vector<int>& dst_faces, const TShapeData& data )
+    {
+        const auto& mesh_data = data.mesh_data;
+        const auto mesh_scale = data.size;
+        if ( mesh_data.vertices.size() % 3 != 0 )
+            LOCO_CORE_ERROR( "_CollectTrimeshDataFromUser >>> there must be 3 elements per vertex" );
+        if ( mesh_data.faces.size() % 3 != 0 )
+            LOCO_CORE_ERROR( "_CollectTrimeshDataFromUser >>> there must be 3 indices per face" );
+
+        // The data is already in the format we require, so just apply the scale to the vertices
+        const ssize_t num_vertices = mesh_data.vertices.size() / 3;
+        for ( ssize_t v = 0; v < num_vertices; v++ )
+        {
+            dst_vertices.push_back( mesh_scale.x() * mesh_data.vertices[3 * v + 0] );
+            dst_vertices.push_back( mesh_scale.y() * mesh_data.vertices[3 * v + 1] );
+            dst_vertices.push_back( mesh_scale.z() * mesh_data.vertices[3 * v + 2] );
+        }
+        const ssize_t num_faces = mesh_data.faces.size() /3 ;
+        for ( ssize_t f = 0; f < num_faces; f++ )
+        {
+            dst_faces.push_back( mesh_data.faces[3 * f + 0] );
+            dst_faces.push_back( mesh_data.faces[3 * f + 1] );
+            dst_faces.push_back( mesh_data.faces[3 * f + 2] );
+        }
+    }
+
     void aiSceneDeleter::operator() ( const aiScene* assimp_scene ) const
     {
         aiReleaseImport( assimp_scene );
     }
-
 }}

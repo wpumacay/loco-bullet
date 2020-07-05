@@ -63,7 +63,7 @@ namespace primitives {
         btVector3 bt_inertia_diag( 0.0, 0.0, 0.0 );
         if ( m_BodyRef->dyntype() == eDynamicsType::DYNAMIC )
         {
-            if ( collider->shape() != eShapeType::HFIELD && collider->shape() != eShapeType::PLANE )
+            if ( collider->shape() != eShapeType::HEIGHTFIELD && collider->shape() != eShapeType::PLANE )
             {
                 if ( m_BodyRef->data().inertia.mass > loco::EPS )
                     bt_mass = m_BodyRef->data().inertia.mass;
@@ -80,7 +80,7 @@ namespace primitives {
             }
         }
 
-        if ( collider->shape() == eShapeType::HFIELD )
+        if ( collider->shape() == eShapeType::HEIGHTFIELD )
         {
             const auto& heights = collider->data().hfield_data.heights;
             const float z_max = *std::max_element( heights.cbegin(), heights.cend() );

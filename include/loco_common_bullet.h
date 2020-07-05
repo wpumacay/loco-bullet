@@ -44,17 +44,30 @@ namespace bullet {
     // Constructs a bt-convex-hull shape from a given set of vertices
     std::unique_ptr<btConvexHullShape> CreateConvexHull( const std::vector<TVec3>& mesh_vertices );
 
+    // Constructs a bt-bvh-triangle-mesh-shape from given vertex data
+    std::unique_ptr<btBvhTriangleMeshShape> CreateTriangularMesh( const std::vector<float>& mesh_vertices,
+                                                                  const std::vector<int>& mesh_faces );
+
     // Creates vertices of an ellipsoid given user shape data
     std::vector<TVec3> CreateEllipsoidVertices( const TShapeData& data );
 
     // Creates vertices of a mesh given user shape data
-    std::vector<TVec3> CreateMeshVertices( const TShapeData& data );
+    std::vector<TVec3> CreateConvexMeshVertices( const TShapeData& data );
 
     // Gets vertices of a given mesh, using a filepath for a mesh model
     void _CollectMeshVerticesFromFile( std::vector<TVec3>& mesh_vertices, const TShapeData& data );
 
     // Gets vertices of a given mesh, using user vertex-data
     void _CollectMeshVerticesFromUser( std::vector<TVec3>& mesh_vertices, const TShapeData& data );
+
+    // Creates the vertex data of a given tri-mesh given user shape data
+    void CreateTriangularMeshData( const TShapeData& data, std::vector<float>& dst_vertices, std::vector<int>& dst_faces );
+
+    // Gets vertex-data of a given trimesh, using a filepath for a trimesm model
+    void _CollectTrimeshDataFromFile( std::vector<float>& dst_vertices, std::vector<int>& dst_faces, const TShapeData& data );
+
+    // Gets vertex-data of a given trimesh, using user vertex-data
+    void _CollectTrimeshDataFromUser( std::vector<float>& dst_vertices, std::vector<int>& dst_faces, const TShapeData& data );
 
     // Custom deleter for assimp-scene objects
     struct aiSceneDeleter

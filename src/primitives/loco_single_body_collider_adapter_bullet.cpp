@@ -149,14 +149,15 @@ namespace primitives {
                 m_Scale.z() = scale_height;
                 break;
             }
-            case eShapeType::MESH :
+            case eShapeType::CONVEX_MESH :
+            case eShapeType::TRIANGULAR_MESH :
             {
                 m_Scale.x() = m_Size.x() / m_Size0.x();
                 m_Scale.y() = m_Size.y() / m_Size0.y();
                 m_Scale.z() = m_Size.z() / m_Size0.z();
                 break;
             }
-            case eShapeType::HFIELD :
+            case eShapeType::HEIGHTFIELD :
             {
                 m_Scale.x() = m_Size.x() / m_Size0.x();
                 m_Scale.y() = m_Size.y() / m_Size0.y();
@@ -174,7 +175,7 @@ namespace primitives {
             return;
 
 
-        if ( m_ColliderRef->shape() != eShapeType::MESH )
+        if ( m_ColliderRef->shape() != eShapeType::CONVEX_MESH )
         {
             LOCO_CORE_WARN( "TBulletSingleBodyColliderAdapter::ChangeVertexData >>> tried to set vertex-data \
                              to the non-mesh collider {0}", m_ColliderRef->name() );
