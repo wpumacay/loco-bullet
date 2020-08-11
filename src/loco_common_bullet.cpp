@@ -123,6 +123,17 @@ namespace bullet {
                                                                 data.size.z() } ) );
                 return std::move( bt_hfield_shape );
             }
+
+            case eShapeType::COMPOUND :
+            {
+                auto bt_compound_shape = std::make_unique<btCompoundShape>();
+                auto children_data = data.children;
+                auto children_tfs = data.children_tfs;
+                for ( ssize_t i = 0; i < children_data.size(); i++ )
+                    bt_compound_shape->addChildShape( mat4_to_bt( children_tfs[i] ),
+                                                      CreateCollisionShape( children_data[i] ).release() );
+                return std::move( bt_compound_shape );
+            }
         }
 
         LOCO_CORE_ERROR( "CreateCollisionShape >>> unsupported shape: {0}", ToString( data.type ) );
@@ -137,19 +148,19 @@ namespace bullet {
         {
             case BroadphaseNativeTypes::BOX_SHAPE_PROXYTYPE :
             {
-                const auto box_shape = dynamic_cast<const btBoxShape*>( collision_shape );
+                const auto box_shape = static_cast<const btBoxShape*>( collision_shape );
                 const auto box_dimensions = box_shape->getHalfExtentsWithMargin();
                 return 8.0 * box_dimensions.x() * box_dimensions.y() * box_dimensions.z();
             }
             case BroadphaseNativeTypes::SPHERE_SHAPE_PROXYTYPE :
             {
-                const auto sphere_shape = dynamic_cast<const btSphereShape*>( collision_shape );
+                const auto sphere_shape = static_cast<const btSphereShape*>( collision_shape );
                 const auto sphere_radius = sphere_shape->getRadius();
                 return (4. / 3.) * loco::PI * sphere_radius * sphere_radius * sphere_radius;
             }
             case BroadphaseNativeTypes::CYLINDER_SHAPE_PROXYTYPE :
             {
-                const auto cylinder_shape = dynamic_cast<const btCylinderShapeZ*>( collision_shape );
+                const auto cylinder_shape = static_cast<const btCylinderShapeZ*>( collision_shape );
                 const auto cylinder_radius = cylinder_shape->getRadius();
                 const auto cylinder_up_axis = cylinder_shape->getUpAxis();
                 const auto cylinder_half_extents = cylinder_shape->getHalfExtentsWithMargin();
@@ -158,13 +169,14 @@ namespace bullet {
             }
             case BroadphaseNativeTypes::CAPSULE_SHAPE_PROXYTYPE :
             {
-                const auto capsule_shape = dynamic_cast<const btCapsuleShapeZ*>( collision_shape );
+                const auto capsule_shape = static_cast<const btCapsuleShapeZ*>( collision_shape );
                 const auto capsule_radius = capsule_shape->getRadius();
                 const auto capsule_height = 2.0 * capsule_shape->getHalfHeight();
                 return loco::PI * capsule_radius * capsule_radius * capsule_height +
                        (4. / 3.) * loco::PI * capsule_radius * capsule_radius * capsule_radius;
             }
             case BroadphaseNativeTypes::CONVEX_HULL_SHAPE_PROXYTYPE :
+            case BroadphaseNativeTypes::COMPOUND_SHAPE_PROXYTYPE :
             {
                 btVector3 aabb_min, aabb_max;
                 collision_shape->getAabb( btTransform::getIdentity(), aabb_min, aabb_max );
