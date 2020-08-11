@@ -101,12 +101,23 @@ set( LOCO_BULLET_INCLUDE_DIRS
      "${CMAKE_SOURCE_DIR}/core/ext/tinyxml2"
      "${CMAKE_SOURCE_DIR}/ext/spdlog/include"
      "${CMAKE_SOURCE_DIR}/ext/tiny_math/include"
-     "${CMAKE_SOURCE_DIR}/ext/tiny_utils/include"
-     "${CMAKE_SOURCE_DIR}/ext/bullet3/src" )
+     "${CMAKE_SOURCE_DIR}/ext/tiny_utils/include" )
 include_directories( ${LOCO_BULLET_INCLUDE_DIRS} )
 
 # Assimp is required to load meshes and do some computations on them
 find_package( assimp REQUIRED )
+
+# Configure external dependency: Bullet physics engine (located in ~/.bullet installation folder)
+if ( WIN32 )
+    set( LOCO_BULLET_INCLUDE_DIRS "C:/.bullet/include/bullet" "${LOCO_BULLET_INCLUDE_DIRS}" )
+    link_directories( "C:/.bullet/lib" )
+elseif ( UNIX )
+    set( LOCO_BULLET_INCLUDE_DIRS "~/.bullet/include/bullet" "${LOCO_BULLET_INCLUDE_DIRS}" )
+    link_directories( "~/.bullet/lib" )
+else()
+    message( "LOCO::DART >> UNSUPPORTED OS-TYPE" )
+endif()
+include_directories( ${LOCO_BULLET_INCLUDE_DIRS} )
 
 add_library( locoPhysicsBULLET SHARED
              ${LOCO_BULLET_SRCS} )
