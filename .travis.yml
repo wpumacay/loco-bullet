@@ -39,6 +39,13 @@ before_install:
   - sudo apt-get install -y ffmpeg
   - echo "Cloning repo-dependencies from github ..."
   - ./scripts/setup_dependencies.sh
+  - echo "Installing bullet-physics to ~/.bullet install location"
+  - git clone https://github.com/wpumacay/bullet3 bullet3
+  - cd bullet3 && mkdir build && cd build
+  - cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DCMAKE_INSTALL_PREFIX=~/.bullet
+  - make -j4
+  - make install && cd ../../ && rm -rf bullet3
+  - export LD_LIBRARY_PATH="~/.bullet/lib:$LD_LIBRARY_PATH"
   - echo "Configuring anaconda and making and env. for the build ..."
   - wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
   - bash miniconda.sh -b -p $HOME/miniconda
