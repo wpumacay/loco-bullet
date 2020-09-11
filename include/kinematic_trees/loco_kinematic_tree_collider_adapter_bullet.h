@@ -15,8 +15,7 @@ namespace kintree {
     {
     public :
 
-        TBulletKinematicTreeColliderAdapter( TKinematicTreeCollider* collider_ref )
-            : TIKinematicTreeColliderAdapter( collider_ref ) {}
+        TBulletKinematicTreeColliderAdapter( TKinematicTreeCollider* collider_ref );
 
         ~TBulletKinematicTreeColliderAdapter();
 

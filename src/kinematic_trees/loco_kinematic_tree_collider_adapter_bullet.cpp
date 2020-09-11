@@ -20,7 +20,12 @@ namespace kintree {
 
     void TBulletKinematicTreeColliderAdapter::Build()
     {
+        m_BulletCollisionShape = bullet::CreateCollisionShape( m_ColliderRef->data() );
+        m_BulletCollisionShape->setMargin( 0.001 );
 
+        m_Size  = m_ColliderRef->size();
+        m_Size0 = m_ColliderRef->size();
+        m_Scale = { 1.0f, 1.0f, 1.0f };
     }
 
     void TBulletKinematicTreeColliderAdapter::Initialize()
